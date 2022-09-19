@@ -1,18 +1,17 @@
 import argparse
 
-from src.adaBoost import ada_boost_debiasing
-from src.utils.data_loader import load_dataset
-
-
-def compute_weights(dataset_name, iterations):
-    data, columns = load_dataset(dataset_name)
-    ada_boost_debiasing(data, columns, number_of_iterations=iterations, dataset=dataset_name)
+from ada_boost import ada_boost_debiasing
+from utils.data_loader import load_dataset, dataset_list
+from utils.statistics import logistic_regression
+from utils.input_arguments import input_arguments
 
 
 if __name__ == '__main__':
-    parser = argparse.ArgumentParser()
-    parser.add_argument('--dataset', default='mainz', choices=['allensbach', 'gesis', 'artificial'])
-    parser.add_argument('--iterations', default=20, type=int)
-    args = parser.parse_args()
-
-    compute_weights(args.dataset, args.iterations)
+    args = input_arguments()
+    dataset_name = args.dataset
+    data, columns = load_dataset(args.dataset)
+    weights = ada_boost_debiasing(data, columns, number_of_iterations=args.iterations,
+                                  dataset=dataset_name, flip_rate=args.flip_rate)
+    #if args.dataset == 'allensbach':
+    #    N = data[data['label'] == 1]
+     #   logistic_regression(N[columns + ['Wahlteilnahme']], weights)

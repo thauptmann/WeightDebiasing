@@ -4,20 +4,31 @@ from sklearn.metrics import roc_auc_score
 from sklearn.model_selection import StratifiedKFold, KFold
 from sklearn.tree import DecisionTreeClassifier
 from sklearn.ensemble import RandomForestClassifier
+from sklearn.neural_network import MLPClassifier
+from sklearn.linear_model import LogisticRegression
+from sklearn.model_selection import GridSearchCV
+from tqdm import tqdm
 
-from src.utils.metrics import interpolate_roc, calculate_median_roc
+from utils.metrics import interpolate_roc, calculate_median_roc
 
 
-def train_stump(X_train, y_train, weights):
-    decision_stump = DecisionTreeClassifier(max_depth=2)
-    decision_stump = decision_stump.fit(X_train, y_train, sample_weight=weights)
+def train_tree(X_train, y_train, weights=None):
+    if weights is not None:
+        param_grid = {'max_depth': [1, 2, 5], 'min_samples_split': [2, 5]}
+        decision_stump = GridSearchCV(
+            DecisionTreeClassifier(), param_grid, n_jobs=-1)
+        decision_stump = decision_stump.fit(
+            X_train, y_train, sample_weight=weights)
+    else:
+        forest = RandomForestClassifier(max_depth=5, n_estimators=50)
+        decision_stump = forest.fit(X_train, y_train)
     return decision_stump
 
 
-def train_forest(X_train, y_train, weights):
-    random_forest = DecisionTreeClassifier()
-    random_forest = random_forest.fit(X_train, y_train, sample_weight=weights)
-    return random_forest
+def train_logistic_regression(X_train, y_train):
+    logistic_regression = LogisticRegression()
+    logistic_regression = logistic_regression.fit(X_train, y_train)
+    return logistic_regression
 
 
 def weighted_auc_prediction(data, columns, iteration, calculate_roc=False):
@@ -28,7 +39,7 @@ def weighted_auc_prediction(data, columns, iteration, calculate_roc=False):
     for train, test in kf.split(data[columns], data['label']):
         train, test = data.iloc[train], data.iloc[test]
         y_train = train['label']
-        clf = train_forest(train[columns], y_train, train.weights)
+        clf = train_tree(train[columns], y_train, train.weights)
         y_predict = clf.predict_proba(test[columns])[:, 1]
         y_test = test['label']
         auroc_scores.append(roc_auc_score(y_test, y_predict))
@@ -40,11 +51,10 @@ def weighted_auc_prediction(data, columns, iteration, calculate_roc=False):
     return np.mean(auroc_scores), median_roc
 
 
-def cv_bootstrap_prediction(df, number_of_splits, columns):
+def cv_bootstrap_prediction(df, number_of_splits, columns, use_weights=True):
     N = df[df['label'] == 1]
     R = df[df['label'] == 0]
-    preds = np.zeros(len(N))
-    preds_r = np.zeros(len(R))
+    predictions = np.zeros(len(N))
     bootstrap_iterations = 10
 
     kf = KFold(n_splits=number_of_splits, shuffle=True)
@@ -52,21 +62,77 @@ def cv_bootstrap_prediction(df, number_of_splits, columns):
         train_index, test_index = split_n
         train_index_r, test_index_r = split_r
         N_train, N_test = N.iloc[train_index], N.iloc[test_index]
-        R_train, R_test = R.iloc[train_index_r], R.iloc[test_index_r]
+        R_train, _ = R.iloc[train_index_r], R.iloc[test_index_r]
         n = min(len(R_train), len(N_train))
         bootstrap_predictions = []
-        bootstrap_predictions_r = []
-        for j in range(bootstrap_iterations):
+        for _ in range(bootstrap_iterations):
             bootstrap = pd.concat([N_train.sample(n=n, replace=True),
                                    R_train.sample(n=n, replace=True)])
-            clf = train_stump(bootstrap[columns], bootstrap.label, bootstrap.weights)
-            bootstrap_predictions.append(clf.predict_proba(N_test[columns])[:, 1])
-            bootstrap_predictions_r.append(clf.predict_proba(R_test[columns])[:, 1])
-        preds[test_index] = np.mean(bootstrap_predictions, axis=0)
-        preds_r[test_index_r] = np.mean(bootstrap_predictions_r, axis=0)
-    return preds, preds_r, clf
+            if not use_weights:
+                clf = train_tree(bootstrap[columns], bootstrap.label)
+            else:
+                clf = train_tree(bootstrap[columns], bootstrap.label,
+                                 bootstrap['weights'])
+            bootstrap_predictions.append(
+                clf.predict_proba(N_test[columns])[:, 1])
+        predictions[test_index] = np.mean(bootstrap_predictions, axis=0)
+    return predictions, clf
 
 
-def train_classifier(df, clf, columns):
-    clf = clf.fit(df[columns], df.label)
-    return clf.predict_proba(df[columns])[:, 1]
+def neural_network_prediction(df, number_of_splits, columns, *args):
+    N = df[df['label'] == 1]
+    R = df[df['label'] == 0]
+    predictions = np.zeros(len(N))
+    bootstrap_iterations = 100
+
+    kf = KFold(n_splits=number_of_splits, shuffle=True)
+    for split_n, split_r in zip(kf.split(N), kf.split(R)):
+        train_index, test_index = split_n
+        train_index_r, test_index_r = split_r
+        N_train, N_test = N.iloc[train_index], N.iloc[test_index]
+        R_train, _ = R.iloc[train_index_r], R.iloc[test_index_r]
+        n = min(len(R_train), len(N_train))
+        bootstrap_predictions = []
+        for _ in tqdm(range(bootstrap_iterations)):
+            bootstrap = pd.concat([N_train.sample(n=n, replace=True),
+                                   R_train.sample(n=n, replace=True)])
+            clf = train_neural_network(bootstrap[columns], bootstrap.label)
+            bootstrap_predictions.append(
+                clf.predict_proba(N_test[columns].values)[:, 1])
+        predictions[test_index] = np.mean(bootstrap_predictions, axis=0)
+    return predictions, clf
+
+
+def train_neural_network(X_train, y_train):
+    features = np.shape(X_train)[1]
+    nn = MLPClassifier(hidden_layer_sizes=[int(features/2)], max_iter=1000,
+                       learning_rate_init=0.01,
+                       batch_size=64,
+                       early_stopping=True, learning_rate='adaptive')
+    nn = nn.fit(X_train.values, y_train.values)
+    return nn
+
+
+def logistic_regression_prediction(df, number_of_splits, columns, *args, **attributes):
+    N = df[df['label'] == 1]
+    R = df[df['label'] == 0]
+    predictions = np.zeros(len(N))
+    bootstrap_iterations = 10
+
+    kf = KFold(n_splits=number_of_splits, shuffle=True)
+    for split_n, split_r in zip(kf.split(N), kf.split(R)):
+        train_index, test_index = split_n
+        train_index_r, test_index_r = split_r
+        N_train, N_test = N.iloc[train_index], N.iloc[test_index]
+        R_train, _ = R.iloc[train_index_r], R.iloc[test_index_r]
+        n = min(len(R_train), len(N_train))
+        bootstrap_predictions = []
+        for _ in range(bootstrap_iterations):
+            bootstrap = pd.concat([N_train.sample(n=n, replace=True),
+                                   R_train.sample(n=n, replace=True)])
+            clf = train_logistic_regression(
+                bootstrap[columns], bootstrap.label)
+            bootstrap_predictions.append(
+                clf.predict_proba(N_test[columns])[:, 1])
+        predictions[test_index] = np.mean(bootstrap_predictions, axis=0)
+    return predictions, clf

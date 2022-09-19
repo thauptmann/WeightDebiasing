@@ -1,42 +1,211 @@
 import pandas as pd
 
+dataset_list = ["allensbach", "gesis", "artificial", "census"]
+
 
 def load_allensbach():
-    allensbach_path = '../data/allensbach_mrs.csv'
+    allensbach_path = "../data/allensbach_mrs.csv"
     allensbach = pd.read_csv(allensbach_path)
-    allensbach.drop(['Unnamed: 0'], axis=1, inplace=True)
-    allensbach_columns = ['Alter', 'Berufsgruppe', 'Erwerbstaetigkeit', 'Geschlecht',
-                          'Optimismus', 'Pessimismus', 'Schulabschluss', 'woechentlicheArbeitszeit', 'Resilienz']
+    allensbach.drop(["Unnamed: 0"], axis=1, inplace=True)
+    allensbach_columns = [
+        "Alter",
+        "Berufsgruppe",
+        "Erwerbstaetigkeit",
+        "Geschlecht",
+        "Optimismus",
+        "Pessimismus",
+        "Schulabschluss",
+        "woechentlicheArbeitszeit",
+        "Resilienz",
+    ]
     return allensbach, allensbach_columns
 
 
 def load_gesis():
-    gesis = pd.read_csv('../data/gesis_processed.csv')
-    gbs = pd.read_csv('../data/gbs_processed.csv')
+    gesis = pd.read_csv("../data/gesis_processed.csv")
+    gbs = pd.read_csv("../data/gbs_processed.csv")
 
-    gesis_columns = ['Geschlecht', 'Geburtsjahr', 'Geburtsland',
-                     'Nationalitaet', 'Familienstand', 'Hoechster Bildungsabschluss',
-                     'Berufliche Ausbildung', 'Erwerbstaetigkeit', 'Nettoeinkommen Selbst',
-                     'Zufriedenheit Wahlergebnis', 'Gesellig', 'Andere kritisieren',
-                     'Gruendlich', 'Nervoes', 'Phantasievoll', 'Berufsgruppe', 'Wahlteilnahme', 'BRS6']
+    gesis_columns = [
+        "Geschlecht",
+        "Geburtsjahr",
+        "Geburtsland",
+        "Nationalitaet",
+        "Familienstand",
+        "Hoechster Bildungsabschluss",
+        "Berufliche Ausbildung",
+        "Erwerbstaetigkeit",
+        "Nettoeinkommen Selbst",
+        "Zufriedenheit Wahlergebnis",
+        "Gesellig",
+        "Andere kritisieren",
+        "Gruendlich",
+        "Nervoes",
+        "Phantasievoll",
+        "Berufsgruppe",
+        "Wahlteilnahme",
+        "BRS6",
+    ]
 
-    gbs['label'] = 1
-    gesis['label'] = 0
+    gbs["label"] = 1
+    gesis["label"] = 0
 
     gesis_gbs = pd.concat([gbs, gesis], ignore_index=True)
     return gesis_gbs, gesis_columns
 
 
 def load_artificial_data():
-    artificial_data_path = 'data_propensity/ArtifPopulation.csv'
+    artificial_data_path = "../data_propensity/ArtifPopulation.csv"
     artificial = pd.read_csv(artificial_data_path)
     return artificial, artificial.columns
 
 
+def load_census_data():
+    columns = [
+        "Age",
+        "Workclass",
+        "fnlgwt",
+        "Education",
+        "Education Num",
+        "Marital Status",
+        "Occupation",
+        "Relationship",
+        "Race",
+        "Sex",
+        "Capital Gain",
+        "Capital Loss",
+        "Hours_per_Week",
+        "Country",
+        "Above_Below 50K",
+    ]
+    df = pd.read_csv(
+        "../data/Census_Income/adult.data", names=columns, na_values=["-1", -1, " ?"]
+    )
+    df, preprocessed_columns = preprocess_census(df)
+    return df, preprocessed_columns
+
+
+def preprocess_census(df):
+    df = df.replace(
+        [
+            " Cambodia",
+            " China",
+            " Hong",
+            " Laos",
+            " Thailand",
+            " Japan",
+            " Taiwan",
+            " Vietnam",
+            " Philippines",
+            " India",
+            " Iran",
+            " Cuba",
+            " Guatemala",
+            " Jamaica",
+            " Nicaragua",
+            " Puerto-Rico",
+            " Dominican-Republic",
+            " El-Salvador",
+            " Haiti",
+            " Honduras",
+            " Mexico",
+            " Trinadad&Tobago",
+            " Ecuador",
+            " Peru",
+            " Columbia",
+            " South",
+            " Poland",
+            " Yugoslavia",
+            " Hungary",
+            " Outlying-US(Guam-USVI-etc)",
+        ],
+        "other",
+    )
+    df = df.replace(
+        [
+            " England",
+            " Germany",
+            " Holand-Netherlands",
+            " Ireland",
+            " France",
+            " Greece",
+            " Italy",
+            " Portugal",
+            " Scotland",
+        ],
+        "west_europe",
+    )
+    df = df.replace(
+        [" Married-civ-spouse", " Married-spouse-absent", " Married-AF-spouse"],
+        "Married",
+    )
+    df.replace(" >50K.", 1, inplace=True)
+    df.replace(" >50K", 1, inplace=True)
+    df.replace(" <=50K.", 0, inplace=True)
+    df.replace(" <=50K", 0, inplace=True)
+    df["Sex"].replace(" Male", 1, inplace=True)
+    df["Sex"].replace(" Female", 0, inplace=True)
+    df.dropna(inplace=True)
+    census_bias = "Above_Below 50K"
+    ctg = [
+        "Marital Status",
+    ]
+    for c in ctg:
+        df = pd.concat(
+            [df, pd.get_dummies(df[c], prefix=c, dummy_na=False)], axis=1
+        ).drop([c], axis=1)
+    census_columns = list(df.columns)
+    meta = [
+        "label",
+        "index",
+        "fnlgwt",
+        "Education",
+        "Relationship",
+        census_bias,
+        "Occupation",
+        "Race",
+        "Country",
+        "Workclass"
+    ]
+    for m in meta:
+        if m in census_columns:
+            census_columns.remove(m)
+    df_copy = df.copy()
+    df_positive_class = df_copy[(df_copy[census_bias] == 1)].copy()
+    df_negative_class = df_copy[(df_copy[census_bias] == 0)].copy()
+
+    rep_fraction = 0.1
+    bias_fraction = 0.05
+    negative_normal = len(df_negative_class)
+    positive_normal = len(df_positive_class)
+
+    rep = pd.concat(
+        [
+            df_negative_class.head(int(negative_normal * 0.3)),
+            df_positive_class.head(int(positive_normal * 0.3)),
+        ],
+        ignore_index=True,
+    )
+    nonrep_more_negative_class = pd.concat(
+        [
+            df_negative_class.tail(int(negative_normal * rep_fraction)),
+            df_positive_class.tail(int(positive_normal * (bias_fraction))),
+        ],
+        ignore_index=True,
+    )
+    rep["label"] = 0
+    nonrep_more_negative_class["label"] = 1
+    census_nonrep_more_negative_class = pd.concat(
+        [rep.copy(deep=True), nonrep_more_negative_class.copy(deep=True)]
+    )
+    return census_nonrep_more_negative_class, census_columns
+
+
 def load_dataset(dataset_name):
-    if dataset_name == 'allensbach':
+    if dataset_name == "allensbach":
         return load_allensbach()
-    elif dataset_name == 'gesis':
+    elif dataset_name == "gesis":
         return load_gesis()
-    elif dataset_name == 'artificial':
+    elif dataset_name == "artificial":
         return load_artificial_data()
+    elif dataset_name == "census":
+        return load_census_data()
