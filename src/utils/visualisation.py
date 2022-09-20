@@ -1,18 +1,19 @@
 import matplotlib.pyplot as plt
 import numpy as np
 import seaborn as sns
+from pathlib import Path
 
 sns.set_theme(style="darkgrid")
 
 
-def plot_line(auc_score, file_name, title="", plot_random_line=False):
-    plt.plot(auc_score, color="blue", linestyle="-", label=title)
+def plot_line(values, path, title="", plot_random_line=False):
+    plt.plot(values, color="blue", linestyle="-", label=title.replace("_", " "))
     if plot_random_line:
-        plt.plot(len(auc_score) * [0.5], color="black", linestyle="--", label="Random")
+        plt.plot(len(values) * [0.5], color="black", linestyle="--", label="Random")
     plt.ylabel(title)
     plt.xlabel("Iteration")
-    plt.savefig(file_name / f"{title}.pdf")
-    plt.close()
+    plt.savefig(Path(path) / f"{title}.pdf")
+    plt.clf()
 
 
 def plot_feature_distribution(df, columns, file_name, weights):
@@ -26,7 +27,7 @@ def plot_feature_distribution(df, columns, file_name, weights):
         sns.ecdfplot(N, x=column_name, weights=weights, label="Weighted")
         plt.legend(title="Data set")
         plt.savefig(plot_directory / f"{column_name}.pdf")
-        plt.close()
+        plt.clf()
 
 
 def plot_feature_histograms(df, columns, file_name, bins, weights):
@@ -47,24 +48,6 @@ def plot_feature_histograms(df, columns, file_name, bins, weights):
         ).set_title("Weighted")
         fig.savefig(plot_directory / f"{column_name}.pdf")
         plt.close()
-
-
-def plot_rocs(start_roc, weighted_roc, file_name):
-    for fper, tper, std, deleted_elements, name in zip(
-        (start_roc, weighted_roc), ("Start", "Weighted")
-    ):
-        tpfrs_higher = np.minimum(tper + std, 1)
-        tpfrs_lower = np.maximum(tper - std, 0)
-        plt.plot(fper, tper, label=f"{name}")
-        plt.fill_between(fper, tpfrs_lower, tpfrs_higher, alpha=0.2)
-    plt.plot(
-        [0, 1], [0, 1], color="black", linestyle="--", label="Random", linewidth=0.8
-    )
-    plt.xlabel("False Positive Rate")
-    plt.ylabel("True Positive Rate")
-    plt.legend()
-    plt.savefig(f"{file_name}.pdf")
-    plt.clf()
 
 
 def plot_asams(weighted_asams, asams, columns, plot_directory):
@@ -90,7 +73,7 @@ def plot_asams(weighted_asams, asams, columns, plot_directory):
 def plot_weights(weights, path, iteration, bins=50):
     sns.histplot(x=weights, bins=bins)
     same_weights_positition = 1 / len(weights)
-    plt.axvline(same_weights_positition, color='k')
+    plt.axvline(same_weights_positition, color="k")
     plt.savefig(f"{path}/weights_{iteration}.pdf", bbox_inches="tight")
     plt.clf()
 
@@ -98,4 +81,13 @@ def plot_weights(weights, path, iteration, bins=50):
 def plot_probabilities(probabilities, path, iteration, bins=50):
     sns.histplot(x=probabilities, bins=bins)
     plt.savefig(f"{path}/probabilities_{iteration}.pdf", bbox_inches="tight")
+    plt.clf()
+
+
+def plot_ratio(values, representative_ratio, title, path):
+    plt.plot(values, color="blue", linestyle="-", label=str(title).replace("_", " "))
+    plt.axhline(y=representative_ratio, color="k", linestyle="--")
+    plt.ylabel(title)
+    plt.xlabel("Iteration")
+    plt.savefig(Path(path) / f"{title}.pdf")
     plt.clf()

@@ -62,30 +62,6 @@ def calculate_rbf_gamma(aggregate_set):
     return 1 / (2 * (sigma**2))
 
 
-def weighted_maximum_mean_discrepancy(x, y, weights):
-    copied_weights = weights / sum(weights)
-    min_weight = np.min(copied_weights[np.nonzero(copied_weights)])
-    number_of_repeats = np.round(copied_weights / min_weight).astype(int)
-    sum_repeats = sum(number_of_repeats)
-    if sum_repeats > 50000:
-        print("Too high repeats")
-        bootstrap_mmd = list()
-        for _ in range(50):
-            indices_x = np.random.choice(
-                len(x), size=len(x), replace=True, p=copied_weights
-            )
-            bootstrapped_x = x[indices_x]
-            indices_y = np.random.choice(len(y), size=len(y), replace=True)
-            bootstrapped_y = y[indices_y]
-            bootstrap_mmd.append(
-                maximum_mean_discrepancy(bootstrapped_x, bootstrapped_y)
-            )
-        return np.mean(bootstrap_mmd)
-    else:
-        new_x = np.repeat(x, number_of_repeats, axis=0)
-        return maximum_mean_discrepancy(new_x, y)
-
-
 def maximum_mean_discrepancy(x, y):
     gamma = calculate_rbf_gamma(np.append(x, y, axis=0))
     return compute_maximum_mean_discrepancy(gamma, x, y)
@@ -116,13 +92,13 @@ def compute_weighted_maximum_mean_discrepancy(gamma, x, y, weights):
     weights_y = np.ones(len(y)) / len(y)
     x_x_rbf_matrix = np.matmul(
         np.expand_dims(weights, 1), np.expand_dims(weights, 0)
-    ) * rbf_kernel(x, x, gamma)
+    ) * rbf_kernel(x, x, gamma=gamma)
     x_x_mean = x_x_rbf_matrix.sum()
 
-    y_y_rbf_matrix = rbf_kernel(y, y, gamma)
+    y_y_rbf_matrix = rbf_kernel(y, y, gamma=gamma)
     y_y_mean = y_y_rbf_matrix.mean()
     weight_matrix = np.matmul(np.expand_dims(weights, 1), np.expand_dims(weights_y, 0))
-    x_y_rbf_matrix = weight_matrix * rbf_kernel(x, y, gamma)
+    x_y_rbf_matrix = weight_matrix * rbf_kernel(x, y, gamma=gamma)
     x_y_mean = x_y_rbf_matrix.sum()
 
     maximum_mean_discrepancy_value = x_x_mean + y_y_mean - 2 * x_y_mean

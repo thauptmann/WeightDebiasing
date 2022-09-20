@@ -33,6 +33,7 @@ def propensity_scores(
     bins=25,
     method="",
     compute_weights=True,
+    bias_variable=None,
 ):
     result_path = Path("../results")
     visualisation_path = result_path / method / dataset
@@ -51,7 +52,11 @@ def propensity_scores(
     )
 
     probabilities, _ = propensity_method(
-        scaled_df, number_of_splits, columns, False, data_set_name=dataset
+        scaled_df,
+        columns,
+        save_path=visualisation_path,
+        number_of_splits=number_of_splits,
+        bias_variable=bias_variable,
     )
     indices = list(range(0, non_representative_size))
     weights = (
@@ -87,7 +92,7 @@ def propensity_scores(
         weights,
     )
 
-    with open(result_path / method / "results.txt", "w") as result_file:
+    with open(visualisation_path / "results.txt", "w") as result_file:
         result_file.write(f"{asams=}\n")
         result_file.write(f"MMDs: {mmd}, {weighted_mmd}\n")
         result_file.write(f"{number_of_zero_weights=}\n")

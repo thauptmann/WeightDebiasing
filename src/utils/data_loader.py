@@ -1,3 +1,4 @@
+from audioop import bias
 import pandas as pd
 
 dataset_list = ["allensbach", "gesis", "artificial", "census"]
@@ -18,7 +19,7 @@ def load_allensbach():
         "woechentlicheArbeitszeit",
         "Resilienz",
     ]
-    return allensbach, allensbach_columns
+    return allensbach, allensbach_columns, None
 
 
 def load_gesis():
@@ -60,6 +61,7 @@ def load_artificial_data():
 
 
 def load_census_data():
+    census_bias = "Above_Below 50K"
     columns = [
         "Age",
         "Workclass",
@@ -80,11 +82,11 @@ def load_census_data():
     df = pd.read_csv(
         "../data/Census_Income/adult.data", names=columns, na_values=["-1", -1, " ?"]
     )
-    df, preprocessed_columns = preprocess_census(df)
-    return df, preprocessed_columns
+    df, preprocessed_columns = preprocess_census(df, census_bias)
+    return df, preprocessed_columns, census_bias
 
 
-def preprocess_census(df):
+def preprocess_census(df, census_bias):
     df = df.replace(
         [
             " Cambodia",
@@ -145,7 +147,6 @@ def preprocess_census(df):
     df["Sex"].replace(" Male", 1, inplace=True)
     df["Sex"].replace(" Female", 0, inplace=True)
     df.dropna(inplace=True)
-    census_bias = "Above_Below 50K"
     ctg = [
         "Marital Status",
     ]
@@ -174,7 +175,7 @@ def preprocess_census(df):
     df_negative_class = df_copy[(df_copy[census_bias] == 0)].copy()
 
     rep_fraction = 0.1
-    bias_fraction = 0.05
+    bias_fraction = 0.08
     negative_normal = len(df_negative_class)
     positive_normal = len(df_positive_class)
 
@@ -204,8 +205,8 @@ def load_dataset(dataset_name):
     if dataset_name == "allensbach":
         return load_allensbach()
     elif dataset_name == "gesis":
-        return load_gesis()
+        return load_gesis(), None
     elif dataset_name == "artificial":
-        return load_artificial_data()
+        return load_artificial_data(), None
     elif dataset_name == "census":
         return load_census_data()

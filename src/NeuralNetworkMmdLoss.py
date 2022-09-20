@@ -7,7 +7,7 @@ from utils.statistics import logistic_regression
 if __name__ == "__main__":
     args = input_arguments()
     dataset_name = args.dataset
-    data, columns = load_dataset(dataset_name)
+    data, columns, bias_variable = load_dataset(dataset_name)
     weights = propensity_scores(
         data,
         columns,
@@ -15,6 +15,7 @@ if __name__ == "__main__":
         neural_network_mmd_loss_prediction,
         method="neural_network_mmd_loss",
         compute_weights=False,
+        bias_variable=bias_variable
     )
 
     if dataset_name == "allensbach":

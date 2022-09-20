@@ -1,4 +1,3 @@
-import dis
 import torch
 import torch.nn as nn
 
@@ -8,37 +7,41 @@ euclidean_distance_fn = torch.nn.PairwiseDistance(2)
 
 # Linear time complexity approximation of weighted MMD
 class MMDLoss(nn.Module):
-    def __init__(self, gamma):
+    def __init__(self, gamma, len_R):
         super(MMDLoss, self).__init__()
         self.gamma = gamma
+        self.weights_R = torch.ones(len_R) / len_R
 
     def rbf_kernel(self, source, target, gamma):
         distance_matrix = torch.cdist(source, target, p=2)
         squared_distance_matrix = distance_matrix.pow(2)
-        return torch.exp(- gamma * squared_distance_matrix)
+        return torch.exp(-gamma * squared_distance_matrix)
 
     def calculate_rbf_gamma(self, aggregate_set):
-        all_distances = torch.cdist(aggregate_set, aggregate_set, p=2)
+        all_distances = euclidean_distance_fn(aggregate_set, p=2)
         sigma = torch.median(all_distances)
         return 1 / (2 * (sigma**2))
 
     def forward(self, N, R, weights):
         weights = torch.squeeze(weights / torch.sum(weights))
-        concated = torch.concat([N, R], dim=0)
+
         if self.gamma is None:
+            concated = torch.concat([N, R], dim=0)
             gamma = self.calculate_rbf_gamma(concated)
         else:
             gamma = self.gamma
-        weights_y = torch.ones(len(R)) / len(R)
+
         x_x_rbf_matrix = torch.matmul(
             torch.unsqueeze(weights, 1), torch.unsqueeze(weights, 0)
         ) * self.rbf_kernel(N, N, gamma)
         x_x_mean = x_x_rbf_matrix.sum()
 
-        y_y_rbf_matrix = self.rbf_kernel(R, R, gamma)
-        y_y_mean = y_y_rbf_matrix.mean()
+        y_y_rbf_matrix = torch.matmul(
+            torch.unsqueeze(self.weights_R, 1), torch.unsqueeze(self.weights_R, 0)
+        ) * self.rbf_kernel(R, R, gamma)
+        y_y_mean = y_y_rbf_matrix.sum()
         weight_matrix = torch.matmul(
-            torch.unsqueeze(weights, 1), torch.unsqueeze(weights_y, 0)
+            torch.unsqueeze(weights, 1), torch.unsqueeze(self.weights_R, 0)
         )
         x_y_rbf_matrix = weight_matrix * self.rbf_kernel(N, R, gamma)
         x_y_mean = x_y_rbf_matrix.sum()

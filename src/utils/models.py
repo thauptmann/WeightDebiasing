@@ -13,7 +13,7 @@ class MmdModel(nn.Module):
             nn.BatchNorm1d(half_feature_size),
             nn.Dropout(0.1),
             nn.Linear(half_feature_size, 1),
-            nn.ReLU(),
+            nn.Softplus(),
         )
 
     def forward(self, x):
