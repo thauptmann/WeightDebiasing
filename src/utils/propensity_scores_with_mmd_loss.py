@@ -66,6 +66,11 @@ def compute_model(
     mmd_list = []
     asam_list = []
     ratio_list = []
+    if bias_variable is not None:
+        weights_N = np.ones(len(tensor_N)) / len(tensor_N)
+        non_representative_ratio = compute_ratio(bias_variable.values, weights_N)
+        ratio_list.append(non_representative_ratio)
+
     gamma = calculate_rbf_gamma(np.append(tensor_N, tensor_R, axis=0))
     mmd_loss_function = MMDLoss(gamma, len(tensor_R), device)
     asam_loss_function = AsamLoss()
