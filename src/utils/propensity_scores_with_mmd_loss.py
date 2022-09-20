@@ -24,8 +24,8 @@ def neural_network_mmd_loss_prediction(df, columns, *args, **attributes):
     scaled_df, _ = scale_df(columns, df)
     scaled_N = scaled_df[scaled_df["label"] == 1]
     scaled_R = scaled_df[scaled_df["label"] == 0]
-    tensor_N = torch.FloatTensor(scaled_N[columns].values).to(device)
-    tensor_R = torch.FloatTensor(scaled_R[columns].values).to(device)
+    tensor_N = torch.FloatTensor(scaled_N[columns].values)
+    tensor_R = torch.FloatTensor(scaled_R[columns].values)
 
     if bias_variable is not None:
         bias_variable_values = scaled_N[bias_variable]
@@ -42,7 +42,6 @@ def neural_network_mmd_loss_prediction(df, columns, *args, **attributes):
     mmd_model, mmd_list, asam_list, ratio_list = compute_model(
         model_path, passes, tensor_N, tensor_R, bias_variable_values
     )
-    mmd_model = mmd_model.to(device)
 
     plot_line(mmd_list, save_path, "MMDs_per_pass")
     plot_line(asam_list, save_path, "ASAMs_per_pass")
@@ -74,7 +73,9 @@ def compute_model(
     early_stopping_counter = 0
 
     best_mmd = torch.inf
-    mmd_model = MmdModel(tensor_N.shape[1])
+    mmd_model = MmdModel(tensor_N.shape[1]).to(device)
+    tensor_N = tensor_N.to(device)
+    tensor_R = tensor_R.to(device)
     optimizer = torch.optim.Adam(
         mmd_model.parameters(), lr=learning_rate, weight_decay=1e-5
     )
