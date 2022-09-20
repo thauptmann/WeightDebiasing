@@ -49,8 +49,8 @@ def neural_network_mmd_loss_prediction(df, columns, *args, **attributes):
         plot_ratio(ratio_list, representative_ratio, "Ratio_per_pass", save_path)
 
     with torch.no_grad():
-        weights = mmd_model(tensor_N).squeeze().numpy()
-    compute_shap_values(mmd_model, tensor_N.numpy(), columns, save_path)
+        weights = mmd_model(tensor_N.to(device)).squeeze().cpu().numpy()
+    compute_shap_values(mmd_model, tensor_N, columns, save_path)
 
     return weights, None
 
@@ -93,13 +93,13 @@ def compute_model(
         with torch.no_grad():
             validation_weights = mmd_model(tensor_N)
         asam = asam_loss_function(tensor_N, tensor_R, validation_weights)
-        asam_list.append(asam)
         mmd = mmd_loss_function(
             tensor_N,
             tensor_R,
             validation_weights,
         )
-        mmd_list.append(mmd)
+        mmd_list.append(mmd.cpu())
+        asam_list.append(asam.cpu())
 
         if mmd < best_mmd:
             best_mmd = mmd
@@ -125,7 +125,7 @@ def compute_model(
 
 def compute_shap_values(model, tensor_N, columns, save_path):
     # Compute SHAP values to measure and visualise the bias
-
+    model = model.cpu()
     with torch.no_grad():
         kernelExplainer = shap.Explainer(model, tensor_N, feature_names=columns)
         shap_values = kernelExplainer(tensor_N)
