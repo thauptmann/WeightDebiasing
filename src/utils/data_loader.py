@@ -152,6 +152,10 @@ def preprocess_census(df, census_bias):
         "Workclass",
         "Marital Status",
         "Race",
+        "Education",
+        "Relationship",
+        "Occupation",
+        "Country"
     ]
     for c in ctg:
         df = pd.concat(
@@ -162,11 +166,7 @@ def preprocess_census(df, census_bias):
         "label",
         "index",
         "fnlgwt",
-        "Education",
-        "Relationship",
         census_bias,
-        "Occupation",
-        "Country",
     ]
     for m in meta:
         if m in census_columns:
