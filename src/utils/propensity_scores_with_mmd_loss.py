@@ -17,7 +17,7 @@ device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
 def neural_network_mmd_loss_prediction(df, columns, *args, **attributes):
     model_path = Path("best_model.pt")
-    passes = 10000
+    passes = 1
     save_path = attributes["save_path"]
     bias_variable = attributes.get("bias_variable", None)
 
@@ -50,7 +50,7 @@ def neural_network_mmd_loss_prediction(df, columns, *args, **attributes):
 
     with torch.no_grad():
         weights = mmd_model(tensor_N.to(device)).squeeze().cpu().numpy()
-    compute_shap_values(mmd_model, tensor_N, columns, save_path)
+    compute_shap_values(mmd_model, tensor_N.numpy(), columns, save_path)
 
     return weights, None
 
@@ -131,14 +131,6 @@ def compute_shap_values(model, tensor_N, columns, save_path):
         shap_values = kernelExplainer(tensor_N)
         shap.summary_plot(shap_values, tensor_N, show=False)
         plt.savefig(f"{save_path}/shap_summary.pdf")
-        plt.clf()
-        shap.summary_plot(
-            shap_values,
-            tensor_N,
-            show=False,
-            plot_type="violin",
-        )
-        plt.savefig(f"{save_path}/shap_summary_violin.pdf")
         plt.clf()
         shap.plots.bar(shap_values, show=False)
         plt.savefig(f"{save_path}/shap_bars.pdf")
