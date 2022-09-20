@@ -147,8 +147,11 @@ def preprocess_census(df, census_bias):
     df["Sex"].replace(" Male", 1, inplace=True)
     df["Sex"].replace(" Female", 0, inplace=True)
     df.dropna(inplace=True)
+    census_bias = "Above_Below 50K"
     ctg = [
+        "Workclass",
         "Marital Status",
+        "Race",
     ]
     for c in ctg:
         df = pd.concat(
@@ -163,9 +166,8 @@ def preprocess_census(df, census_bias):
         "Relationship",
         census_bias,
         "Occupation",
-        "Race",
+        
         "Country",
-        "Workclass"
     ]
     for m in meta:
         if m in census_columns:
