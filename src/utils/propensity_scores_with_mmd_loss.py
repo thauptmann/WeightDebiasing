@@ -12,6 +12,8 @@ import matplotlib.pyplot as plt
 from utils.visualisation import plot_line, plot_ratio
 from torch.optim.lr_scheduler import ReduceLROnPlateau
 
+device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+
 
 def neural_network_mmd_loss_prediction(df, columns, *args, **attributes):
     model_path = Path("best_model.pt")
@@ -22,8 +24,8 @@ def neural_network_mmd_loss_prediction(df, columns, *args, **attributes):
     scaled_df, _ = scale_df(columns, df)
     scaled_N = scaled_df[scaled_df["label"] == 1]
     scaled_R = scaled_df[scaled_df["label"] == 0]
-    tensor_N = torch.FloatTensor(scaled_N[columns].values)
-    tensor_R = torch.FloatTensor(scaled_R[columns].values)
+    tensor_N = torch.FloatTensor(scaled_N[columns].values).to(device)
+    tensor_R = torch.FloatTensor(scaled_R[columns].values).to(device)
 
     if bias_variable is not None:
         bias_variable_values = scaled_N[bias_variable]
@@ -40,6 +42,7 @@ def neural_network_mmd_loss_prediction(df, columns, *args, **attributes):
     mmd_model, mmd_list, asam_list, ratio_list = compute_model(
         model_path, passes, tensor_N, tensor_R, bias_variable_values
     )
+    mmd_model = mmd_model.to(device)
 
     plot_line(mmd_list, save_path, "MMDs_per_pass")
     plot_line(asam_list, save_path, "ASAMs_per_pass")
