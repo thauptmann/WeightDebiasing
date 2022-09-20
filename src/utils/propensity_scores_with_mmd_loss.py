@@ -17,7 +17,7 @@ device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
 def neural_network_mmd_loss_prediction(df, columns, *args, **attributes):
     model_path = Path("best_model.pt")
-    passes = 1
+    passes = 10000
     save_path = attributes["save_path"]
     bias_variable = attributes.get("bias_variable", None)
 
