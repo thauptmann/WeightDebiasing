@@ -7,10 +7,11 @@ euclidean_distance_fn = torch.nn.PairwiseDistance(2)
 
 # Linear time complexity approximation of weighted MMD
 class MMDLoss(nn.Module):
-    def __init__(self, gamma, len_R):
+    def __init__(self, gamma, len_R, device):
         super(MMDLoss, self).__init__()
         self.gamma = gamma
-        self.weights_R = torch.ones(len_R) / len_R
+        self.weights_R = (torch.ones(len_R) / len_R).to(device)
+        self.device = device
 
     def rbf_kernel(self, source, target, gamma):
         distance_matrix = torch.cdist(source, target, p=2)

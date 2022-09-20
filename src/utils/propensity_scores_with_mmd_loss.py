@@ -67,7 +67,7 @@ def compute_model(
     asam_list = []
     ratio_list = []
     gamma = calculate_rbf_gamma(np.append(tensor_N, tensor_R, axis=0))
-    mmd_loss_function = MMDLoss(gamma, len(tensor_R))
+    mmd_loss_function = MMDLoss(gamma, len(tensor_R), device)
     asam_loss_function = AsamLoss()
     learning_rate = 0.001
     early_stopping_counter = 0
