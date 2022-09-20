@@ -112,7 +112,7 @@ def compute_model(
 
         if bias_variable is not None:
             current_ratio = compute_ratio(
-                bias_variable.values, validation_weights.numpy()
+                bias_variable.values, validation_weights.cpu().numpy()
             )
             ratio_list.append(current_ratio)
         scheduler.step(mmd)
