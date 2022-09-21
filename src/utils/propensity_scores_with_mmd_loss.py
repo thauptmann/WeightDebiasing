@@ -61,7 +61,7 @@ def compute_model(
     tensor_N,
     tensor_R,
     bias_variable=None,
-    patience=100,
+    patience=1000,
 ):
     mmd_list = []
     asam_list = []
@@ -80,6 +80,8 @@ def compute_model(
     len_r = len(tensor_R)
     tensor_N = tensor_N.to(device)
     tensor_R = tensor_R.to(device)
+    uniform_weights = torch.ones(len(tensor_N)) / len(tensor_N)
+    mse_loss_fn = torch.nn.MSELoss()
 
     best_mmd = torch.inf
     mmd_model = MmdModel(tensor_N.shape[1]).to(device)
@@ -97,8 +99,10 @@ def compute_model(
 
         train_weights = mmd_model(x)
         mmd_loss = mmd_loss_function(x, y, train_weights)
+        mse_loss = mse_loss_fn(train_weights.squeeze(), uniform_weights)
         if not torch.isnan(mmd_loss) and not torch.isinf(mmd_loss):
-            mmd_loss.backward()
+            loss = mmd_loss + mse_loss
+            loss.backward()
             optimizer.step()
 
         mmd_model.eval()
