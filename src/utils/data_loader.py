@@ -1,4 +1,3 @@
-from audioop import bias
 import pandas as pd
 
 dataset_list = ["allensbach", "gesis", "artificial", "census"]
@@ -61,7 +60,7 @@ def load_artificial_data():
 
 
 def load_census_data():
-    census_bias = "Above_Below 50K"
+    census_bias = "Marital Status_Married"
     columns = [
         "Age",
         "Workclass",
@@ -147,13 +146,10 @@ def preprocess_census(df, census_bias):
     df["Sex"].replace(" Male", 1, inplace=True)
     df["Sex"].replace(" Female", 0, inplace=True)
     df.dropna(inplace=True)
-    census_bias = "Above_Below 50K"
     ctg = [
         "Workclass",
         "Marital Status",
         "Race",
-        "Education",
-        "Relationship",
         "Occupation",
         "Country"
     ]
@@ -166,6 +162,8 @@ def preprocess_census(df, census_bias):
         "label",
         "index",
         "fnlgwt",
+        "Education",
+        "Relationship",
         census_bias,
     ]
     for m in meta:
@@ -175,15 +173,15 @@ def preprocess_census(df, census_bias):
     df_positive_class = df_copy[(df_copy[census_bias] == 1)].copy()
     df_negative_class = df_copy[(df_copy[census_bias] == 0)].copy()
 
-    rep_fraction = 0.1
-    bias_fraction = 0.08
+    rep_fraction = 0.12
+    bias_fraction = 0.07
     negative_normal = len(df_negative_class)
     positive_normal = len(df_positive_class)
 
     rep = pd.concat(
         [
-            df_negative_class.head(int(negative_normal * 0.3)),
-            df_positive_class.head(int(positive_normal * 0.3)),
+            df_negative_class.head(int(negative_normal * 0.2)),
+            df_positive_class.head(int(positive_normal * 0.2)),
         ],
         ignore_index=True,
     )

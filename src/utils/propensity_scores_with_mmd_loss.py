@@ -1,4 +1,3 @@
-from dataclasses import replace
 from pathlib import Path
 import torch
 import shap
@@ -13,7 +12,7 @@ import matplotlib.pyplot as plt
 from utils.visualisation import plot_line, plot_ratio
 from torch.optim.lr_scheduler import ReduceLROnPlateau
 
-device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 
 def neural_network_mmd_loss_prediction(df, columns, *args, **attributes):
@@ -87,7 +86,7 @@ def compute_model(
     optimizer = torch.optim.Adam(
         mmd_model.parameters(), lr=learning_rate, weight_decay=1e-5
     )
-    scheduler = ReduceLROnPlateau(optimizer, patience=patience/2)
+    scheduler = ReduceLROnPlateau(optimizer, patience=patience / 2)
     for _ in trange(passes):
         mmd_model.train()
         optimizer.zero_grad()
