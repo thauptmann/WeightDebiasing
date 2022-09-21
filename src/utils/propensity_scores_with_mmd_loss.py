@@ -80,7 +80,7 @@ def compute_model(
     len_r = len(tensor_R)
     tensor_N = tensor_N.to(device)
     tensor_R = tensor_R.to(device)
-    uniform_weights = torch.ones(len(tensor_N)) / len(tensor_N)
+    uniform_weights = (torch.ones(len(tensor_N)) / len(tensor_N)).to(device)
     mse_loss_fn = torch.nn.MSELoss()
 
     best_mmd = torch.inf
