@@ -77,6 +77,10 @@ def compute_model(
     asam_loss_function = AsamLoss()
     learning_rate = 0.001
     early_stopping_counter = 0
+    len_n = len(tensor_N)
+    len_r = len(tensor_R)
+    tensor_N = tensor_N.to(device)
+    tensor_R = tensor_R.to(device)
 
     best_mmd = torch.inf
     mmd_model = MmdModel(tensor_N.shape[1]).to(device)
@@ -87,8 +91,10 @@ def compute_model(
     for _ in trange(passes):
         mmd_model.train()
         optimizer.zero_grad()
-        x = np.random.choice(tensor_N, len(tensor_N), replace=True).to(device)
-        y = np.random.choice(tensor_R, len(tensor_R), replace=True).to(device)
+        indices_x = np.random.choice(len_n, len_n, replace=True)
+        indices_y = np.random.choice(len_r, len_r, replace=True)
+        x = tensor_N[indices_x]
+        y = tensor_R[indices_y]
 
         train_weights = mmd_model(x)
         mmd_loss = mmd_loss_function(x, y, train_weights)
