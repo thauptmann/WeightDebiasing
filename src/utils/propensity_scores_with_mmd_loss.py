@@ -1,3 +1,4 @@
+from dataclasses import replace
 from pathlib import Path
 import torch
 import shap
@@ -79,8 +80,6 @@ def compute_model(
 
     best_mmd = torch.inf
     mmd_model = MmdModel(tensor_N.shape[1]).to(device)
-    tensor_N = tensor_N.to(device)
-    tensor_R = tensor_R.to(device)
     optimizer = torch.optim.Adam(
         mmd_model.parameters(), lr=learning_rate, weight_decay=1e-5
     )
@@ -88,8 +87,11 @@ def compute_model(
     for _ in trange(passes):
         mmd_model.train()
         optimizer.zero_grad()
-        train_weights = mmd_model(tensor_N)
-        mmd_loss = mmd_loss_function(tensor_N, tensor_R, train_weights)
+        x = np.random.choice(tensor_N, len(tensor_N), replace=True).to(device)
+        y = np.random.choice(tensor_R, len(tensor_R), replace=True).to(device)
+
+        train_weights = mmd_model(x)
+        mmd_loss = mmd_loss_function(x, y, train_weights)
         if not torch.isnan(mmd_loss) and not torch.isinf(mmd_loss):
             mmd_loss.backward()
             optimizer.step()

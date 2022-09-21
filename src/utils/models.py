@@ -13,6 +13,7 @@ class MmdModel(nn.Module):
             nn.Linear(number_of_features, half_feature_size),
             nn.ReLU(),
             nn.BatchNorm1d(half_feature_size),
+            nn.Dropout(0.1),
             output_linear,
             nn.Softplus(),
         )
