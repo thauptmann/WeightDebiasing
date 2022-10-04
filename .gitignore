@@ -197,3 +197,4 @@ src/best_model.pt
 results/neural_network_mmd_loss/allensbach/results.txt
 data
 data_propensity
+results/*

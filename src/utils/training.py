@@ -79,7 +79,7 @@ def cv_bootstrap_prediction(df, number_of_splits, columns, use_weights=True):
     return predictions, clf
 
 
-def neural_network_prediction(df, number_of_splits, columns, *args):
+def neural_network_prediction(df, columns, number_of_splits, *args, **attributes):
     N = df[df['label'] == 1]
     R = df[df['label'] == 0]
     predictions = np.zeros(len(N))

@@ -75,3 +75,9 @@ class AsamLoss(nn.Module):
         loss = torch.abs(means_difference / middle_variance)
 
         return torch.mean(loss)
+
+
+def earth_mover_distance(p, q):
+    x = p - q
+    y = torch.cumsum(x, dim=0)
+    return abs(y).sum().div(len(p))

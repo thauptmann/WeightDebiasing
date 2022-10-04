@@ -80,8 +80,6 @@ def compute_model(
     len_r = len(tensor_R)
     tensor_N = tensor_N.to(device)
     tensor_R = tensor_R.to(device)
-    uniform_weights = (torch.ones(len(tensor_N)) / len(tensor_N)).to(device)
-    mse_loss_fn = torch.nn.MSELoss()
 
     best_mmd = torch.inf
     mmd_model = MmdModel(tensor_N.shape[1]).to(device)
@@ -99,10 +97,9 @@ def compute_model(
 
         train_weights = mmd_model(x)
         mmd_loss = mmd_loss_function(x, y, train_weights)
-        mse_loss = mse_loss_fn(train_weights.squeeze(), uniform_weights)
+        train_weights = train_weights / torch.sum(train_weights)
         if not torch.isnan(mmd_loss) and not torch.isinf(mmd_loss):
-            loss = mmd_loss + mse_loss
-            loss.backward()
+            mmd_loss.backward()
             optimizer.step()
 
         mmd_model.eval()
