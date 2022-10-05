@@ -6,13 +6,13 @@ from .metrics import (
     maximum_mean_discrepancy_weighted,
     maximum_mean_discrepancy,
     scale_df,
+    compute_relative_bias,
 )
 import random
 from .visualisation import (
     plot_feature_distribution,
     plot_feature_histograms,
     plot_asams,
-    plot_probabilities,
     plot_weights,
     plot_line,
 )
@@ -21,7 +21,7 @@ seed = 5
 np.random.seed(seed)
 random.seed(seed)
 torch.manual_seed(seed)
-eps = 1e-10
+eps = 1e-20
 
 
 def propensity_scores(
@@ -29,7 +29,7 @@ def propensity_scores(
     columns,
     dataset,
     propensity_method,
-    number_of_splits=5,
+    number_of_splits=10,
     bins=25,
     method="",
     compute_weights=True,
@@ -73,10 +73,11 @@ def propensity_scores(
     weighted_asams = average_standardised_absolute_mean_distance(
         scaled_df, columns, weights
     )
+
     asams = [np.mean(asams_values), np.mean(weighted_asams)]
     number_of_zero_weights = np.count_nonzero(weights == 0)
-
     scaled_df[columns] = scaler.inverse_transform(scaled_df[columns])
+    relative_biases = compute_relative_bias(df, weights)
 
     plot_results(
         asams,
@@ -96,6 +97,9 @@ def propensity_scores(
         result_file.write(f"{asams=}\n")
         result_file.write(f"MMDs: {mmd}, {weighted_mmd}\n")
         result_file.write(f"{number_of_zero_weights=}\n")
+        result_file.write("\nRelative Bias:\n")
+        for column, relative_bias in zip(scaled_df.columns, relative_biases):
+            result_file.write(f"{column}: {relative_bias}\n")
     return weights
 
 
@@ -113,8 +117,8 @@ def plot_results(
     weights,
 ):
     plot_asams(weighted_asams, asams_values, columns, visualisation_path)
-    plot_feature_distribution(scaled_df, columns, visualisation_path, weights)
-    plot_feature_histograms(scaled_df, columns, visualisation_path, bins, weights)
+    plot_feature_distribution(scaled_df, visualisation_path, weights)
+    plot_feature_histograms(scaled_df, visualisation_path, bins, weights)
     plot_probabilities(probabilities, visualisation_path, 0, bins)
     plot_line(asams, visualisation_path, title="ASAM")
     plot_line([mmd, weighted_mmd], visualisation_path, title="MMD")

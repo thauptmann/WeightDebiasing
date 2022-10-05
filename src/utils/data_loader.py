@@ -50,13 +50,14 @@ def load_gesis():
     gesis["label"] = 0
 
     gesis_gbs = pd.concat([gbs, gesis], ignore_index=True)
-    return gesis_gbs, gesis_columns
+    return gesis_gbs, gesis_columns, None
 
 
 def load_artificial_data():
-    artificial_data_path = "../data_propensity/ArtifPopulation.csv"
+    artificial_data_path = "../data/artificial.csv"
     artificial = pd.read_csv(artificial_data_path)
-    return artificial, artificial.columns
+    columns = artificial.filter(like='x').columns
+    return artificial, columns, None
 
 
 def load_census_data():
@@ -82,7 +83,7 @@ def load_census_data():
         "../data/Census_Income/adult.data", names=columns, na_values=["-1", -1, " ?"]
     )
     df, preprocessed_columns = preprocess_census(df, census_bias)
-    return df, preprocessed_columns, census_bias
+    return df, preprocessed_columns, census_bias, None
 
 
 def preprocess_census(df, census_bias):
@@ -146,13 +147,7 @@ def preprocess_census(df, census_bias):
     df["Sex"].replace(" Male", 1, inplace=True)
     df["Sex"].replace(" Female", 0, inplace=True)
     df.dropna(inplace=True)
-    ctg = [
-        "Workclass",
-        "Marital Status",
-        "Race",
-        "Occupation",
-        "Country"
-    ]
+    ctg = ["Workclass", "Marital Status", "Race", "Occupation", "Country"]
     for c in ctg:
         df = pd.concat(
             [df, pd.get_dummies(df[c], prefix=c, dummy_na=False)], axis=1
@@ -204,8 +199,8 @@ def load_dataset(dataset_name):
     if dataset_name == "allensbach":
         return load_allensbach()
     elif dataset_name == "gesis":
-        return load_gesis(), None
+        return load_gesis()
     elif dataset_name == "artificial":
-        return load_artificial_data(), None
+        return load_artificial_data()
     elif dataset_name == "census":
         return load_census_data()

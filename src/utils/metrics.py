@@ -8,7 +8,7 @@ from sklearn.preprocessing import StandardScaler
 def interpolate_roc(y_test, y_predict, iteration):
     interpolation_points = 250
     median_fpr = np.linspace(0, 1, interpolation_points)
-    fpr, tpr, thresholds = roc_curve(y_test, y_predict)
+    fpr, tpr, _ = roc_curve(y_test, y_predict)
     interp_tpr = np.interp(median_fpr, fpr, tpr)
     interp_tpr[0] = 0.0
     return median_fpr, interp_tpr, [iteration] * interpolation_points
@@ -36,9 +36,9 @@ def calculate_median_rocs(rocs):
     return median_rocs
 
 
-def average_standardised_absolute_mean_distance(df, columns, weights=None):
-    N = df[df["label"] == 1][columns]
-    R = df[df["label"] == 0][columns]
+def average_standardised_absolute_mean_distance(N, R, columns, weights=None):
+    N = N[columns]
+    R = R[columns]
 
     if weights is None:
         weights = np.ones(len(N))
@@ -54,6 +54,14 @@ def average_standardised_absolute_mean_distance(df, columns, weights=None):
     )
     standardised_absolute_mean_distances = abs(means_difference / middle_variance)
     return standardised_absolute_mean_distances
+
+
+def compute_relative_bias(N, R, weights):
+    eps = 1e-20
+    weights = weights / sum(weights)
+    population_means = np.mean(R.values, axis=0) + eps
+    weighted_means = np.average(N.values, weights=weights, axis=0) + eps
+    return ((weighted_means - population_means) / population_means) * 100
 
 
 def calculate_rbf_gamma(aggregate_set):
@@ -81,7 +89,7 @@ def compute_maximum_mean_discrepancy(gamma, x, y):
     return np.sqrt(maximum_mean_discrepancy_value)
 
 
-def scale_df(columns, df):
+def scale_df(df, columns):
     scaler = StandardScaler()
     scaled = df.copy(deep=True)
     scaled[columns] = scaler.fit_transform(df[columns])
@@ -116,3 +124,12 @@ def calculate_rbf_gamma_weighted(aggregate_set):
     all_distances = pdist(aggregate_set, "euclid")
     sigma = np.median(all_distances)
     return 1 / (2 * (sigma**2))
+
+
+def compute_ratio(bias_values, weights):
+    weights = np.squeeze(weights / np.sum(weights))
+    one_indices = np.argwhere(bias_values == 1)
+    zero_indices = np.argwhere(bias_values == 0)
+    positive = np.sum(weights[one_indices])
+    negative = np.sum(weights[zero_indices])
+    return positive / negative

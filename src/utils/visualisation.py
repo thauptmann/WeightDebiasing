@@ -7,35 +7,32 @@ sns.set_theme(style="darkgrid")
 
 
 def plot_line(values, path, title="", plot_random_line=False):
-    plt.plot(values, color="blue", linestyle="-", label=title.replace("_", " "))
+    beautified_title = title.replace("_", " ")
+    plt.plot(values, color="blue", linestyle="-", label=beautified_title)
     if plot_random_line:
         plt.plot(len(values) * [0.5], color="black", linestyle="--", label="Random")
-    plt.ylabel(title)
+    plt.ylabel(beautified_title)
     plt.xlabel("Iteration")
     plt.savefig(Path(path) / f"{title}.pdf")
     plt.clf()
 
 
-def plot_feature_distribution(df, columns, file_name, weights):
+def plot_feature_distribution(N, R, file_name, weights):
     plot_directory = file_name / "cumulative_distributions"
     plot_directory.mkdir(exist_ok=True)
-    N = df[df["label"] == 1]
-    R = df[df["label"] == 0]
-    for column_name in columns:
+    for column_name in N.columns:
         sns.ecdfplot(N, x=column_name, label="Non-Representative")
-        sns.ecdfplot(R, x=column_name, label="Representative")
-        sns.ecdfplot(N, x=column_name, weights=weights, label="Weighted")
+        sns.ecdfplot(R, x=column_name, label="Representative", linestyle="dashed")
+        sns.ecdfplot(N, x=column_name, weights=weights, label="Weighted", linestyle="dotted")
         plt.legend(title="Data set")
         plt.savefig(plot_directory / f"{column_name}.pdf")
         plt.clf()
 
 
-def plot_feature_histograms(df, columns, file_name, bins, weights):
+def plot_feature_histograms(N, R, file_name, bins, weights):
     plot_directory = file_name / "histograms"
     plot_directory.mkdir(exist_ok=True)
-    N = df[df["label"] == 1]
-    R = df[df["label"] == 0]
-    for column_name in columns:
+    for column_name in N.columns:
         fig, ax = plt.subplots(1, 3, sharey=True, sharex=True)
         sns.histplot(
             N, x=column_name, ax=ax[0], bins=bins, stat="probability"
@@ -78,16 +75,32 @@ def plot_weights(weights, path, iteration, bins=50):
     plt.clf()
 
 
-def plot_probabilities(probabilities, path, iteration, bins=50):
-    sns.histplot(x=probabilities, bins=bins)
-    plt.savefig(f"{path}/probabilities_{iteration}.pdf", bbox_inches="tight")
-    plt.clf()
-
-
 def plot_ratio(values, representative_ratio, title, path):
-    plt.plot(values, color="blue", linestyle="-", label=str(title).replace("_", " "))
+    beautified_title = title.replace("_", " ")
+    plt.plot(values, color="blue", linestyle="-", label=beautified_title)
     plt.axhline(y=representative_ratio, color="k", linestyle="--")
-    plt.ylabel(title)
+    plt.ylabel(beautified_title)
     plt.xlabel("Iteration")
     plt.savefig(Path(path) / f"{title}.pdf")
     plt.clf()
+
+
+def plot_results(
+    asams,
+    asams_values,
+    bins,
+    columns,
+    mmd,
+    N,
+    R,
+    visualisation_path,
+    weighted_asams,
+    weighted_mmd,
+    weights,
+):
+    plot_asams(weighted_asams, asams_values, columns, visualisation_path)
+    plot_feature_distribution(N, R, visualisation_path, weights)
+    plot_feature_histograms(N, R, visualisation_path, bins, weights)
+    plot_line(asams, visualisation_path, title="ASAM")
+    plot_line([mmd, weighted_mmd], visualisation_path, title="MMD")
+    plot_weights(weights / sum(weights), visualisation_path, 0, bins)

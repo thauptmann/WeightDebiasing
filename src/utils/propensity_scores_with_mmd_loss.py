@@ -5,7 +5,7 @@ import shap
 from utils.metrics import scale_df
 from utils.models import MmdModel
 from .loss import AsamLoss, MMDLoss
-from .metrics import calculate_rbf_gamma
+from .metrics import calculate_rbf_gamma, compute_ratio
 import numpy as np
 from tqdm import trange
 import matplotlib.pyplot as plt
@@ -19,7 +19,7 @@ def neural_network_mmd_loss_prediction(df, columns, *args, **attributes):
     model_path = Path("best_model.pt")
     passes = 10000
     save_path = attributes["save_path"]
-    bias_variable = attributes.get("bias_variable", None)
+    target_variables = attributes.get("bias_variable", None)
 
     scaled_df, _ = scale_df(columns, df)
     scaled_N = scaled_df[scaled_df["label"] == 1]
@@ -27,9 +27,9 @@ def neural_network_mmd_loss_prediction(df, columns, *args, **attributes):
     tensor_N = torch.FloatTensor(scaled_N[columns].values)
     tensor_R = torch.FloatTensor(scaled_R[columns].values)
 
-    if bias_variable is not None:
-        bias_variable_values = scaled_N[bias_variable]
-        representative_variable_values = scaled_R[bias_variable]
+    if target_variables is not None:
+        bias_variable_values = scaled_N[target_variables]
+        representative_variable_values = scaled_R[target_variables]
         weights_R = np.ones(len(scaled_R)) / len(scaled_R)
         representative_ratio = compute_ratio(
             representative_variable_values.values, weights_R
@@ -45,7 +45,7 @@ def neural_network_mmd_loss_prediction(df, columns, *args, **attributes):
 
     plot_line(mmd_list, save_path, "MMDs_per_pass")
     plot_line(asam_list, save_path, "ASAMs_per_pass")
-    if bias_variable is not None:
+    if target_variables is not None:
         plot_ratio(ratio_list, representative_ratio, "Ratio_per_pass", save_path)
 
     with torch.no_grad():
@@ -61,7 +61,7 @@ def compute_model(
     tensor_N,
     tensor_R,
     bias_variable=None,
-    patience=1000,
+    patience=250,
 ):
     mmd_list = []
     asam_list = []
@@ -148,12 +148,3 @@ def compute_shap_values(model, tensor_N, columns, save_path):
         shap.plots.bar(shap_values, show=False)
         plt.savefig(f"{save_path}/shap_bars.pdf")
         plt.clf()
-
-
-def compute_ratio(bias_values, weights):
-    weights = np.squeeze(weights / np.sum(weights))
-    one_indices = np.argwhere(bias_values == 1)
-    zero_indices = np.argwhere(bias_values == 0)
-    positive = np.sum(weights[one_indices])
-    negative = np.sum(weights[zero_indices])
-    return positive / negative
