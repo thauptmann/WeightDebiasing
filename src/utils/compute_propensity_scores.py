@@ -3,19 +3,14 @@ import numpy as np
 from pathlib import Path
 from .metrics import (
     average_standardised_absolute_mean_distance,
+    compute_relative_bias,
     maximum_mean_discrepancy_weighted,
     maximum_mean_discrepancy,
     scale_df,
-    compute_relative_bias,
+    compute_weighted_means,
 )
 import random
-from .visualisation import (
-    plot_feature_distribution,
-    plot_feature_histograms,
-    plot_asams,
-    plot_weights,
-    plot_line,
-)
+from .visualisation import plot_results
 
 seed = 5
 np.random.seed(seed)
@@ -39,7 +34,7 @@ def propensity_scores(
     visualisation_path = result_path / method / dataset
     visualisation_path.mkdir(exist_ok=True, parents=True)
     df = df.sample(frac=1)
-    scaled_df, scaler = scale_df(columns, df)
+    scaled_df, scaler = scale_df(df, columns)
     scaled_N = scaled_df[scaled_df["label"] == 1]
     scaled_R = scaled_df[scaled_df["label"] == 0]
     non_representative_size = len(scaled_df[scaled_df["label"] == 1])
@@ -51,8 +46,9 @@ def propensity_scores(
         np.ones(representative_size) / representative_size
     )
 
-    probabilities, _ = propensity_method(
-        scaled_df,
+    probabilities = propensity_method(
+        scaled_N,
+        scaled_R,
         columns,
         save_path=visualisation_path,
         number_of_splits=number_of_splits,
@@ -66,32 +62,23 @@ def propensity_scores(
     scaled_df.iloc[indices, scaled_df.columns.get_loc("weights")] = weights
 
     mmd = maximum_mean_discrepancy(scaled_N[columns].values, scaled_R[columns].values)
-    asams_values = average_standardised_absolute_mean_distance(scaled_df, columns)
+    asams_values = average_standardised_absolute_mean_distance(
+        scaled_N, scaled_R, columns
+    )
     weighted_mmd = maximum_mean_discrepancy_weighted(
         scaled_N[columns].values, scaled_R[columns].values, weights
     )
     weighted_asams = average_standardised_absolute_mean_distance(
-        scaled_df, columns, weights
+        scaled_N, scaled_R, columns, weights
     )
 
     asams = [np.mean(asams_values), np.mean(weighted_asams)]
     number_of_zero_weights = np.count_nonzero(weights == 0)
     scaled_df[columns] = scaler.inverse_transform(scaled_df[columns])
-    relative_biases = compute_relative_bias(df, weights)
-
-    plot_results(
-        asams,
-        asams_values,
-        bins,
-        columns,
-        mmd,
-        probabilities,
-        scaled_df,
-        visualisation_path,
-        weighted_asams,
-        weighted_mmd,
-        weights,
-    )
+    weighted_means = compute_weighted_means(scaled_N, weights)
+    population_means = np.mean(scaled_R.values, axis=0)
+    mean_weighted_means = np.mean(weighted_means, axis=0)
+    relative_biases = compute_relative_bias(weighted_means, population_means)
 
     with open(visualisation_path / "results.txt", "w") as result_file:
         result_file.write(f"{asams=}\n")
@@ -100,26 +87,19 @@ def propensity_scores(
         result_file.write("\nRelative Bias:\n")
         for column, relative_bias in zip(scaled_df.columns, relative_biases):
             result_file.write(f"{column}: {relative_bias}\n")
+
+    plot_results(
+        asams,
+        asams_values,
+        bins,
+        columns,
+        mmd,
+        scaled_N,
+        scaled_R,
+        visualisation_path,
+        weighted_asams,
+        weighted_mmd,
+        weights,
+    )
+
     return weights
-
-
-def plot_results(
-    asams,
-    asams_values,
-    bins,
-    columns,
-    mmd,
-    probabilities,
-    scaled_df,
-    visualisation_path,
-    weighted_asams,
-    weighted_mmd,
-    weights,
-):
-    plot_asams(weighted_asams, asams_values, columns, visualisation_path)
-    plot_feature_distribution(scaled_df, visualisation_path, weights)
-    plot_feature_histograms(scaled_df, visualisation_path, bins, weights)
-    plot_probabilities(probabilities, visualisation_path, 0, bins)
-    plot_line(asams, visualisation_path, title="ASAM")
-    plot_line([mmd, weighted_mmd], visualisation_path, title="MMD")
-    plot_weights(weights / sum(weights), visualisation_path, 0, bins)

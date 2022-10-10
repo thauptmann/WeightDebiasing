@@ -17,13 +17,15 @@ def plot_line(values, path, title="", plot_random_line=False):
     plt.clf()
 
 
-def plot_feature_distribution(N, R, file_name, weights):
+def plot_cumulative_distribution(N, R, file_name, weights):
     plot_directory = file_name / "cumulative_distributions"
     plot_directory.mkdir(exist_ok=True)
     for column_name in N.columns:
         sns.ecdfplot(N, x=column_name, label="Non-Representative")
         sns.ecdfplot(R, x=column_name, label="Representative", linestyle="dashed")
-        sns.ecdfplot(N, x=column_name, weights=weights, label="Weighted", linestyle="dotted")
+        sns.ecdfplot(
+            N, x=column_name, weights=weights, label="Weighted", linestyle="dotted"
+        )
         plt.legend(title="Data set")
         plt.savefig(plot_directory / f"{column_name}.pdf")
         plt.clf()
@@ -99,7 +101,7 @@ def plot_results(
     weights,
 ):
     plot_asams(weighted_asams, asams_values, columns, visualisation_path)
-    plot_feature_distribution(N, R, visualisation_path, weights)
+    plot_cumulative_distribution(N, R, visualisation_path, weights)
     plot_feature_histograms(N, R, visualisation_path, bins, weights)
     plot_line(asams, visualisation_path, title="ASAM")
     plot_line([mmd, weighted_mmd], visualisation_path, title="MMD")

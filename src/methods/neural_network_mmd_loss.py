@@ -1,58 +1,37 @@
 from pathlib import Path
 import torch
 import shap
-
-from utils.metrics import scale_df
-from utils.models import MmdModel
+from scipy.spatial.distance import pdist
+from utils.models import Mlp
 from .loss import AsamLoss, MMDLoss
-from .metrics import calculate_rbf_gamma, compute_ratio
 import numpy as np
 from tqdm import trange
 import matplotlib.pyplot as plt
-from utils.visualisation import plot_line, plot_ratio
+from utils.visualisation import plot_line
 from torch.optim.lr_scheduler import ReduceLROnPlateau
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 
-def neural_network_mmd_loss_prediction(df, columns, *args, **attributes):
+def neural_network_mmd_loss_weighting(N, R, columns, *args, **attributes):
     model_path = Path("best_model.pt")
     passes = 10000
     save_path = attributes["save_path"]
-    target_variables = attributes.get("bias_variable", None)
 
-    scaled_df, _ = scale_df(columns, df)
-    scaled_N = scaled_df[scaled_df["label"] == 1]
-    scaled_R = scaled_df[scaled_df["label"] == 0]
-    tensor_N = torch.FloatTensor(scaled_N[columns].values)
-    tensor_R = torch.FloatTensor(scaled_R[columns].values)
+    tensor_N = torch.FloatTensor(N[columns].values)
+    tensor_R = torch.FloatTensor(R[columns].values)
 
-    if target_variables is not None:
-        bias_variable_values = scaled_N[target_variables]
-        representative_variable_values = scaled_R[target_variables]
-        weights_R = np.ones(len(scaled_R)) / len(scaled_R)
-        representative_ratio = compute_ratio(
-            representative_variable_values.values, weights_R
-        )
-
-    else:
-        bias_variable_values = None
-        representative_variable_values = None
-
-    mmd_model, mmd_list, asam_list, ratio_list = compute_model(
-        model_path, passes, tensor_N, tensor_R, bias_variable_values
+    mmd_model, mmd_list, asam_list = compute_model(
+        model_path, passes, tensor_N, tensor_R
     )
 
     plot_line(mmd_list, save_path, "MMDs_per_pass")
     plot_line(asam_list, save_path, "ASAMs_per_pass")
-    if target_variables is not None:
-        plot_ratio(ratio_list, representative_ratio, "Ratio_per_pass", save_path)
 
     with torch.no_grad():
         weights = mmd_model(tensor_N.to(device)).squeeze().cpu().numpy()
-    compute_shap_values(mmd_model, tensor_N.numpy(), columns, save_path)
-
-    return weights, None
+    # compute_shap_values(mmd_model, tensor_N.numpy(), columns, save_path)
+    return weights
 
 
 def compute_model(
@@ -60,16 +39,10 @@ def compute_model(
     passes,
     tensor_N,
     tensor_R,
-    bias_variable=None,
-    patience=250,
+    patience=500,
 ):
     mmd_list = []
     asam_list = []
-    ratio_list = []
-    if bias_variable is not None:
-        weights_N = np.ones(len(tensor_N)) / len(tensor_N)
-        non_representative_ratio = compute_ratio(bias_variable.values, weights_N)
-        ratio_list.append(non_representative_ratio)
 
     gamma = calculate_rbf_gamma(np.append(tensor_N, tensor_R, axis=0))
     mmd_loss_function = MMDLoss(gamma, len(tensor_R), device)
@@ -82,7 +55,7 @@ def compute_model(
     tensor_R = tensor_R.to(device)
 
     best_mmd = torch.inf
-    mmd_model = MmdModel(tensor_N.shape[1]).to(device)
+    mmd_model = Mlp(tensor_N.shape[1]).to(device)
     optimizer = torch.optim.Adam(
         mmd_model.parameters(), lr=learning_rate, weight_decay=1e-5
     )
@@ -123,17 +96,12 @@ def compute_model(
             if early_stopping_counter > patience:
                 break
 
-        if bias_variable is not None:
-            current_ratio = compute_ratio(
-                bias_variable.values, validation_weights.cpu().numpy()
-            )
-            ratio_list.append(current_ratio)
         scheduler.step(mmd)
 
     mmd_model.load_state_dict(torch.load(model_path))
     mmd_model.eval()
 
-    return mmd_model, mmd_list, asam_list, ratio_list
+    return mmd_model, mmd_list, asam_list
 
 
 def compute_shap_values(model, tensor_N, columns, save_path):
@@ -148,3 +116,9 @@ def compute_shap_values(model, tensor_N, columns, save_path):
         shap.plots.bar(shap_values, show=False)
         plt.savefig(f"{save_path}/shap_bars.pdf")
         plt.clf()
+
+
+def calculate_rbf_gamma(aggregate_set):
+    all_distances = pdist(aggregate_set, "euclid")
+    sigma = np.median(all_distances)
+    return 1 / (2 * (sigma**2))

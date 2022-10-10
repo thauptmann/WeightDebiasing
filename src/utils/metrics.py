@@ -56,11 +56,12 @@ def average_standardised_absolute_mean_distance(N, R, columns, weights=None):
     return standardised_absolute_mean_distances
 
 
-def compute_relative_bias(N, R, weights):
-    eps = 1e-20
+def compute_weighted_means(N, weights):
     weights = weights / sum(weights)
-    population_means = np.mean(R.values, axis=0) + eps
-    weighted_means = np.average(N.values, weights=weights, axis=0) + eps
+    return np.average(N.values, weights=weights, axis=0)
+
+
+def compute_relative_bias(weighted_means, population_means):
     return ((weighted_means - population_means) / population_means) * 100
 
 

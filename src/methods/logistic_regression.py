@@ -3,9 +3,7 @@ from sklearn.linear_model import LogisticRegression
 import pandas as pd
 
 
-def logistic_regression_weighting(df, columns, **attributes):
-    N = df[df["label"] == 1]
-    R = df[df["label"] == 0]
+def logistic_regression_weighting(N, R, columns, *args, **attributes):
     predictions = np.zeros(len(N))
     train = pd.concat([N, R])
     clf = train_logistic_regression(train[columns], train.label)
