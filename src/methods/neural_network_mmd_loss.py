@@ -2,7 +2,7 @@ from pathlib import Path
 import torch
 import shap
 from scipy.spatial.distance import pdist
-from utils.models import Mlp
+from utils.models import WeightingMlp
 from .loss import WeightedMMDLoss
 import numpy as np
 from tqdm import trange
@@ -13,29 +13,33 @@ from torch.optim.lr_scheduler import ReduceLROnPlateau
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 
-def neural_network_mmd_loss_weighting(N, R, columns, *args, **attributes):
+def neural_network_mmd_loss_weighting_with_batches(
+    N, R, columns, use_batches=True, *args, **attributes
+):
+    return neural_network_mmd_loss_weighting(N, R, columns, use_batches)
+
+
+def neural_network_mmd_loss_weighting(
+    N, R, columns, use_batches=False, *args, **attributes
+):
     passes = 10000
     save_path = attributes["save_path"]
 
     tensor_N = torch.FloatTensor(N[columns].values)
     tensor_R = torch.FloatTensor(R[columns].values)
 
-    mmd_model, mmd_list = compute_model(passes, tensor_N, tensor_R)
+    mmd_model, mmd_list = compute_model(
+        passes, tensor_N, tensor_R, use_batches=use_batches
+    )
 
     plot_line(mmd_list, save_path, "MMDs_per_pass")
 
     with torch.no_grad():
         weights = mmd_model(tensor_N).squeeze().numpy()
-    # compute_shap_values(mmd_model, tensor_N.numpy(), columns, save_path)
     return weights
 
 
-def compute_model(
-    passes,
-    tensor_N,
-    tensor_R,
-    patience=250,
-):
+def compute_model(passes, tensor_N, tensor_R, patience=250, use_batches=False):
     model_path = Path("best_model.pt")
     mmd_list = []
 
@@ -45,19 +49,29 @@ def compute_model(
     early_stopping_counter = 0
     tensor_N = tensor_N.to(device)
     tensor_R = tensor_R.to(device)
+    batch_size = 256
 
     best_mmd = torch.inf
-    mmd_model = Mlp(tensor_N.shape[1]).to(device)
+    mmd_model = WeightingMlp(tensor_N.shape[1]).to(device)
     optimizer = torch.optim.Adam(
         mmd_model.parameters(), lr=learning_rate, weight_decay=1e-5
     )
-    scheduler = ReduceLROnPlateau(optimizer, patience=patience / 2)
+    scheduler = ReduceLROnPlateau(optimizer, patience=int(patience / 2))
     for _ in trange(passes):
         mmd_model.train()
         optimizer.zero_grad()
 
-        train_weights = mmd_model(tensor_N)
-        mmd_loss = mmd_loss_function(tensor_N, tensor_R, train_weights)
+        if use_batches:
+            training_indices = np.random.choice(batch_size, batch_size)
+            reference_indices = np.random.choice(batch_size, batch_size)
+            training_data = tensor_N[training_indices]
+            reference_data = tensor_R[reference_indices]
+        else:
+            training_data = tensor_N
+            reference_data = tensor_R
+
+        train_weights = mmd_model(training_data)
+        mmd_loss = mmd_loss_function(training_data, reference_data, train_weights)
         train_weights = train_weights / torch.sum(train_weights)
         if not torch.isnan(mmd_loss) and not torch.isinf(mmd_loss):
             mmd_loss.backward()

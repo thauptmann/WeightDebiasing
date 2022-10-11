@@ -7,7 +7,10 @@ from utils.census_experiments import census_experiments
 
 from methods.logistic_regression import logistic_regression_weighting
 from methods.naive_weighting import naive_weighting
-from methods.neural_network_mmd_loss import neural_network_mmd_loss_weighting
+from methods.neural_network_mmd_loss import (
+    neural_network_mmd_loss_weighting,
+    neural_network_mmd_loss_weighting_with_batches,
+)
 from methods.neural_network_classifier import neural_network_weighting
 from methods.random_forest import random_forest_weighting
 from methods.gradient_boosting import gradient_boosting_weighting
@@ -71,6 +74,8 @@ def get_weighting_function(method_name):
         compute_weights_function = ada_debiasing_weighting
     elif method_name == "domain_adaptation":
         compute_weights_function = domain_adaptation_weighting
+    elif method_name == 'neural_network_mmd_loss_with_batches':
+        compute_weights_function = neural_network_mmd_loss_weighting_with_batches
 
     return compute_weights_function
 

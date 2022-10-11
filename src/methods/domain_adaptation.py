@@ -1,13 +1,10 @@
-from itertools import cycle
 from pathlib import Path
 import torch
-import shap
 from scipy.spatial.distance import pdist
 from utils.models import Mlp
 from .loss import MMDLoss
 import numpy as np
 from tqdm import trange
-import matplotlib.pyplot as plt
 from torch.optim.lr_scheduler import ReduceLROnPlateau
 from torch.utils.data import TensorDataset, DataLoader
 from torch import nn
@@ -43,20 +40,14 @@ def compute_model(
     bce_loss_fn = nn.BCEWithLogitsLoss()
     learning_rate = 0.001
     early_stopping_counter = 0
-    batch_size = 256
+    batch_size = 128
 
-    r_dataset = TensorDataset(tensor_r)
-    r_dataloader = DataLoader(
-        r_dataset, batch_size=batch_size, shuffle=True, drop_last=True
+    dataset = TensorDataset(
+        torch.concat([tensor_n, tensor_r]),
+        torch.concat([torch.ones(len(tensor_n)), torch.zeros(len(tensor_r))]),
     )
-
-    n_dataset = TensorDataset(tensor_n)
-    n_dataloader = DataLoader(
-        n_dataset, batch_size=batch_size, shuffle=True, drop_last=True
-    )
-
-    y = torch.FloatTensor(
-        torch.concat([torch.ones(batch_size), torch.zeros(batch_size)])
+    dataloader = DataLoader(
+        dataset, batch_size=batch_size, shuffle=True, drop_last=True
     )
 
     best_validation_loss = torch.inf
@@ -66,25 +57,25 @@ def compute_model(
         domain_adaptation_model.parameters(), lr=learning_rate, weight_decay=1e-5
     )
     scheduler = ReduceLROnPlateau(optimizer, patience=int(patience / 2))
+    mmd_loss_weight = 0.1
 
     for _ in trange(epochs):
-        for n, r in zip(cycle(n_dataloader), r_dataloader):
-            n = n[0].to(device)
-            r = r[0].to(device)
-
-            domain_adaptation_model.train()
+        domain_adaptation_model.train()
+        for x, y in dataloader:
+            x = x.to(device)
+            y = y.to(device)
             optimizer.zero_grad()
             (
                 predictions,
                 latent_features,
-            ) = domain_adaptation_model.forward_with_latent_features(
-                torch.concat([n, r])
-            )
+            ) = domain_adaptation_model.forward_with_latent_features(x)
             bce_loss = bce_loss_fn(torch.squeeze(predictions), y)
+            one_idxs = torch.nonzero(y == 1).squeeze()
+            zero_idxs = torch.nonzero(y == 0).squeeze()
             mmd_loss = mmd_loss_function(
-                latent_features[:batch_size, :], latent_features[batch_size:, :]
+                latent_features[one_idxs, :], latent_features[zero_idxs, :]
             )
-            loss = bce_loss + 0.1 * mmd_loss
+            loss = bce_loss + mmd_loss_weight * mmd_loss
             loss.backward()
             optimizer.step()
             scheduler.step(loss)
@@ -105,7 +96,7 @@ def compute_model(
                 validation_latent_features[:batch_size, :],
                 validation_latent_features[batch_size:, :],
             )
-            validation_loss = bce_loss + 0.5 * mmd_loss
+            validation_loss = bce_loss + mmd_loss_weight * mmd_loss
 
         if validation_loss < best_validation_loss:
             best_validation_loss = validation_loss
@@ -119,20 +110,6 @@ def compute_model(
     domain_adaptation_model.eval()
 
     return domain_adaptation_model
-
-
-def compute_shap_values(model, tensor_N, columns, save_path):
-    # Compute SHAP values to measure and visualise the bias
-    model = model.cpu()
-    with torch.no_grad():
-        kernelExplainer = shap.Explainer(model, tensor_N, feature_names=columns)
-        shap_values = kernelExplainer(tensor_N)
-        shap.summary_plot(shap_values, tensor_N, show=False)
-        plt.savefig(f"{save_path}/shap_summary.pdf")
-        plt.clf()
-        shap.plots.bar(shap_values, show=False)
-        plt.savefig(f"{save_path}/shap_bars.pdf")
-        plt.clf()
 
 
 def calculate_rbf_gamma(aggregate_set):
