@@ -7,7 +7,7 @@ method_list = [
     "gradient_boosting",
     "neural_network_classifier",
     "neural_network_mmd_loss",
-    "neural_network_mmd_loss_with_batches"
+    "neural_network_mmd_loss_with_batches",
     "naive",
     "adaDebias",
     "domain_adaptation",

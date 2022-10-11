@@ -16,7 +16,9 @@ device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 def neural_network_mmd_loss_weighting_with_batches(
     N, R, columns, use_batches=True, *args, **attributes
 ):
-    return neural_network_mmd_loss_weighting(N, R, columns, use_batches)
+    return neural_network_mmd_loss_weighting(
+        N, R, columns, use_batches, args, **attributes
+    )
 
 
 def neural_network_mmd_loss_weighting(
@@ -35,21 +37,23 @@ def neural_network_mmd_loss_weighting(
     plot_line(mmd_list, save_path, "MMDs_per_pass")
 
     with torch.no_grad():
-        weights = mmd_model(tensor_N).squeeze().numpy()
+        tensor_N = tensor_N.to(device)
+        weights = mmd_model(tensor_N).cpu().squeeze().numpy()
     return weights
 
 
-def compute_model(passes, tensor_N, tensor_R, patience=250, use_batches=False):
+def compute_model(passes, tensor_N, tensor_R, patience=1000, use_batches=False):
     model_path = Path("best_model.pt")
     mmd_list = []
+    batch_size = 600
+    learning_rate = 0.001
+    early_stopping_counter = 0
 
     gamma = calculate_rbf_gamma(np.append(tensor_N, tensor_R, axis=0))
     mmd_loss_function = WeightedMMDLoss(gamma, len(tensor_R), device)
-    learning_rate = 0.001
-    early_stopping_counter = 0
+
     tensor_N = tensor_N.to(device)
     tensor_R = tensor_R.to(device)
-    batch_size = 256
 
     best_mmd = torch.inf
     mmd_model = WeightingMlp(tensor_N.shape[1]).to(device)
@@ -63,8 +67,10 @@ def compute_model(passes, tensor_N, tensor_R, patience=250, use_batches=False):
 
         if use_batches:
             training_indices = np.random.choice(batch_size, batch_size)
-            reference_indices = np.random.choice(batch_size, batch_size)
             training_data = tensor_N[training_indices]
+            reference_indices = np.random.choice(
+                len(tensor_R), len(tensor_R), replace=True
+            )
             reference_data = tensor_R[reference_indices]
         else:
             training_data = tensor_N
@@ -72,9 +78,9 @@ def compute_model(passes, tensor_N, tensor_R, patience=250, use_batches=False):
 
         train_weights = mmd_model(training_data)
         mmd_loss = mmd_loss_function(training_data, reference_data, train_weights)
-        train_weights = train_weights / torch.sum(train_weights)
         if not torch.isnan(mmd_loss) and not torch.isinf(mmd_loss):
-            mmd_loss.backward()
+            loss = mmd_loss
+            loss.backward()
             optimizer.step()
 
         mmd_model.eval()

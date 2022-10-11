@@ -27,8 +27,8 @@ def artificial_data_experiment(
     number_of_splits=10,
     bins=100,
     method="",
-    number_of_repetitions=100,
-    sample_size=1000,
+    number_of_repetitions=4,
+    sample_size=10000,
 ):
     result_path = Path("../results")
     visualisation_path = result_path / method / dataset
@@ -79,7 +79,7 @@ def artificial_data_experiment(
         result_file.write(
             f"MMDs: {np.mean(weighted_mmds_list)} +- {np.std(weighted_mmds_list)}\n"
         )
-        result_file.write("\nBiases:\n")
+        result_file.write("\nRelative Biases:\n")
         for column, mean_bias, sd_bias in zip(
             scaled_df.drop(["pi"], axis="columns").columns, mean_biases, sd_biases
         ):
