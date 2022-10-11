@@ -42,10 +42,10 @@ def neural_network_mmd_loss_weighting(
     return weights
 
 
-def compute_model(passes, tensor_N, tensor_R, patience=1000, use_batches=False):
+def compute_model(passes, tensor_N, tensor_R, patience=500, use_batches=False):
     model_path = Path("best_model.pt")
     mmd_list = []
-    batch_size = 600
+    batch_size = 512
     learning_rate = 0.001
     early_stopping_counter = 0
 
