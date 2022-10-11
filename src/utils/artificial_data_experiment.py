@@ -4,7 +4,6 @@ from pathlib import Path
 from .metrics import (
     average_standardised_absolute_mean_distance,
     maximum_mean_discrepancy_weighted,
-    maximum_mean_discrepancy,
     scale_df,
     compute_weighted_means,
     compute_relative_bias,
@@ -20,7 +19,7 @@ torch.manual_seed(seed)
 eps = 1e-20
 
 
-def compute_artificial_data_metrics(
+def artificial_data_experiment(
     df,
     columns,
     dataset,
@@ -28,7 +27,7 @@ def compute_artificial_data_metrics(
     number_of_splits=10,
     bins=100,
     method="",
-    number_of_repetitions=400,
+    number_of_repetitions=100,
     sample_size=1000,
 ):
     result_path = Path("../results")
@@ -36,10 +35,11 @@ def compute_artificial_data_metrics(
     visualisation_path.mkdir(exist_ok=True, parents=True)
     df = df.reset_index(drop=True)
     scaled_df, scaler = scale_df(df, columns)
+    population_means = np.mean(df.drop(["pi"], axis="columns").values, axis=0)
 
     weighted_mmds_list = []
     asams_list = []
-    weighted_means_list = []
+    relative_biases_list = []
 
     for _ in trange(number_of_repetitions):
         scaled_N, scaled_R = sample(scaled_df, sample_size)
@@ -52,12 +52,6 @@ def compute_artificial_data_metrics(
             save_path=visualisation_path,
         )
 
-        mmd = maximum_mean_discrepancy(
-            scaled_N[columns].values, scaled_R[columns].values
-        )
-        asams_values = average_standardised_absolute_mean_distance(
-            scaled_N, scaled_R, columns
-        )
         weighted_mmd = maximum_mean_discrepancy_weighted(
             scaled_N[columns].values, scaled_R[columns].values, weights
         )
@@ -65,38 +59,39 @@ def compute_artificial_data_metrics(
             scaled_N, scaled_R, columns, weights
         )
 
-        asams = [np.mean(asams_values), np.mean(weighted_asams)]
+        asams_list.append(weighted_asams)
+        weighted_mmds_list.append(weighted_mmd)
+
         scaled_N[columns] = scaler.inverse_transform(scaled_N[columns])
         scaled_R[columns] = scaler.inverse_transform(scaled_R[columns])
         weighted_means = compute_weighted_means(
             scaled_N.drop(["label", "pi"], axis="columns"), weights
         )
-        weighted_means_list.append(weighted_means)
 
-    population_means = np.mean(df.drop(["pi"], axis="columns").values, axis=0)
-    mean_weighted_means = np.mean(weighted_means_list, axis=0)
-    biases = compute_relative_bias(mean_weighted_means, population_means)
+        relative_biases = compute_relative_bias(weighted_means, population_means)
+        relative_biases_list.append(relative_biases)
+
+    mean_biases = np.mean(relative_biases_list, axis=0)
+    sd_biases = np.std(relative_biases_list, axis=0)
+
+    with open(visualisation_path / "results.txt", "w") as result_file:
+        result_file.write(f"ASAMS: {np.mean(asams_list)} +- {np.std(asams_list)}\n")
+        result_file.write(
+            f"MMDs: {np.mean(weighted_mmds_list)} +- {np.std(weighted_mmds_list)}\n"
+        )
+        result_file.write("\nBiases:\n")
+        for column, mean_bias, sd_bias in zip(
+            scaled_df.drop(["pi"], axis="columns").columns, mean_biases, sd_biases
+        ):
+            result_file.write(f"{column}: {mean_bias} +- {sd_bias}\n")
 
     plot_results(
-        asams,
-        asams_values,
         bins,
-        columns,
-        mmd,
         scaled_N,
         scaled_R,
         visualisation_path,
-        weighted_asams,
-        weighted_mmd,
         weights,
     )
-
-    with open(visualisation_path / "results.txt", "w") as result_file:
-        result_file.write(f"{asams=}\n")
-        result_file.write(f"MMDs: {mmd}, {weighted_mmd}\n")
-        result_file.write("\nBiases:\n")
-        for column, relative_bias in zip(scaled_df.columns, biases):
-            result_file.write(f"{column}: {relative_bias}\n")
 
 
 def sample(df, sample_size):

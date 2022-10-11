@@ -23,10 +23,7 @@ def ada_debiasing_weighting(N, R, columns, number_of_splits, *args, **kwargs):
         )
         predicted_classes = np.round(prediction_n)
         probability_difference = np.abs(prediction_n - 0.5)
-        error_rate = np.count_nonzero(
-            predicted_classes == np.ones_like(prediction_n)
-        ) / len(prediction_n)
-        # print(f"{error_rate}\n")
+
         alpha = learning_rate * np.log(
             ((1 - probability_difference) / probability_difference)
         )

@@ -34,8 +34,8 @@ def plot_cumulative_distribution(N, R, file_name, weights):
 def plot_feature_histograms(N, R, file_name, bins, weights):
     plot_directory = file_name / "histograms"
     plot_directory.mkdir(exist_ok=True)
+    fig, ax = plt.subplots(1, 3, sharey=True, sharex=True)
     for column_name in N.columns:
-        fig, ax = plt.subplots(1, 3, sharey=True, sharex=True)
         sns.histplot(
             N, x=column_name, ax=ax[0], bins=bins, stat="probability"
         ).set_title("Non-Representative")
@@ -46,7 +46,8 @@ def plot_feature_histograms(N, R, file_name, bins, weights):
             N, x=column_name, weights=weights, ax=ax[2], bins=bins, stat="probability"
         ).set_title("Weighted")
         fig.savefig(plot_directory / f"{column_name}.pdf")
-        plt.close()
+        [axis.clear() for axis in ax]
+    plt.clf()
 
 
 def plot_asams(weighted_asams, asams, columns, plot_directory):
@@ -88,21 +89,15 @@ def plot_ratio(values, representative_ratio, title, path):
 
 
 def plot_results(
-    asams,
-    asams_values,
     bins,
-    columns,
-    mmd,
     N,
     R,
     visualisation_path,
-    weighted_asams,
-    weighted_mmd,
     weights,
 ):
-    plot_asams(weighted_asams, asams_values, columns, visualisation_path)
+    # plot_asams(weighted_asams, asams_values, columns, visualisation_path)
     plot_cumulative_distribution(N, R, visualisation_path, weights)
     plot_feature_histograms(N, R, visualisation_path, bins, weights)
-    plot_line(asams, visualisation_path, title="ASAM")
-    plot_line([mmd, weighted_mmd], visualisation_path, title="MMD")
+    # plot_line(asams, visualisation_path, title="ASAM")
+    # plot_line([mmd, weighted_mmd], visualisation_path, title="MMD")
     plot_weights(weights / sum(weights), visualisation_path, 0, bins)

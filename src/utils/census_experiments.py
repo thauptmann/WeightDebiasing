@@ -19,7 +19,7 @@ torch.manual_seed(seed)
 eps = 1e-20
 
 
-def propensity_scores(
+def census_experiments(
     df,
     columns,
     dataset,
@@ -67,10 +67,10 @@ def propensity_scores(
 
     scaled_N[columns] = scaler.inverse_transform(scaled_N[columns])
     scaled_R[columns] = scaler.inverse_transform(scaled_R[columns])
-    scaled_df[columns] = scaler.inverse_transform(scaled_df[columns])
 
     asams = [np.mean(asams_values), np.mean(weighted_asams)]
-
+    number_of_zero_weights = np.count_nonzero(weights == 0)
+    scaled_df[columns] = scaler.inverse_transform(scaled_df[columns])
     weighted_means = compute_weighted_means(scaled_N, weights)
     population_means = np.mean(scaled_R.values, axis=0)
     relative_biases = compute_relative_bias(weighted_means, population_means)
@@ -78,6 +78,7 @@ def propensity_scores(
     with open(visualisation_path / "results.txt", "w") as result_file:
         result_file.write(f"{asams=}\n")
         result_file.write(f"MMDs: {mmd}, {weighted_mmd}\n")
+        result_file.write(f"{number_of_zero_weights=}\n")
         result_file.write("\nRelative Bias:\n")
         for column, relative_bias in zip(scaled_df.columns, relative_biases):
             result_file.write(f"{column}: {relative_bias}\n")

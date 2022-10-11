@@ -5,3 +5,4 @@ python src/run_weighting_experiment.py --dataset census --method gradient_boosti
 python src/run_weighting_experiment.py --dataset census --method neural_network_classifier
 python src/run_weighting_experiment.py --dataset census --method neural_network_mmd_loss
 python src/run_weighting_experiment.py --dataset census --method adaDebias
+python src/run_weighting_experiment.py --dataset census --method domain_adaption
