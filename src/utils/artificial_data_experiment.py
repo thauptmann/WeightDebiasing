@@ -27,8 +27,8 @@ def artificial_data_experiment(
     number_of_splits=10,
     bins=100,
     method="",
-    number_of_repetitions=4,
-    sample_size=10000,
+    number_of_repetitions=1000,
+    sample_size=1000,
 ):
     result_path = Path("../results")
     visualisation_path = result_path / method / dataset
