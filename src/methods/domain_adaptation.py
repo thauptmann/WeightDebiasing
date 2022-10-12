@@ -44,6 +44,7 @@ def compute_model(
     batch_size = 128
 
     tensor_r = tensor_r.to(device)
+    tensor_n = tensor_n.to(device)
 
     dataset = TensorDataset(
         torch.concat([tensor_n, tensor_r]),
