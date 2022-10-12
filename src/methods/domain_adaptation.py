@@ -20,7 +20,8 @@ def domain_adaptation_weighting(N, R, columns, *args, **attributes):
     domain_adaptation_model = compute_model(epochs, tensor_N, tensor_R)
 
     with torch.no_grad():
-        predictions = domain_adaptation_model(tensor_N).squeeze()
+        tensor_N = tensor_N.to(device)
+        predictions = domain_adaptation_model(tensor_N).cpu().squeeze()
     predictions = nn.Sigmoid()(predictions)
     weights = (1 - predictions) / predictions
 
