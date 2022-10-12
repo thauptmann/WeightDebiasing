@@ -94,7 +94,9 @@ def compute_model(
             )
             bce_loss = bce_loss_fn(
                 torch.squeeze(validation_predictions),
-                torch.concat([torch.ones(len(tensor_n)), torch.zeros(len(tensor_r))]).to(device),
+                torch.concat(
+                    [torch.ones(len(tensor_n)), torch.zeros(len(tensor_r))]
+                ).to(device),
             )
             mmd_loss = mmd_loss_function(
                 validation_latent_features[:batch_size, :],
