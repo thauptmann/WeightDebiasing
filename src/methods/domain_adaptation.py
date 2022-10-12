@@ -43,6 +43,8 @@ def compute_model(
     early_stopping_counter = 0
     batch_size = 128
 
+    tensor_r = tensor_r.to(device)
+
     dataset = TensorDataset(
         torch.concat([tensor_n, tensor_r]),
         torch.concat([torch.ones(len(tensor_n)), torch.zeros(len(tensor_r))]),
