@@ -76,6 +76,8 @@ def get_weighting_function(method_name):
         compute_weights_function = domain_adaptation_weighting
     elif method_name == 'neural_network_mmd_loss_with_batches':
         compute_weights_function = neural_network_mmd_loss_weighting_with_batches
+    else:
+        compute_weights_function = naive_weighting
 
     return compute_weights_function
 
