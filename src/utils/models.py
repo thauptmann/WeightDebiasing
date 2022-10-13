@@ -5,7 +5,8 @@ import numpy as np
 
 class WeightingMlp(nn.Module):
     def __init__(self, number_of_features):
-        half_feature_size = int(number_of_features / 2)
+        # half_feature_size = int(number_of_features / 2)
+        half_feature_size = number_of_features
         super(WeightingMlp, self).__init__()
         self.encoding = nn.Sequential(
             nn.Linear(number_of_features, half_feature_size),

@@ -29,20 +29,39 @@ def neural_network_mmd_loss_weighting(
 
     tensor_N = torch.FloatTensor(N[columns].values)
     tensor_R = torch.FloatTensor(R[columns].values)
+    number_of_features = tensor_N.shape[1]
+    latent_feature_list = [
+        number_of_features,
+        int(number_of_features * 0.75),
+        int(number_of_features * 1.25),
+    ]
+    best_mmd = np.inf
+    best_model = None
+    best_mmd_list = None
 
-    mmd_model, mmd_list = compute_model(
-        passes, tensor_N, tensor_R, use_batches=use_batches
-    )
+    for latent_features in latent_feature_list:
+        mmd_model, mmd_list, mmd = compute_model(
+            passes,
+            tensor_N,
+            tensor_R,
+            use_batches=use_batches,
+            latent_features=latent_features,
+        )
+        if mmd < best_mmd:
+            best_model = mmd_model
+            best_mmd_list = mmd_list
 
-    plot_line(mmd_list, save_path, "MMDs_per_pass")
+    plot_line(best_mmd_list, save_path, "MMDs_per_pass")
 
     with torch.no_grad():
         tensor_N = tensor_N.to(device)
-        weights = mmd_model(tensor_N).cpu().squeeze().numpy()
+        weights = best_model(tensor_N).cpu().squeeze().numpy()
     return weights
 
 
-def compute_model(passes, tensor_N, tensor_R, patience=500, use_batches=False):
+def compute_model(
+    passes, tensor_N, tensor_R, patience=500, use_batches=False, latent_features=1
+):
     model_path = Path("best_model.pt")
     mmd_list = []
     batch_size = 512
@@ -56,12 +75,12 @@ def compute_model(passes, tensor_N, tensor_R, patience=500, use_batches=False):
     tensor_R = tensor_R.to(device)
 
     best_mmd = torch.inf
-    mmd_model = WeightingMlp(tensor_N.shape[1]).to(device)
+    mmd_model = WeightingMlp(latent_features).to(device)
     optimizer = torch.optim.Adam(
         mmd_model.parameters(), lr=learning_rate, weight_decay=1e-5
     )
     scheduler = ReduceLROnPlateau(optimizer, patience=int(patience / 2))
-    for _ in trange(passes):
+    for _ in range(passes):
         mmd_model.train()
         optimizer.zero_grad()
 
@@ -83,14 +102,7 @@ def compute_model(passes, tensor_N, tensor_R, patience=500, use_batches=False):
             loss.backward()
             optimizer.step()
 
-        mmd_model.eval()
-        with torch.no_grad():
-            validation_weights = mmd_model(tensor_N)
-        mmd = mmd_loss_function(
-            tensor_N,
-            tensor_R,
-            validation_weights,
-        )
+        mmd = validate_model(tensor_N, tensor_R, mmd_loss_function, mmd_model)
         mmd_list.append(mmd.cpu())
 
         if mmd < best_mmd:
@@ -107,7 +119,20 @@ def compute_model(passes, tensor_N, tensor_R, patience=500, use_batches=False):
     mmd_model.load_state_dict(torch.load(model_path))
     mmd_model.eval()
 
-    return mmd_model, mmd_list
+    return mmd_model, mmd_list, best_mmd
+
+
+def validate_model(tensor_N, tensor_R, mmd_loss_function, mmd_model):
+    mmd_model.eval()
+    with torch.no_grad():
+        validation_weights = mmd_model(tensor_N)
+    mmd = mmd_loss_function(
+        tensor_N,
+        tensor_R,
+        validation_weights,
+    )
+
+    return mmd
 
 
 def compute_shap_values(model, tensor_N, columns, save_path):

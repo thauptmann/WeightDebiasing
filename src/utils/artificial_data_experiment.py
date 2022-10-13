@@ -26,7 +26,7 @@ def artificial_data_experiment(
     number_of_splits=5,
     bins=100,
     method="",
-    number_of_repetitions=500,
+    number_of_repetitions=5,
     sample_size=1000,
 ):
     result_path = Path("../results")
