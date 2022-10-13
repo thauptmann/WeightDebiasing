@@ -1,7 +1,7 @@
 import torch
 import numpy as np
 from pathlib import Path
-from .metrics import (
+from utils.metrics import (
     average_standardised_absolute_mean_distance,
     compute_relative_bias,
     maximum_mean_discrepancy_weighted,
@@ -10,7 +10,7 @@ from .metrics import (
     compute_weighted_means,
 )
 import random
-from .visualisation import plot_results
+from utils.visualisation import plot_results
 
 seed = 5
 np.random.seed(seed)
@@ -19,7 +19,7 @@ torch.manual_seed(seed)
 eps = 1e-20
 
 
-def census_experiments(
+def gbs_experiments(
     df,
     columns,
     dataset,
@@ -67,10 +67,10 @@ def census_experiments(
 
     scaled_N[columns] = scaler.inverse_transform(scaled_N[columns])
     scaled_R[columns] = scaler.inverse_transform(scaled_R[columns])
+    scaled_df[columns] = scaler.inverse_transform(scaled_df[columns])
 
     asams = [np.mean(asams_values), np.mean(weighted_asams)]
-    number_of_zero_weights = np.count_nonzero(weights == 0)
-    scaled_df[columns] = scaler.inverse_transform(scaled_df[columns])
+
     weighted_means = compute_weighted_means(scaled_N, weights)
     population_means = np.mean(scaled_R.values, axis=0)
     relative_biases = compute_relative_bias(weighted_means, population_means)
@@ -78,7 +78,6 @@ def census_experiments(
     with open(visualisation_path / "results.txt", "w") as result_file:
         result_file.write(f"{asams=}\n")
         result_file.write(f"MMDs: {mmd}, {weighted_mmd}\n")
-        result_file.write(f"{number_of_zero_weights=}\n")
         result_file.write("\nRelative Bias:\n")
         for column, relative_bias in zip(scaled_df.columns, relative_biases):
             result_file.write(f"{column}: {relative_bias}\n")

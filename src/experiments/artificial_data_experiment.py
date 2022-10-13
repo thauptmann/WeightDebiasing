@@ -1,7 +1,9 @@
 import torch
 import numpy as np
 from pathlib import Path
-from .metrics import (
+
+from utils.data_loader import sample
+from utils.metrics import (
     average_standardised_absolute_mean_distance,
     maximum_mean_discrepancy_weighted,
     scale_df,
@@ -9,7 +11,7 @@ from .metrics import (
     compute_relative_bias,
 )
 import random
-from .visualisation import plot_results
+from utils.visualisation import plot_results
 from tqdm import trange
 
 seed = 5
@@ -21,7 +23,6 @@ torch.manual_seed(seed)
 def artificial_data_experiment(
     df,
     columns,
-    dataset,
     propensity_method,
     number_of_splits=10,
     bins=100,
@@ -30,7 +31,7 @@ def artificial_data_experiment(
     sample_size=1000,
 ):
     result_path = Path("../results")
-    visualisation_path = result_path / method / dataset
+    visualisation_path = result_path / method / "artificial"
     visualisation_path.mkdir(exist_ok=True, parents=True)
     df = df.reset_index(drop=True)
     scaled_df, scaler = scale_df(df, columns)
@@ -94,11 +95,3 @@ def artificial_data_experiment(
         visualisation_path,
         weights,
     )
-
-
-def sample(df, sample_size):
-    representative = df.sample(sample_size)
-    representative["label"] = 0
-    non_representative = df.sample(sample_size, weights=df["pi"])
-    non_representative["label"] = 1
-    return non_representative, representative

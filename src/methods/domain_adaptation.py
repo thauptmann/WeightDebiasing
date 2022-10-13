@@ -16,20 +16,35 @@ device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 def domain_adaptation_weighting(N, R, columns, number_of_splits, *args, **attributes):
     predictions = np.zeros(len(N))
     k_fold = KFold(n_splits=number_of_splits, shuffle=True)
+    epochs = 1000
     for train_index, test_index in k_fold.split(N):
         train_N = N.iloc[train_index]
         test_N = N.iloc[test_index]
-        epochs = 1000
-        tensor_N = torch.FloatTensor(N[train_N][columns].values)
-        tensor_test_N = torch.FloatTensor(N[test_N][columns].values)
+        tensor_N = torch.FloatTensor(train_N[columns].values)
+        number_of_features = tensor_N.shape[1]
+        tensor_test_N = torch.FloatTensor(test_N[columns].values)
         tensor_R = torch.FloatTensor(R[columns].values)
 
-        domain_adaptation_model = compute_model(epochs, tensor_N, tensor_R)
+        latent_feature_list = [
+            number_of_features,
+            int(number_of_features * 0.75),
+            int(number_of_features * 1.25),
+        ]
+        best_loss = np.inf
+        best_model = None
+
+        for latent_features in latent_feature_list:
+            domain_adaptation_model, loss = compute_model(
+                epochs, tensor_N, tensor_R, 100, latent_features
+            )
+
+            if loss < best_loss:
+                best_model = domain_adaptation_model
 
         with torch.no_grad():
             tensor_N = tensor_N.to(device)
-            predictions = domain_adaptation_model(tensor_test_N).cpu().squeeze()
-        predictions[test_index] = nn.Sigmoid()(predictions)
+            prediction = best_model(tensor_test_N).cpu().squeeze()
+        predictions[test_index] = nn.Sigmoid()(prediction)
     weights = (1 - predictions) / predictions
 
     return weights
@@ -40,6 +55,7 @@ def compute_model(
     tensor_n,
     tensor_r,
     patience=100,
+    latent_features=1
 ):
     model_path = Path("best_model.pt")
 
@@ -63,7 +79,7 @@ def compute_model(
 
     best_validation_loss = torch.inf
 
-    domain_adaptation_model = Mlp(tensor_n.shape[1]).to(device)
+    domain_adaptation_model = Mlp(tensor_n.shape[1], latent_features).to(device)
     optimizer = torch.optim.Adam(
         domain_adaptation_model.parameters(), lr=learning_rate, weight_decay=1e-5
     )
@@ -122,7 +138,7 @@ def compute_model(
     domain_adaptation_model.load_state_dict(torch.load(model_path))
     domain_adaptation_model.eval()
 
-    return domain_adaptation_model
+    return domain_adaptation_model, best_validation_loss
 
 
 def calculate_rbf_gamma(aggregate_set):

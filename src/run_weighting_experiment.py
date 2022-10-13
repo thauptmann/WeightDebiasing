@@ -1,16 +1,15 @@
-from utils.compute_propensity_scores import propensity_scores
+from functools import partial
+from experiments.gbs_experiments import gbs_experiments
 from utils.data_loader import load_dataset
 from utils.input_arguments import input_arguments
-from utils.artificial_data_experiment import artificial_data_experiment
+from experiments.artificial_data_experiment import artificial_data_experiment
 from utils.statistics import logistic_regression
-from utils.census_experiments import census_experiments
+from experiments.census_experiments import census_experiments
 
 from methods.logistic_regression import logistic_regression_weighting
 from methods.naive_weighting import naive_weighting
-from methods.neural_network_mmd_loss import (
-    neural_network_mmd_loss_weighting,
-    neural_network_mmd_loss_weighting_with_batches,
-)
+from methods.neural_network_mmd_loss import neural_network_mmd_loss_weighting
+
 from methods.neural_network_classifier import neural_network_weighting
 from methods.random_forest import random_forest_weighting
 from methods.gradient_boosting import gradient_boosting_weighting
@@ -30,21 +29,21 @@ def weighting_experiment():
         artificial_data_experiment(
             data,
             columns,
-            dataset_name,
             compute_weights_function,
             method=method_name,
         )
     elif dataset_name == "census":
+        bias = args.bias
         weights = census_experiments(
             data,
             columns,
-            dataset_name,
             compute_weights_function,
             method=method_name,
             bias_variable=bias_variable,
+            bias=bias,
         )
     else:
-        weights = propensity_scores(
+        weights = gbs_experiments(
             data,
             columns,
             dataset_name,
@@ -74,8 +73,10 @@ def get_weighting_function(method_name):
         compute_weights_function = ada_debiasing_weighting
     elif method_name == "domain_adaptation":
         compute_weights_function = domain_adaptation_weighting
-    elif method_name == 'neural_network_mmd_loss_with_batches':
-        compute_weights_function = neural_network_mmd_loss_weighting_with_batches
+    elif method_name == "neural_network_mmd_loss_with_batches":
+        compute_weights_function = partial(
+            neural_network_mmd_loss_weighting, use_batches=True
+        )
     else:
         compute_weights_function = naive_weighting
 

@@ -1,11 +1,10 @@
 import pandas as pd
 import pathlib
 
-dataset_list = ["allensbach", "gesis", "artificial", "census"]
 file_path = pathlib.Path(__file__).parent.resolve()
 
 
-def load_allensbach():
+def load_gbs():
     allensbach_path = f"{file_path}/../../data/allensbach_mrs.csv"
     allensbach = pd.read_csv(allensbach_path)
     allensbach.drop(["Unnamed: 0", "Gruppe", "GBS-CODE"], axis=1, inplace=True)
@@ -139,24 +138,21 @@ def preprocess_census(df, census_bias):
             census_columns.remove(m)
     df = df.drop(["fnlgwt", "Education", "Relationship", "Occupation"], axis="columns")
 
-    equal_probability = 1 / len(df)
-    df["weights"] = equal_probability - (df[census_bias] * (equal_probability * 0.5))
-    fraction = 0.1
-
-    rep = df.sample(frac=fraction)
-    nonrep_negative_class = df.sample(frac=fraction, weights=df["weights"])
-    rep["label"] = 0
-    nonrep_negative_class["label"] = 1
-    census_nonrep_more_negative_class = pd.concat(
-        [rep.copy(deep=True), nonrep_negative_class.copy(deep=True)]
-    )
-    return census_nonrep_more_negative_class, census_columns
+    return df, census_columns
 
 
 def load_dataset(dataset_name):
-    if dataset_name == "allensbach":
-        return load_allensbach()
+    if dataset_name == "gbs":
+        return load_gbs()
     elif dataset_name == "artificial":
         return load_artificial_data()
     elif dataset_name == "census":
         return load_census_data()
+
+
+def sample(df, sample_size):
+    representative = df.sample(sample_size)
+    representative["label"] = 0
+    non_representative = df.sample(sample_size, weights=df["pi"])
+    non_representative["label"] = 1
+    return non_representative, representative

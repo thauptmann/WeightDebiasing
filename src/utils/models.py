@@ -4,18 +4,16 @@ import numpy as np
 
 
 class WeightingMlp(nn.Module):
-    def __init__(self, number_of_features):
-        # half_feature_size = int(number_of_features / 2)
-        half_feature_size = number_of_features
+    def __init__(self, number_of_features, latent_features):
         super(WeightingMlp, self).__init__()
         self.encoding = nn.Sequential(
-            nn.Linear(number_of_features, half_feature_size),
+            nn.Linear(number_of_features, latent_features),
             nn.ReLU(),
-            nn.BatchNorm1d(half_feature_size),
+            nn.BatchNorm1d(latent_features),
         )
         self.weighting = nn.Sequential(
             nn.Dropout(0.1),
-            nn.Linear(half_feature_size, 1),
+            nn.Linear(latent_features, 1),
             nn.Softplus(),
         )
 
@@ -33,17 +31,16 @@ class WeightingMlp(nn.Module):
 
 
 class Mlp(nn.Module):
-    def __init__(self, number_of_features):
-        half_feature_size = int(number_of_features / 2)
+    def __init__(self, number_of_features, latent_features):
         super(Mlp, self).__init__()
         self.encoding = nn.Sequential(
-            nn.Linear(number_of_features, half_feature_size),
+            nn.Linear(number_of_features, latent_features),
             nn.ReLU(),
-            nn.BatchNorm1d(half_feature_size),
+            nn.BatchNorm1d(latent_features),
         )
         self.weighting = nn.Sequential(
             nn.Dropout(0.1),
-            nn.Linear(half_feature_size, 1),
+            nn.Linear(latent_features, 1),
         )
 
     def forward(self, x):

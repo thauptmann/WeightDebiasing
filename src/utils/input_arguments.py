@@ -1,5 +1,4 @@
 import argparse
-from .data_loader import dataset_list
 
 method_list = [
     "logistic_regression",
@@ -13,11 +12,14 @@ method_list = [
     "domain_adaptation",
 ]
 
+bias_choice = ["oversampling", "undersampling", "none"]
+dataset_list = ["gbs", "artificial", "census"]
+
 
 def input_arguments():
     parser = argparse.ArgumentParser()
-    parser.add_argument("--dataset", default="allensbach", choices=dataset_list)
+    parser.add_argument("--dataset", default="gbs", choices=dataset_list)
     parser.add_argument("--method", default="logistic_regression", choices=method_list)
-    parser.add_argument("--iterations", default=20, type=int)
+    parser.add_argument("--bias", default="none", choices=bias_choice)
 
     return parser.parse_args()

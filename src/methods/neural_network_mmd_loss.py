@@ -12,14 +12,6 @@ from torch.optim.lr_scheduler import ReduceLROnPlateau
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 
-def neural_network_mmd_loss_weighting_with_batches(
-    N, R, columns, use_batches=True, *args, **attributes
-):
-    return neural_network_mmd_loss_weighting(
-        N, R, columns, use_batches, args, **attributes
-    )
-
-
 def neural_network_mmd_loss_weighting(
     N, R, columns, use_batches=False, *args, **attributes
 ):
@@ -68,13 +60,13 @@ def compute_model(
     early_stopping_counter = 0
 
     gamma = calculate_rbf_gamma(np.append(tensor_N, tensor_R, axis=0))
-    mmd_loss_function = WeightedMMDLoss(gamma, len(tensor_R), device)
+    mmd_loss_function = WeightedMMDLoss(gamma, len(tensor_R), latent_features, device)
 
     tensor_N = tensor_N.to(device)
     tensor_R = tensor_R.to(device)
 
     best_mmd = torch.inf
-    mmd_model = WeightingMlp(latent_features).to(device)
+    mmd_model = WeightingMlp(N.shape[1], latent_features).to(device)
     optimizer = torch.optim.Adam(
         mmd_model.parameters(), lr=learning_rate, weight_decay=1e-5
     )
