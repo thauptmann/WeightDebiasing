@@ -1,4 +1,5 @@
 from pathlib import Path
+from sklearn.model_selection import KFold
 import torch
 from scipy.spatial.distance import pdist
 from utils.models import Mlp
@@ -12,17 +13,23 @@ from torch import nn
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 
-def domain_adaptation_weighting(N, R, columns, *args, **attributes):
-    epochs = 1000
-    tensor_N = torch.FloatTensor(N[columns].values)
-    tensor_R = torch.FloatTensor(R[columns].values)
+def domain_adaptation_weighting(N, R, columns, number_of_splits, *args, **attributes):
+    predictions = np.zeros(len(N))
+    k_fold = KFold(n_splits=number_of_splits, shuffle=True)
+    for train_index, test_index in k_fold.split(N):
+        train_N = N.iloc[train_index]
+        test_N = N.iloc[test_index]
+        epochs = 1000
+        tensor_N = torch.FloatTensor(N[train_N][columns].values)
+        tensor_test_N = torch.FloatTensor(N[test_N][columns].values)
+        tensor_R = torch.FloatTensor(R[columns].values)
 
-    domain_adaptation_model = compute_model(epochs, tensor_N, tensor_R)
+        domain_adaptation_model = compute_model(epochs, tensor_N, tensor_R)
 
-    with torch.no_grad():
-        tensor_N = tensor_N.to(device)
-        predictions = domain_adaptation_model(tensor_N).cpu().squeeze()
-    predictions = nn.Sigmoid()(predictions)
+        with torch.no_grad():
+            tensor_N = tensor_N.to(device)
+            predictions = domain_adaptation_model(tensor_test_N).cpu().squeeze()
+        predictions[test_index] = nn.Sigmoid()(predictions)
     weights = (1 - predictions) / predictions
 
     return weights

@@ -24,10 +24,10 @@ def artificial_data_experiment(
     columns,
     dataset,
     propensity_method,
-    number_of_splits=10,
+    number_of_splits=5,
     bins=100,
     method="",
-    number_of_repetitions=1000,
+    number_of_repetitions=10,
     sample_size=1000,
 ):
     result_path = Path("../results")
@@ -79,8 +79,8 @@ def artificial_data_experiment(
             f"ASAMS: {np.nanmean(asams_list)} +- {np.nanstd(asams_list)}\n"
         )
         result_file.write(
-            f"MMDs: {np.nanmean(weighted_mmds_list)} +-\
-             {np.nanstd(weighted_mmds_list)}\n"
+            f"MMDs: {np.nanmean(weighted_mmds_list)} +-"
+            f"{np.nanstd(weighted_mmds_list)}\n"
         )
         result_file.write("\nRelative Biases:\n")
         for column, mean_bias, sd_bias in zip(

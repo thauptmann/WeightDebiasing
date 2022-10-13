@@ -3,7 +3,6 @@ import math
 import pandas as pd
 import numpy as np
 
-from tqdm.auto import tqdm
 from sklearn.model_selection import GridSearchCV
 from sklearn.tree import DecisionTreeClassifier
 
@@ -17,7 +16,7 @@ def ada_debiasing_weighting(N, R, columns, number_of_splits, *args, **kwargs):
     weights_R = (np.ones(len(R)) / len(R)) * weight_relation
     learning_rate = 0.5
 
-    for _ in tqdm(range(number_of_iterations)):
+    for _ in range(number_of_iterations):
         prediction_n = train_weighted_tree(
             N, R, number_of_splits, columns, np.concatenate([weights_N, weights_R])
         )
