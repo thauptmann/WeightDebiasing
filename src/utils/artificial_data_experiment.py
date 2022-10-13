@@ -23,7 +23,7 @@ def artificial_data_experiment(
     columns,
     dataset,
     propensity_method,
-    number_of_splits=5,
+    number_of_splits=500,
     bins=100,
     method="",
     number_of_repetitions=5,

@@ -5,7 +5,6 @@ from scipy.spatial.distance import pdist
 from utils.models import WeightingMlp
 from .loss import WeightedMMDLoss
 import numpy as np
-from tqdm import trange
 import matplotlib.pyplot as plt
 from utils.visualisation import plot_line
 from torch.optim.lr_scheduler import ReduceLROnPlateau
