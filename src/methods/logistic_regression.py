@@ -11,7 +11,7 @@ def logistic_regression_weighting(N, R, columns, number_of_splits, *args, **attr
         train_N = N.iloc[train_index]
         test_N = N.iloc[test_index]
         train = pd.concat([N, R])
-        clf = train_logistic_regression(train_N[columns], train.label)
+        clf = train_logistic_regression(train[columns], train.label)
         predictions[test_index] = clf.predict_proba(test_N[columns])[:, 1]
     weights = (1 - predictions) / predictions
     return weights

@@ -16,7 +16,6 @@ seed = 5
 np.random.seed(seed)
 random.seed(seed)
 torch.manual_seed(seed)
-eps = 1e-20
 
 
 def artificial_data_experiment(
