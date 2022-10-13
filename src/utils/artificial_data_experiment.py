@@ -71,13 +71,16 @@ def artificial_data_experiment(
         relative_biases = compute_relative_bias(weighted_means, population_means)
         relative_biases_list.append(relative_biases)
 
-    mean_biases = np.mean(relative_biases_list, axis=0)
-    sd_biases = np.std(relative_biases_list, axis=0)
+    mean_biases = np.nanmean(relative_biases_list, axis=0)
+    sd_biases = np.nanstd(relative_biases_list, axis=0)
 
     with open(visualisation_path / "results.txt", "w") as result_file:
-        result_file.write(f"ASAMS: {np.mean(asams_list)} +- {np.std(asams_list)}\n")
         result_file.write(
-            f"MMDs: {np.mean(weighted_mmds_list)} +- {np.std(weighted_mmds_list)}\n"
+            f"ASAMS: {np.nanmean(asams_list)} +- {np.nanstd(asams_list)}\n"
+        )
+        result_file.write(
+            f"MMDs: {np.nanmean(weighted_mmds_list)} +-\
+             {np.nanstd(weighted_mmds_list)}\n"
         )
         result_file.write("\nRelative Biases:\n")
         for column, mean_bias, sd_bias in zip(
