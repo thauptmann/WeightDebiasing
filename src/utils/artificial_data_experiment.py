@@ -23,10 +23,10 @@ def artificial_data_experiment(
     columns,
     dataset,
     propensity_method,
-    number_of_splits=500,
+    number_of_splits=10,
     bins=100,
     method="",
-    number_of_repetitions=5,
+    number_of_repetitions=500,
     sample_size=1000,
 ):
     result_path = Path("../results")
