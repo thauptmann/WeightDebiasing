@@ -5,7 +5,6 @@ from scipy.spatial.distance import pdist
 from utils.models import Mlp
 from .loss import MMDLoss
 import numpy as np
-from tqdm import trange
 from torch.optim.lr_scheduler import ReduceLROnPlateau
 from torch.utils.data import TensorDataset, DataLoader
 from torch import nn
@@ -23,7 +22,7 @@ def domain_adaptation_weighting(N, R, columns, number_of_splits, *args, **attrib
         tensor_N = torch.FloatTensor(train_N[columns].values)
         number_of_features = tensor_N.shape[1]
         tensor_test_N = torch.FloatTensor(test_N[columns].values)
-        
+
         tensor_R = torch.FloatTensor(R[columns].values)
 
         latent_feature_list = [
@@ -51,13 +50,7 @@ def domain_adaptation_weighting(N, R, columns, number_of_splits, *args, **attrib
     return weights
 
 
-def compute_model(
-    epochs,
-    tensor_n,
-    tensor_r,
-    patience=100,
-    latent_features=1
-):
+def compute_model(epochs, tensor_n, tensor_r, patience=100, latent_features=1):
     model_path = Path("best_model.pt")
 
     gamma = calculate_rbf_gamma(torch.concat([tensor_n, tensor_r]))
@@ -87,7 +80,7 @@ def compute_model(
     scheduler = ReduceLROnPlateau(optimizer, patience=int(patience / 2))
     mmd_loss_weight = 0.1
 
-    for _ in trange(epochs):
+    for _ in range(epochs):
         domain_adaptation_model.train()
         for x, y in dataloader:
             x = x.to(device)
