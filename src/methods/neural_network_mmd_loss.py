@@ -34,7 +34,7 @@ def neural_network_mmd_loss_weighting(
     best_mmd_list = None
     best_mean_list = None
     if bias_values is not None:
-        bias_values = torch.FloatTensor(bias_values).to(device)
+        bias_values = torch.FloatTensor(bias_values.values).to(device)
 
     for latent_features in latent_feature_list:
         mmd_model, mmd_list, mmd, means = compute_model(
