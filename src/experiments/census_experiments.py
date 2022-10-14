@@ -104,7 +104,7 @@ def census_experiments(
         )
         result_file.write(
             f"MMDs: {np.nanmean(weighted_mmds_list)} +- "
-            f"{np.nanstd(weighted_mmds_list)}\n"
+            f"{np.nanstd(weighted_mmds_list)}\n\n"
         )
         result_file.write("\nRelative Biases:\n")
         for column, mean_bias, sd_bias in zip(
@@ -112,7 +112,7 @@ def census_experiments(
         ):
             result_file.write(f"{column}: {mean_bias} +- {sd_bias}\n")
 
-    if method == "neural_network_with_mmd_loss":
+    if method == "neural_network_mmd_loss":
         plot_results_with_variance(
             mean_list,
             mmd_list,
