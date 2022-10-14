@@ -83,7 +83,7 @@ def compute_model(
     tensor_R = tensor_R.to(device)
 
     if bias_values is not None:
-        validation_weights = torch.ones(len(tensor_N)) / len(tensor_N)
+        validation_weights = (torch.ones(len(tensor_N)) / len(tensor_N)).to(device)
         positive_value = torch.sum(bias_values * validation_weights.squeeze())
         means.append(positive_value)
 
