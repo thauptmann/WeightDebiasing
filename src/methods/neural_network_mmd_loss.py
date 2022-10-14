@@ -131,9 +131,9 @@ def compute_model(
 
         scheduler.step(mmd)
         if bias_values is not None:
-            validation_weights = validation_weights / sum(validation_weights)
+            validation_weights = (validation_weights / sum(validation_weights)).to(device)
             positive_value = torch.sum(
-                torch.FloatTensor(bias_values).to(device) * validation_weights.squeeze()
+                bias_values * validation_weights.squeeze()
             )
             means.append(positive_value)
 
