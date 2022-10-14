@@ -39,7 +39,7 @@ def census_experiments(
     df = df.reset_index(drop=True)
 
     equal_probability = 1 / len(df)
-    bias_strength = 0.4
+    bias_strength = 0.3
     if bias_type == "none":
         df["pi"] = equal_probability
     elif bias_type == "undersampling":
