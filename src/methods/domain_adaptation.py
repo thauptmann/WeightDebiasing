@@ -23,6 +23,7 @@ def domain_adaptation_weighting(N, R, columns, number_of_splits, *args, **attrib
         tensor_N = torch.FloatTensor(train_N[columns].values)
         number_of_features = tensor_N.shape[1]
         tensor_test_N = torch.FloatTensor(test_N[columns].values)
+        
         tensor_R = torch.FloatTensor(R[columns].values)
 
         latent_feature_list = [
@@ -42,7 +43,7 @@ def domain_adaptation_weighting(N, R, columns, number_of_splits, *args, **attrib
                 best_model = domain_adaptation_model
 
         with torch.no_grad():
-            tensor_N = tensor_N.to(device)
+            tensor_test_N = tensor_test_N.to(device)
             prediction = best_model(tensor_test_N).cpu().squeeze()
         predictions[test_index] = nn.Sigmoid()(prediction)
     weights = (1 - predictions) / predictions
