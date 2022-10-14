@@ -6,8 +6,8 @@ from utils.models import WeightingMlp
 from .loss import WeightedMMDLoss
 import numpy as np
 import matplotlib.pyplot as plt
-from utils.visualisation import plot_line
 from torch.optim.lr_scheduler import ReduceLROnPlateau
+from tqdm import trange
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
@@ -16,7 +16,10 @@ def neural_network_mmd_loss_weighting(
     N, R, columns, use_batches=False, *args, **attributes
 ):
     passes = 10000
-    save_path = attributes["save_path"]
+    bias_variable = attributes["bias_variable"]
+    bias_values = None
+    if bias_variable is not None:
+        bias_values = N[bias_variable]
 
     tensor_N = torch.FloatTensor(N[columns].values)
     tensor_R = torch.FloatTensor(R[columns].values)
@@ -29,20 +32,25 @@ def neural_network_mmd_loss_weighting(
     best_mmd = np.inf
     best_model = None
     best_mmd_list = None
+    best_mean_list = None
 
     for latent_features in latent_feature_list:
-        mmd_model, mmd_list, mmd = compute_model(
+        mmd_model, mmd_list, mmd, means = compute_model(
             passes,
             tensor_N,
             tensor_R,
             use_batches=use_batches,
             latent_features=latent_features,
+            bias_values=bias_values.values,
         )
         if mmd < best_mmd:
             best_model = mmd_model
             best_mmd_list = mmd_list
+            best_mean_list = means
 
-    plot_line(best_mmd_list, save_path, "MMDs_per_pass")
+    # plot_line(best_mmd_list, save_path, "MMDs_per_pass")
+    attributes["mean_list"].append(best_mean_list)
+    attributes["mmd_list"].append(best_mmd_list)
 
     with torch.no_grad():
         tensor_N = tensor_N.to(device)
@@ -51,13 +59,20 @@ def neural_network_mmd_loss_weighting(
 
 
 def compute_model(
-    passes, tensor_N, tensor_R, patience=500, use_batches=False, latent_features=1
+    passes,
+    tensor_N,
+    tensor_R,
+    patience=500,
+    use_batches=False,
+    latent_features=1,
+    bias_values=None,
 ):
     model_path = Path("best_model.pt")
     mmd_list = []
     batch_size = 512
     learning_rate = 0.001
     early_stopping_counter = 0
+    means = []
 
     gamma = calculate_rbf_gamma(np.append(tensor_N, tensor_R, axis=0))
     mmd_loss_function = WeightedMMDLoss(gamma, len(tensor_R), device)
@@ -65,13 +80,20 @@ def compute_model(
     tensor_N = tensor_N.to(device)
     tensor_R = tensor_R.to(device)
 
+    if bias_values is not None:
+        validation_weights = torch.ones(len(tensor_N)) / len(tensor_N)
+        positive_value = torch.sum(
+            torch.FloatTensor(bias_values) * validation_weights.squeeze()
+        )
+        means.append(positive_value)
+
     best_mmd = torch.inf
     mmd_model = WeightingMlp(tensor_N.shape[1], latent_features).to(device)
     optimizer = torch.optim.Adam(
         mmd_model.parameters(), lr=learning_rate, weight_decay=1e-5
     )
     scheduler = ReduceLROnPlateau(optimizer, patience=int(patience / 2))
-    for _ in range(passes):
+    for _ in trange(passes):
         mmd_model.train()
         optimizer.zero_grad()
 
@@ -93,7 +115,9 @@ def compute_model(
             loss.backward()
             optimizer.step()
 
-        mmd = validate_model(tensor_N, tensor_R, mmd_loss_function, mmd_model)
+        mmd, validation_weights = validate_model(
+            tensor_N, tensor_R, mmd_loss_function, mmd_model
+        )
         mmd_list.append(mmd.cpu())
 
         if mmd < best_mmd:
@@ -106,11 +130,17 @@ def compute_model(
                 break
 
         scheduler.step(mmd)
+        if bias_values is not None:
+            validation_weights = validation_weights / sum(validation_weights)
+            positive_value = torch.sum(
+                torch.FloatTensor(bias_values) * validation_weights.squeeze()
+            )
+            means.append(positive_value)
 
     mmd_model.load_state_dict(torch.load(model_path))
     mmd_model.eval()
 
-    return mmd_model, mmd_list, best_mmd
+    return mmd_model, mmd_list, best_mmd, means
 
 
 def validate_model(tensor_N, tensor_R, mmd_loss_function, mmd_model):
@@ -123,7 +153,7 @@ def validate_model(tensor_N, tensor_R, mmd_loss_function, mmd_model):
         validation_weights,
     )
 
-    return mmd
+    return mmd, validation_weights
 
 
 def compute_shap_values(model, tensor_N, columns, save_path):

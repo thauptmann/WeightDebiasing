@@ -40,7 +40,7 @@ def weighting_experiment():
             compute_weights_function,
             method=method_name,
             bias_variable=bias_variable,
-            bias=bias,
+            bias_type=bias,
         )
     else:
         weights = gbs_experiments(

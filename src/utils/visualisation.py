@@ -101,3 +101,54 @@ def plot_results(
     # plot_line(asams, visualisation_path, title="ASAM")
     # plot_line([mmd, weighted_mmd], visualisation_path, title="MMD")
     plot_weights(weights / sum(weights), visualisation_path, 0, bins)
+
+
+def plot_results_with_variance(
+    ratio_list,
+    mmd_list,
+    representative_ratio,
+    visualisation_path,
+):
+    plot_mmd_with_variance(mmd_list, visualisation_path)
+    plot_mean_with_variance(ratio_list, representative_ratio, visualisation_path)
+
+
+def plot_mmd_with_variance(mmd_list, visualisation_path):
+    mean_mmd = np.mean(mmd_list, axis=0)
+    sd_mmd = np.std(mmd_list, axis=0)
+    plt.plot(mean_mmd, color="blue")
+    plt.fill_between(
+        x=range(len(mean_mmd)),
+        y1=mean_mmd - sd_mmd,
+        y2=mean_mmd + sd_mmd,
+        color="blue",
+        alpha=0.5,
+    )
+    plt.ylabel("Weighted MMD")
+    plt.xlabel("Pass")
+    plt.savefig(Path(visualisation_path) / "weighted_mmd.pdf")
+    plt.clf()
+
+
+def plot_mean_with_variance(mean_list, representative_mean, visualisation_path):
+    mean_mean = np.mean(mean_list, axis=0)
+    sd_mean = np.std(mean_list, axis=0)
+    plt.plot(mean_mean, color="blue", label="Weighted Mean", linestyle="--")
+    plt.plot(
+        len(mean_mean) * [representative_mean],
+        color="black",
+        linestyle="-",
+        label="Population Mean",
+    )
+    plt.fill_between(
+        x=range(len(mean_mean)),
+        y1=mean_mean - sd_mean,
+        y2=mean_mean + sd_mean,
+        color="blue",
+        alpha=0.5,
+    )
+    plt.ylabel("Mean")
+    plt.xlabel("Pass")
+    plt.legend()
+    plt.savefig(Path(visualisation_path) / "weighted_mean.pdf")
+    plt.clf()

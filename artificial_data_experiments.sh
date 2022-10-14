@@ -4,5 +4,4 @@ python src/run_weighting_experiment.py --dataset artificial --method random_fore
 python src/run_weighting_experiment.py --dataset artificial --method gradient_boosting
 python src/run_weighting_experiment.py --dataset artificial --method neural_network_classifier
 python src/run_weighting_experiment.py --dataset artificial --method neural_network_mmd_loss
-python src/run_weighting_experiment.py --dataset artificial --method adaDebias
 python src/run_weighting_experiment.py --dataset artificial --method domain_adaptation
