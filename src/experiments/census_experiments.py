@@ -28,10 +28,10 @@ def census_experiments(
     propensity_method,
     number_of_splits=10,
     method="",
-    number_of_repetitions=1,
+    number_of_repetitions=500,
     bias_variable=None,
     bias_type=None,
-    sample_size=2000,
+    sample_size=3000,
 ):
     result_path = Path("../results")
     visualisation_path = result_path / method / "census" / bias_type
