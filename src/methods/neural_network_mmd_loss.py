@@ -43,7 +43,7 @@ def neural_network_mmd_loss_weighting(
             tensor_R,
             use_batches=use_batches,
             latent_features=latent_features,
-            bias_values=bias_values.values,
+            bias_values=bias_values,
         )
         if mmd < best_mmd:
             best_model = mmd_model
