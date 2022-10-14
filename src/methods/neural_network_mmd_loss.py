@@ -33,6 +33,8 @@ def neural_network_mmd_loss_weighting(
     best_model = None
     best_mmd_list = None
     best_mean_list = None
+    if bias_values is not None:
+        bias_values = torch.FloatTensor(bias_values).to(device)
 
     for latent_features in latent_feature_list:
         mmd_model, mmd_list, mmd, means = compute_model(
@@ -82,9 +84,7 @@ def compute_model(
 
     if bias_values is not None:
         validation_weights = torch.ones(len(tensor_N)) / len(tensor_N)
-        positive_value = torch.sum(
-            torch.FloatTensor(bias_values) * validation_weights.squeeze()
-        )
+        positive_value = torch.sum(bias_values * validation_weights.squeeze())
         means.append(positive_value)
 
     best_mmd = torch.inf
@@ -133,7 +133,7 @@ def compute_model(
         if bias_values is not None:
             validation_weights = validation_weights / sum(validation_weights)
             positive_value = torch.sum(
-                torch.FloatTensor(bias_values) * validation_weights.squeeze()
+                torch.FloatTensor(bias_values).to(device) * validation_weights.squeeze()
             )
             means.append(positive_value)
 
