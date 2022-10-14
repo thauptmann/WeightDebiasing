@@ -85,7 +85,7 @@ def compute_model(
     if bias_values is not None:
         validation_weights = (torch.ones(len(tensor_N)) / len(tensor_N)).to(device)
         positive_value = torch.sum(bias_values * validation_weights.squeeze())
-        means.append(positive_value)
+        means.append(positive_value.cpu())
 
     best_mmd = torch.inf
     mmd_model = WeightingMlp(tensor_N.shape[1], latent_features).to(device)
@@ -135,7 +135,7 @@ def compute_model(
             positive_value = torch.sum(
                 bias_values * validation_weights.squeeze()
             )
-            means.append(positive_value)
+            means.append(positive_value.cpu())
 
     mmd_model.load_state_dict(torch.load(model_path))
     mmd_model.eval()
