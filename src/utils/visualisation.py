@@ -114,8 +114,8 @@ def plot_results_with_variance(
 
 
 def plot_mmd_with_variance(mmd_list, visualisation_path):
-    mean_mmd = np.mean(mmd_list, axis=0)
-    sd_mmd = np.std(mmd_list, axis=0)
+    mean_mmd = np.nanmean(mmd_list, axis=0)
+    sd_mmd = np.nanstd(mmd_list, axis=0)
     plt.plot(mean_mmd, color="blue")
     plt.fill_between(
         x=range(len(mean_mmd)),

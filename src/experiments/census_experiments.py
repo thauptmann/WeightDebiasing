@@ -8,7 +8,6 @@ from utils.metrics import (
     average_standardised_absolute_mean_distance,
     compute_relative_bias,
     maximum_mean_discrepancy_weighted,
-    maximum_mean_discrepancy,
     scale_df,
     compute_weighted_means,
 )
@@ -41,7 +40,7 @@ def census_experiments(
     equal_probability = 1 / len(df)
     bias_strength = 0.2
     if bias_type == "none":
-        df["pi"] = equal_probability
+        df["pi"] = 1
     elif bias_type == "undersampling":
         df["pi"] = equal_probability - (
             df[bias_variable] * (equal_probability * bias_strength)

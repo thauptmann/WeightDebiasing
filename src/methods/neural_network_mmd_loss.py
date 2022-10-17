@@ -12,9 +12,9 @@ device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 
 def neural_network_mmd_loss_weighting(
-    N, R, columns, use_batches=False, *args, **attributes
+    N, R, columns, use_batches=False, early_stopping=True, *args, **attributes
 ):
-    passes = 10000
+    passes = 8000
     bias_variable = attributes["bias_variable"]
     bias_values = None
     if bias_variable is not None:
@@ -72,7 +72,6 @@ def compute_model(
     mmd_list = []
     batch_size = 512
     learning_rate = 0.001
-    early_stopping_counter = 0
     means = []
 
     gamma = calculate_rbf_gamma(np.append(tensor_N, tensor_R, axis=0))
@@ -117,16 +116,11 @@ def compute_model(
         mmd, validation_weights = validate_model(
             tensor_N, tensor_R, mmd_loss_function, mmd_model
         )
-        mmd_list.append(mmd.cpu())
+        mmd_list.append(mmd.cpu().numpy())
 
         if mmd < best_mmd:
             best_mmd = mmd
             torch.save(mmd_model.state_dict(), model_path)
-            early_stopping_counter = 0
-        else:
-            early_stopping_counter += 1
-            if early_stopping_counter > patience:
-                break
 
         scheduler.step(mmd)
         if bias_values is not None:
@@ -139,7 +133,7 @@ def compute_model(
     mmd_model.load_state_dict(torch.load(model_path))
     mmd_model.eval()
 
-    return mmd_model, mmd_list, best_mmd, means
+    return mmd_model, np.squeeze(mmd_list), best_mmd, means
 
 
 def validate_model(tensor_N, tensor_R, mmd_loss_function, mmd_model):
