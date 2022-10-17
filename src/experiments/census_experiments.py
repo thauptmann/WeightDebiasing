@@ -31,7 +31,7 @@ def census_experiments(
     number_of_repetitions=500,
     bias_variable=None,
     bias_type=None,
-    sample_size=3000,
+    sample_size=1000,
 ):
     result_path = Path("../results")
     visualisation_path = result_path / method / "census" / bias_type
@@ -39,7 +39,7 @@ def census_experiments(
     df = df.reset_index(drop=True)
 
     equal_probability = 1 / len(df)
-    bias_strength = 0.3
+    bias_strength = 0.2
     if bias_type == "none":
         df["pi"] = equal_probability
     elif bias_type == "undersampling":
