@@ -7,7 +7,6 @@ from .loss import WeightedMMDLoss
 import numpy as np
 import matplotlib.pyplot as plt
 from torch.optim.lr_scheduler import ReduceLROnPlateau
-from tqdm import trange
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
@@ -93,7 +92,7 @@ def compute_model(
         mmd_model.parameters(), lr=learning_rate, weight_decay=1e-5
     )
     scheduler = ReduceLROnPlateau(optimizer, patience=int(patience / 2))
-    for _ in trange(passes):
+    for _ in range(passes):
         mmd_model.train()
         optimizer.zero_grad()
 
@@ -131,10 +130,10 @@ def compute_model(
 
         scheduler.step(mmd)
         if bias_values is not None:
-            validation_weights = (validation_weights / sum(validation_weights)).to(device)
-            positive_value = torch.sum(
-                bias_values * validation_weights.squeeze()
+            validation_weights = (validation_weights / sum(validation_weights)).to(
+                device
             )
+            positive_value = torch.sum(bias_values * validation_weights.squeeze())
             means.append(positive_value.cpu())
 
     mmd_model.load_state_dict(torch.load(model_path))

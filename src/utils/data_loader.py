@@ -121,7 +121,8 @@ def preprocess_census(df, census_bias):
     ctg = ["Workclass", "Marital Status", "Race", "Country"]
     for c in ctg:
         df = pd.concat(
-            [df, pd.get_dummies(df[c], prefix=c, dummy_na=False)], axis=1
+            [df, pd.get_dummies(df[c], prefix=c, dummy_na=False, drop_first=True)],
+            axis=1,
         ).drop([c], axis=1)
     census_columns = list(df.columns)
     meta = [
