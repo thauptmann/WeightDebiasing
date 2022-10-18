@@ -11,7 +11,6 @@ from utils.metrics import (
     compute_relative_bias,
 )
 import random
-from utils.visualisation import plot_results
 from tqdm import trange
 
 seed = 5
@@ -43,9 +42,6 @@ def artificial_data_experiment(
 
     for _ in trange(number_of_repetitions):
         scaled_N, scaled_R = sample(scaled_df, sample_size)
-        reference_means = np.mean(
-            scaled_R.drop(["pi", "label"], axis="columns").values, axis=0
-        )
         weights = propensity_method(
             scaled_N,
             scaled_R,
@@ -70,7 +66,11 @@ def artificial_data_experiment(
             scaled_N.drop(["label", "pi"], axis="columns"), weights
         )
 
+        reference_means = np.mean(
+            scaled_R.drop(["pi", "label"], axis="columns").values, axis=0
+        )
         relative_biases = compute_relative_bias(weighted_means, reference_means)
+
         relative_biases_list.append(relative_biases)
 
     mean_biases = np.nanmean(relative_biases_list, axis=0)
@@ -89,11 +89,3 @@ def artificial_data_experiment(
             scaled_df.drop(["pi"], axis="columns").columns, mean_biases, sd_biases
         ):
             result_file.write(f"{column}: {mean_bias} +- {sd_bias}\n")
-
-    plot_results(
-        bins,
-        scaled_N,
-        scaled_R,
-        visualisation_path,
-        weights,
-    )
