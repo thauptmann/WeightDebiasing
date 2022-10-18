@@ -32,7 +32,8 @@ def census_experiments(
     bias_type=None,
     sample_size=1000,
 ):
-    result_path = Path("../results")
+    file_directory = Path(__file__).parent
+    result_path = Path(file_directory, "../results")
     visualisation_path = result_path / method / "census" / bias_type
     visualisation_path.mkdir(exist_ok=True, parents=True)
     df = df.reset_index(drop=True)
@@ -64,6 +65,11 @@ def census_experiments(
 
     for _ in trange(number_of_repetitions):
         scaled_N, scaled_R = sample(scaled_df, sample_size)
+
+        reference_means = np.mean(
+            scaled_R.drop(["pi", "label"], axis="columns").values, axis=0
+        )
+        tmp = abs(reference_means - population_means)
 
         weights = propensity_method(
             scaled_N,

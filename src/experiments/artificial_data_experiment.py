@@ -30,7 +30,8 @@ def artificial_data_experiment(
     number_of_repetitions=500,
     sample_size=1000,
 ):
-    result_path = Path("../results")
+    file_directory = Path(__file__).parent
+    result_path = Path(file_directory, "../results")
     visualisation_path = result_path / method / "artificial"
     visualisation_path.mkdir(exist_ok=True, parents=True)
     df = df.reset_index(drop=True)
@@ -42,7 +43,9 @@ def artificial_data_experiment(
 
     for _ in trange(number_of_repetitions):
         scaled_N, scaled_R = sample(scaled_df, sample_size)
-        reference_means = np.mean(scaled_R.drop(["pi", "label"], axis="columns").values, axis=0)
+        reference_means = np.mean(
+            scaled_R.drop(["pi", "label"], axis="columns").values, axis=0
+        )
         weights = propensity_method(
             scaled_N,
             scaled_R,
