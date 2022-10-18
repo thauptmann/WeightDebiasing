@@ -1,6 +1,6 @@
-python src/run_weighting_experiment.py --dataset census --method naive --bias none
-python src/run_weighting_experiment.py --dataset census --method naive --bias oversampling
-python src/run_weighting_experiment.py --dataset census --method naive --bias undersampling
+python src/run_weighting_experiment.py --dataset census --method none --bias none
+python src/run_weighting_experiment.py --dataset census --method none --bias oversampling
+python src/run_weighting_experiment.py --dataset census --method none --bias undersampling
 
 python src/run_weighting_experiment.py --dataset census --method logistic_regression --bias none
 python src/run_weighting_experiment.py --dataset census --method logistic_regression --bias oversampling

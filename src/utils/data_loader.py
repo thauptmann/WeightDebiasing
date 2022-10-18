@@ -1,7 +1,7 @@
 import pandas as pd
 import pathlib
 
-file_path = pathlib.Path(__file__).parent.resolve()
+file_path = pathlib.Path(__file__).parent
 
 
 def load_gbs():
