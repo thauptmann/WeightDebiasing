@@ -30,7 +30,7 @@ def census_experiments(
     number_of_repetitions=500,
     bias_variable=None,
     bias_type=None,
-    sample_size=1000,
+    sample_size=2000,
 ):
     file_directory = Path(__file__).parent
     result_path = Path(file_directory, "../../results")
@@ -53,7 +53,6 @@ def census_experiments(
 
     scaled_df, scaler = scale_df(df, columns)
 
-    population_means = np.mean(df.drop(["pi"], axis="columns").values, axis=0)
     positive = np.sum(df[bias_variable].values)
     representative_mean = positive / len(df)
 
@@ -65,11 +64,6 @@ def census_experiments(
 
     for _ in trange(number_of_repetitions):
         scaled_N, scaled_R = sample(scaled_df, sample_size)
-
-        reference_means = np.mean(
-            scaled_R.drop(["pi", "label"], axis="columns").values, axis=0
-        )
-        tmp = abs(reference_means - population_means)
 
         weights = propensity_method(
             scaled_N,
@@ -94,10 +88,14 @@ def census_experiments(
         scaled_N[columns] = scaler.inverse_transform(scaled_N[columns])
         scaled_R[columns] = scaler.inverse_transform(scaled_R[columns])
 
+        reference_means = np.mean(
+            scaled_R.drop(["pi", "label"], axis="columns").values, axis=0
+        )
+
         weighted_means = compute_weighted_means(
             scaled_N.drop(["pi", "label"], axis="columns"), weights
         )
-        relative_biases = compute_relative_bias(weighted_means, population_means)
+        relative_biases = compute_relative_bias(weighted_means, reference_means)
         relative_biases_list.append(relative_biases)
 
     mean_biases = np.nanmean(relative_biases_list, axis=0)

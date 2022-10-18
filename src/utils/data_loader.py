@@ -118,6 +118,7 @@ def preprocess_census(df, census_bias):
     df["Sex"].replace(" Male", 1, inplace=True)
     df["Sex"].replace(" Female", 0, inplace=True)
     df.dropna(inplace=True)
+    df = df[df["Workclass"] != " Without-pay"]
     ctg = ["Workclass", "Marital Status", "Race", "Country"]
     for c in ctg:
         df = pd.concat(
