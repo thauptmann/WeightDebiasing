@@ -50,8 +50,9 @@ def neural_network_mmd_loss_weighting(
             best_mean_list = means
 
     # plot_line(best_mmd_list, save_path, "MMDs_per_pass")
-    attributes["mean_list"].append(best_mean_list)
-    attributes["mmd_list"].append(best_mmd_list)
+    if bias_values is not None:
+        attributes["mean_list"].append(best_mean_list)
+        attributes["mmd_list"].append(best_mmd_list)
 
     with torch.no_grad():
         tensor_N = tensor_N.to(device)

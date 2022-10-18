@@ -30,7 +30,7 @@ def census_experiments(
     number_of_repetitions=500,
     bias_variable=None,
     bias_type=None,
-    sample_size=2000,
+    sample_size=1000,
 ):
     file_directory = Path(__file__).parent
     result_path = Path(file_directory, "../../results")
