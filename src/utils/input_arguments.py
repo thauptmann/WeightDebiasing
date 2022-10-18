@@ -7,7 +7,7 @@ method_list = [
     "neural_network_classifier",
     "neural_network_mmd_loss",
     "neural_network_mmd_loss_with_batches",
-    "naive",
+    "none",
     "adaDebias",
     "domain_adaptation",
 ]

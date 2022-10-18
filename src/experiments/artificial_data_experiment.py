@@ -35,7 +35,6 @@ def artificial_data_experiment(
     visualisation_path.mkdir(exist_ok=True, parents=True)
     df = df.reset_index(drop=True)
     scaled_df, scaler = scale_df(df, columns)
-    population_means = np.mean(df.drop(["pi"], axis="columns").values, axis=0)
 
     weighted_mmds_list = []
     asams_list = []
@@ -43,7 +42,7 @@ def artificial_data_experiment(
 
     for _ in trange(number_of_repetitions):
         scaled_N, scaled_R = sample(scaled_df, sample_size)
-
+        reference_means = np.mean(scaled_R.drop(["pi", "label"], axis="columns").values, axis=0)
         weights = propensity_method(
             scaled_N,
             scaled_R,
@@ -68,7 +67,7 @@ def artificial_data_experiment(
             scaled_N.drop(["label", "pi"], axis="columns"), weights
         )
 
-        relative_biases = compute_relative_bias(weighted_means, population_means)
+        relative_biases = compute_relative_bias(weighted_means, reference_means)
         relative_biases_list.append(relative_biases)
 
     mean_biases = np.nanmean(relative_biases_list, axis=0)

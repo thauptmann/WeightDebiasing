@@ -57,7 +57,7 @@ def weighting_experiment():
 
 
 def get_weighting_function(method_name):
-    if method_name == "naive":
+    if method_name == "none":
         compute_weights_function = naive_weighting
     elif method_name == "logistic_regression":
         compute_weights_function = logistic_regression_weighting
