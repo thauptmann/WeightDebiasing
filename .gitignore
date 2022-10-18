@@ -193,9 +193,8 @@ fabric.properties
 .vscode/settings.json
 results/logistic_regression_classifier/results.txt
 results/neural_network_mmd_loss/results.txt
-src/best_model.pt
 results/neural_network_mmd_loss/allensbach/results.txt
 data
 data_propensity
 results/*
-best_model.pt
+*.pt
