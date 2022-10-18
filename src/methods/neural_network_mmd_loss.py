@@ -68,7 +68,7 @@ def compute_model(
     latent_features=1,
     bias_values=None,
 ):
-    model_path = Path("best_model.pt")
+    model_path = Path("best_model_mmd_loss.pt")
     mmd_list = []
     batch_size = 512
     learning_rate = 0.001

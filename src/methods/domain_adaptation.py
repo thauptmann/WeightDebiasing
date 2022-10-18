@@ -51,7 +51,7 @@ def domain_adaptation_weighting(N, R, columns, number_of_splits, *args, **attrib
 
 
 def compute_model(epochs, tensor_n, tensor_r, patience=100, latent_features=1):
-    model_path = Path("best_model.pt")
+    model_path = Path("best_model_domain_adaptation.pt")
 
     gamma = calculate_rbf_gamma(torch.concat([tensor_n, tensor_r]))
     mmd_loss_function = MMDLoss(gamma, device)
