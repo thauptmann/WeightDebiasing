@@ -12,9 +12,9 @@ device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 
 def neural_network_mmd_loss_weighting(
-    N, R, columns, use_batches=False, early_stopping=True, *args, **attributes
+    N, R, columns, use_batches=False, *args, **attributes
 ):
-    passes = 1000
+    passes = 5000
     bias_variable = attributes["bias_variable"]
     bias_values = None
     if bias_variable is not None:
@@ -64,7 +64,7 @@ def compute_model(
     passes,
     tensor_N,
     tensor_R,
-    patience=500,
+    patience=250,
     use_batches=False,
     latent_features=1,
     bias_values=None,
@@ -91,7 +91,7 @@ def compute_model(
     optimizer = torch.optim.Adam(
         mmd_model.parameters(), lr=learning_rate, weight_decay=1e-5
     )
-    scheduler = ReduceLROnPlateau(optimizer, patience=int(patience / 2))
+    scheduler = ReduceLROnPlateau(optimizer, patience=patience)
     for _ in range(passes):
         mmd_model.train()
         optimizer.zero_grad()
