@@ -3,6 +3,7 @@ import numpy as np
 from pathlib import Path
 
 from utils.data_loader import sample
+from utils.visualisation import plot_weights
 
 from utils.metrics import (
     average_standardised_absolute_mean_distance,
@@ -27,10 +28,11 @@ def census_experiments(
     propensity_method,
     number_of_splits=10,
     method="",
-    number_of_repetitions=5,
+    number_of_repetitions=500,
     bias_variable=None,
     bias_type=None,
-    sample_size=4000,
+    sample_size=1000,
+    bias_strength=0.02,
 ):
     file_directory = Path(__file__).parent
     result_path = Path(file_directory, "../../results")
@@ -40,7 +42,7 @@ def census_experiments(
 
     equal_probability = 1 / len(df)
     equal_logit = np.log(equal_probability / (1 - equal_probability))
-    bias_strength = 0.1
+
     if bias_type == "none":
         df["pi"] = equal_logit
     elif bias_type == "undersampling":
@@ -56,11 +58,13 @@ def census_experiments(
 
     weighted_mmds_list = []
     asams_list = []
-    relative_biases_list = []
+    weighted_means_list = []
     mean_list = []
     mmd_list = []
 
-    for _ in trange(number_of_repetitions):
+    population_means = np.mean(df.drop(["pi"], axis="columns").values, axis=0)
+
+    for i in trange(number_of_repetitions):
         scaled_N, scaled_R = sample(scaled_df, sample_size)
 
         weights = propensity_method(
@@ -86,18 +90,15 @@ def census_experiments(
         scaled_N[columns] = scaler.inverse_transform(scaled_N[columns])
         scaled_R[columns] = scaler.inverse_transform(scaled_R[columns])
 
-        reference_means = np.mean(
-            scaled_R.drop(["pi", "label"], axis="columns").values, axis=0
-        )
-
         weighted_means = compute_weighted_means(
             scaled_N.drop(["pi", "label"], axis="columns"), weights
         )
-        relative_biases = compute_relative_bias(weighted_means, reference_means)
-        relative_biases_list.append(relative_biases)
 
-    mean_biases = np.nanmean(relative_biases_list, axis=0)
-    sd_biases = np.nanstd(relative_biases_list, axis=0)
+        plot_weights(weights, visualisation_path / "weights", i)
+        weighted_means_list.append(weighted_means)
+
+    weighted_means = np.mean(weighted_means_list, axis=0)
+    relative_biases = compute_relative_bias(weighted_means, population_means)
 
     with open(visualisation_path / "results.txt", "w") as result_file:
         result_file.write(
@@ -108,12 +109,11 @@ def census_experiments(
             f"{np.nanstd(weighted_mmds_list)}\n\n"
         )
         result_file.write("\nRelative Biases:\n")
-        for column, mean_bias, sd_bias in zip(
-            scaled_N.drop(["pi", "label"], axis="columns").columns,
-            mean_biases,
-            sd_biases,
+        for column, bias in zip(
+            df.drop(["pi"], axis="columns").columns,
+            relative_biases,
         ):
-            result_file.write(f"{column}: {mean_bias} +- {sd_bias}\n")
+            result_file.write(f"{column}: {bias}\n")
 
     if method == "neural_network_mmd_loss":
         plot_results_with_variance(

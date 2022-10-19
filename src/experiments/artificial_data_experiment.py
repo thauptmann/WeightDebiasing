@@ -39,7 +39,9 @@ def artificial_data_experiment(
 
     weighted_mmds_list = []
     asams_list = []
-    relative_biases_list = []
+    weighted_means_list = []
+
+    population_means = np.mean(df.drop(["pi"], axis="columns").values, axis=0)
 
     for _ in trange(number_of_repetitions):
         scaled_N, scaled_R = sample(scaled_df, sample_size)
@@ -68,15 +70,10 @@ def artificial_data_experiment(
             scaled_N.drop(["label", "pi"], axis="columns"), weights
         )
 
-        reference_means = np.mean(
-            scaled_R.drop(["pi", "label"], axis="columns").values, axis=0
-        )
-        relative_biases = compute_relative_bias(weighted_means, reference_means)
+        weighted_means_list.append(weighted_means)
 
-        relative_biases_list.append(relative_biases)
-
-    mean_biases = np.nanmean(relative_biases_list, axis=0)
-    sd_biases = np.nanstd(relative_biases_list, axis=0)
+    weighted_means = np.mean(weighted_means_list, axis=0)
+    relative_biases = compute_relative_bias(weighted_means, population_means)
 
     with open(visualisation_path / "results.txt", "w") as result_file:
         result_file.write(
@@ -87,7 +84,7 @@ def artificial_data_experiment(
             f"{np.nanstd(weighted_mmds_list)}\n"
         )
         result_file.write("\nRelative Biases:\n")
-        for column, mean_bias, sd_bias in zip(
-            scaled_df.drop(["pi"], axis="columns").columns, mean_biases, sd_biases
+        for column, bias in zip(
+            scaled_df.drop(["pi"], axis="columns").columns, relative_biases
         ):
-            result_file.write(f"{column}: {mean_bias} +- {sd_bias}\n")
+            result_file.write(f"{column}: {bias} \n")

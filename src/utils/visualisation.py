@@ -71,6 +71,8 @@ def plot_asams(weighted_asams, asams, columns, plot_directory):
 
 
 def plot_weights(weights, path, iteration, bins=50):
+    path.mkdir(exist_ok=True)
+    weights = weights / sum(weights)
     sns.histplot(x=weights, bins=bins)
     same_weights_positition = 1 / len(weights)
     plt.axvline(same_weights_positition, color="k")
