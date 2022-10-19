@@ -30,7 +30,7 @@ def census_experiments(
     number_of_repetitions=500,
     bias_variable=None,
     bias_type=None,
-    sample_size=1000,
+    sample_size=4000,
 ):
     file_directory = Path(__file__).parent
     result_path = Path(file_directory, "../../results")
@@ -39,18 +39,16 @@ def census_experiments(
     df = df.reset_index(drop=True)
 
     equal_probability = 1 / len(df)
-    bias_strength = 0.2
+    equal_logit = np.log(equal_probability / (1 - equal_probability))
+    bias_strength = 0.1
     if bias_type == "none":
-        df["pi"] = 1
+        df["pi"] = equal_logit
     elif bias_type == "undersampling":
-        df["pi"] = equal_probability - (
-            df[bias_variable] * (equal_probability * bias_strength)
-        )
+        df["pi"] = equal_logit - (df[bias_variable] * (equal_logit * bias_strength))
     else:
-        df["pi"] = equal_probability + (
-            df[bias_variable] * (equal_probability * bias_strength)
-        )
+        df["pi"] = equal_logit + (df[bias_variable] * (equal_logit * bias_strength))
 
+    df["pi"] = np.exp(df["pi"]) / (1 + np.exp(df["pi"])).values
     scaled_df, scaler = scale_df(df, columns)
 
     positive = np.sum(df[bias_variable].values)
@@ -85,9 +83,6 @@ def census_experiments(
         weighted_mmds_list.append(weighted_mmd)
         asams_list.append(np.mean(weighted_asams))
 
-        scaled_N[columns] = scaler.inverse_transform(scaled_N[columns])
-        scaled_R[columns] = scaler.inverse_transform(scaled_R[columns])
-
         reference_means = np.mean(
             scaled_R.drop(["pi", "label"], axis="columns").values, axis=0
         )
@@ -111,7 +106,9 @@ def census_experiments(
         )
         result_file.write("\nRelative Biases:\n")
         for column, mean_bias, sd_bias in zip(
-            scaled_df.drop(["pi"], axis="columns").columns, mean_biases, sd_biases
+            scaled_N.drop(["pi", "label"], axis="columns").columns,
+            mean_biases,
+            sd_biases,
         ):
             result_file.write(f"{column}: {mean_bias} +- {sd_bias}\n")
 

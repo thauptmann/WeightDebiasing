@@ -83,7 +83,7 @@ def artificial_data_experiment(
             f"ASAMS: {np.nanmean(asams_list)} +- {np.nanstd(asams_list)}\n"
         )
         result_file.write(
-            f"MMDs: {np.nanmean(weighted_mmds_list)} +-"
+            f"MMDs: {np.nanmean(weighted_mmds_list)} +- "
             f"{np.nanstd(weighted_mmds_list)}\n"
         )
         result_file.write("\nRelative Biases:\n")

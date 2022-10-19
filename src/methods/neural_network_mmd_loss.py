@@ -14,7 +14,7 @@ device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 def neural_network_mmd_loss_weighting(
     N, R, columns, use_batches=False, early_stopping=True, *args, **attributes
 ):
-    passes = 8000
+    passes = 100
     bias_variable = attributes["bias_variable"]
     bias_values = None
     if bias_variable is not None:
