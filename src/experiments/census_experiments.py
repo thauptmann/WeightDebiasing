@@ -27,7 +27,7 @@ def census_experiments(
     propensity_method,
     number_of_splits=10,
     method="",
-    number_of_repetitions=500,
+    number_of_repetitions=5,
     bias_variable=None,
     bias_type=None,
     sample_size=4000,
@@ -82,6 +82,9 @@ def census_experiments(
         )
         weighted_mmds_list.append(weighted_mmd)
         asams_list.append(np.mean(weighted_asams))
+
+        scaled_N[columns] = scaler.inverse_transform(scaled_N[columns])
+        scaled_R[columns] = scaler.inverse_transform(scaled_R[columns])
 
         reference_means = np.mean(
             scaled_R.drop(["pi", "label"], axis="columns").values, axis=0
