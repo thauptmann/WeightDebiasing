@@ -10,11 +10,13 @@ class WeightingMlp(nn.Module):
         self.encoding = nn.Sequential(
             nn.Linear(number_of_features, latent_features),
             nn.ReLU(),
+            nn.Dropout(0.4), 
             nn.BatchNorm1d(latent_features),
         )
         self.weighting = nn.Sequential(
             nn.Linear(latent_features, half_features),
-            nn.ReLU(),
+            nn.ReLU(),        
+            nn.Dropout(0.4),
             nn.BatchNorm1d(half_features),
             nn.Linear(half_features, 1),
             nn.ReLU(),

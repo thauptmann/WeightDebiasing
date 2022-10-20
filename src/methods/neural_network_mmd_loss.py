@@ -94,7 +94,7 @@ def compute_model(
     optimizer = torch.optim.Adam(
         mmd_model.parameters(), lr=learning_rate, weight_decay=1e-5
     )
-    scheduler = ReduceLROnPlateau(optimizer, patience=patience)
+    scheduler = ReduceLROnPlateau(optimizer, patience=patience, threshold=0)
     for _ in range(passes):
         mmd_model.train()
         optimizer.zero_grad()
