@@ -6,14 +6,17 @@ import numpy as np
 class WeightingMlp(nn.Module):
     def __init__(self, number_of_features, latent_features):
         super(WeightingMlp, self).__init__()
+        half_features = int(latent_features / 2)
         self.encoding = nn.Sequential(
             nn.Linear(number_of_features, latent_features),
             nn.ReLU(),
             nn.BatchNorm1d(latent_features),
         )
         self.weighting = nn.Sequential(
-            nn.Dropout(0.1),
-            nn.Linear(latent_features, 1),
+            nn.Linear(latent_features, half_features),
+            nn.ReLU(),
+            nn.BatchNorm1d(half_features),
+            nn.Linear(half_features, 1),
             nn.ReLU(),
         )
 

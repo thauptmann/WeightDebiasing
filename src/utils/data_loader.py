@@ -105,7 +105,7 @@ def preprocess_census(df, census_bias):
             " Portugal",
             " Scotland",
         ],
-        "west_europe",
+        "other",
     )
     df = df.replace(
         [" Married-civ-spouse", " Married-spouse-absent", " Married-AF-spouse"],
@@ -119,6 +119,12 @@ def preprocess_census(df, census_bias):
     df["Sex"].replace(" Female", 0, inplace=True)
     df.dropna(inplace=True)
     df = df[df["Workclass"] != " Without-pay"]
+    df = df.replace(" Self-emp-inc", "Self-emp")
+    df = df.replace(" Self-emp-not-inc", "Self-emp")
+    df = df.replace(" Asian-Pac-Islander", " Other")
+    df = df.replace(" Local-gov", "Gov")
+    df = df.replace(" State-gov", "Gov")
+
     ctg = ["Workclass", "Marital Status", "Race", "Country"]
     for c in ctg:
         df = pd.concat(
@@ -143,6 +149,10 @@ def preprocess_census(df, census_bias):
     return df, census_columns
 
 
+def load_barometer():
+    data_path = f"{file_path}/../../data/spanish_barometer_population.csv"
+
+
 def load_dataset(dataset_name):
     if dataset_name == "gbs":
         return load_gbs()
@@ -150,6 +160,8 @@ def load_dataset(dataset_name):
         return load_artificial_data()
     elif dataset_name == "census":
         return load_census_data()
+    elif dataset_name == "barometer":
+        return load_barometer()
 
 
 def sample(df, sample_size):

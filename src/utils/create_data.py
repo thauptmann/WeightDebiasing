@@ -1,11 +1,13 @@
 import argparse
 from pathlib import Path
+import pathlib
 import numpy as np
 from scipy.stats import bernoulli, norm
 import pandas as pd
 
 bernoulli_p = 0.5
 random_seed = 5
+file_path = pathlib.Path(__file__).parent
 np.random.seed(random_seed)
 
 columns = [
@@ -118,9 +120,49 @@ def create_correlated_normal_distribution(x, y, p):
     return correlated_samples
 
 
+barometer_cols = ["P44", "P43", "P1", "P4", "P0", "P0A", "P58"]
+map_cols_to_understandable_names = {
+    "P44": "age",
+    "P43": "sex",
+    "P1": "economical_situation_spain",
+    "P4": "economical_situation_personal",
+    "P0": "nationality",
+    "P58": "use_of_internet"
+}
+
+replace_values = {
+    "Hombre": 0,
+    "Mujer": 1,
+    "Mala": 1,
+    "Muy mala": 1,
+    "Regular": 0,
+    "Buena": 0,
+    "No": 0,
+    "Sí": 1
+}
+
+
+def create_barometer_population(size, filename):
+    save_path = Path(f"{file_path}/../../data/debiasing/")
+    save_path.mkdir(exist_ok=True, parents=True)
+
+    spss = pd.read_spss(f"{save_path}/spanish_barometer.sav", usecols=barometer_cols)
+    spss = spss.rename(columns=map_cols_to_understandable_names)
+    spss = spss.replace(replace_values)
+
+    # spss_reduced_columns =
+    spss = spss.sample(size, replace=True)
+    spss.to_csv(f"{save_path}/{filename}.csv")
+
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("--size", default=50000, type=int)
-    parser.add_argument("--filename", default=None, type=str)
+    parser.add_argument("--dataset", required=True)
+    parser.add_argument("--size", default=50000, type=int, required=True)
+    parser.add_argument("--filename", default=None, type=str, required=True)
     args = parser.parse_args()
-    create_aritficial_data_set(args.size, args.filename)
+    data_set = args.dataset
+    if data_set == "artificial":
+        create_aritficial_data_set(args.size, args.filename)
+    else:
+        create_barometer_population(args.size, args.filename)

@@ -12,8 +12,8 @@ method_list = [
     "domain_adaptation",
 ]
 
-bias_choice = ["oversampling", "undersampling", "none"]
-dataset_list = ["gbs", "artificial", "census"]
+bias_choice = ["oversampling", "undersampling", "none", "age"]
+dataset_list = ["gbs", "artificial", "census", "spanish_barometer"]
 
 
 def input_arguments():

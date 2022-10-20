@@ -22,17 +22,16 @@ random.seed(seed)
 torch.manual_seed(seed)
 
 
-def census_experiments(
+def barometer_experiments(
     df,
     columns,
     propensity_method,
     number_of_splits=10,
     method="",
-    number_of_repetitions=1,
+    number_of_repetitions=500,
     bias_variable=None,
     bias_type=None,
     sample_size=1000,
-    bias_strength=0.02,
 ):
     file_directory = Path(__file__).parent
     result_path = Path(file_directory, "../../results")
@@ -47,13 +46,10 @@ def census_experiments(
         df["pi"] = equal_logit
     elif bias_type == "undersampling":
         df["pi"] = equal_logit - (df[bias_variable] * (equal_logit * bias_strength))
-    elif bias_type == "age":
-        df["pi"] = ((200 - df["Age"]) ** 5) / ((200 - 10) ** 5)
     else:
         df["pi"] = equal_logit + (df[bias_variable] * (equal_logit * bias_strength))
 
-    odds = np.exp(df["pi"])
-    df["pi"] = odds / (1 + odds)
+    df["pi"] = np.exp(df["pi"]) / (1 + np.exp(df["pi"])).values
     scaled_df, scaler = scale_df(df, columns)
 
     positive = np.sum(df[bias_variable].values)
