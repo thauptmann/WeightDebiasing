@@ -14,7 +14,7 @@ device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 def neural_network_mmd_loss_weighting(
     N, R, columns, use_batches=False, *args, **attributes
 ):
-    passes = 5000
+    passes = 10000
     bias_variable = attributes["bias_variable"]
     bias_values = None
     if bias_variable is not None:
@@ -27,6 +27,7 @@ def neural_network_mmd_loss_weighting(
         number_of_features,
         int(number_of_features * 0.75),
         int(number_of_features * 1.25),
+        int(number_of_features * 2),
     ]
     best_mmd = np.inf
     best_model = None
@@ -85,6 +86,9 @@ def compute_model(
         validation_weights = (torch.ones(len(tensor_N)) / len(tensor_N)).to(device)
         positive_value = torch.sum(bias_values * validation_weights.squeeze())
         means.append(positive_value.cpu())
+
+        start_mmd = mmd_loss_function(tensor_N, tensor_R, validation_weights)
+        mmd_list.append(start_mmd)
 
     best_mmd = torch.inf
     mmd_model = WeightingMlp(tensor_N.shape[1], latent_features).to(device)
