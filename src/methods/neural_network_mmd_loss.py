@@ -87,7 +87,7 @@ def compute_model(
         means.append(positive_value.cpu())
 
         start_mmd = mmd_loss_function(tensor_N, tensor_R, validation_weights)
-        mmd_list.append(start_mmd)
+        mmd_list.append(start_mmd.cpu().numpy())
 
     best_mmd = torch.inf
     mmd_model = WeightingMlp(tensor_N.shape[1], latent_features).to(device)
