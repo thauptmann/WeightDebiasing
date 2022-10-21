@@ -28,6 +28,7 @@ def neural_network_mmd_loss_weighting(
         int(number_of_features * 0.5),
         int(number_of_features * 2),
     ]
+    dropout_list = [0.4, 0.5]
     best_mmd = np.inf
     best_model = None
     best_mmd_list = None
@@ -36,18 +37,20 @@ def neural_network_mmd_loss_weighting(
         bias_values = torch.FloatTensor(bias_values.values).to(device)
 
     for latent_features in latent_feature_list:
-        mmd_model, mmd_list, mmd, means = compute_model(
-            passes,
-            tensor_N,
-            tensor_R,
-            use_batches=use_batches,
-            latent_features=latent_features,
-            bias_values=bias_values,
-        )
-        if mmd < best_mmd:
-            best_model = mmd_model
-            best_mmd_list = mmd_list
-            best_mean_list = means
+        for dropout in dropout_list:
+            mmd_model, mmd_list, mmd, means = compute_model(
+                passes,
+                tensor_N,
+                tensor_R,
+                use_batches=use_batches,
+                latent_features=latent_features,
+                bias_values=bias_values,
+                dropout=dropout
+            )
+            if mmd < best_mmd:
+                best_model = mmd_model
+                best_mmd_list = mmd_list
+                best_mean_list = means
 
     # plot_line(best_mmd_list, save_path, "MMDs_per_pass")
     if bias_values is not None:
@@ -68,6 +71,7 @@ def compute_model(
     use_batches=False,
     latent_features=1,
     bias_values=None,
+    dropout=0
 ):
     model_path = Path("best_model_mmd_loss.pt")
     mmd_list = []
@@ -90,7 +94,7 @@ def compute_model(
         mmd_list.append(start_mmd.cpu().numpy())
 
     best_mmd = torch.inf
-    mmd_model = WeightingMlp(tensor_N.shape[1], latent_features).to(device)
+    mmd_model = WeightingMlp(tensor_N.shape[1], latent_features, dropout).to(device)
     optimizer = torch.optim.Adam(
         mmd_model.parameters(), lr=learning_rate, weight_decay=1e-5
     )
