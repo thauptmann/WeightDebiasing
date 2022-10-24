@@ -1,10 +1,13 @@
 from functools import partial
-from experiments.gbs_experiments import gbs_experiments
+
 from utils.data_loader import load_dataset
 from utils.input_arguments import input_arguments
-from experiments.artificial_data_experiment import artificial_data_experiment
 from utils.statistics import logistic_regression
+
+from experiments.artificial_data_experiment import artificial_data_experiment
 from experiments.census_experiments import census_experiments
+from experiments.gbs_experiments import gbs_experiments
+from experiments.barometer_experiments import barometer_experiments
 
 from methods.logistic_regression import logistic_regression_weighting
 from methods.naive_weighting import naive_weighting
@@ -41,6 +44,15 @@ def weighting_experiment():
             method=method_name,
             bias_variable=bias_variable,
             bias_type=bias,
+        )
+    elif dataset_name == "barometer":
+        use_age_bias = args.use_age_bias
+        weights = barometer_experiments(
+            data,
+            columns,
+            compute_weights_function,
+            method=method_name,
+            use_age_bias=use_age_bias,
         )
     else:
         weights = gbs_experiments(

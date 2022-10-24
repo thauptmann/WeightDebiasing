@@ -150,7 +150,21 @@ def preprocess_census(df, census_bias):
 
 
 def load_barometer():
-    data_path = f"{file_path}/../../data/spanish_barometer_population.csv"
+    data_path = f"{file_path}/../../data/debiasing/spanish_barometer_population.csv"
+    barometer = pd.read_csv(data_path, index_col="Unnamed: 0")
+    columns = [
+        "frequency_of_religious_acts",
+        "sex",
+        "age",
+        "education_level",
+        "socioeconomics_status",
+        "autonomous_community_of_residence",
+        "size_of_municipality_of_residence",
+        "nationality",
+        "marital_status",
+        "degree_of_voting_to_change_things",
+    ]
+    return barometer, columns, None
 
 
 def load_dataset(dataset_name):
@@ -168,5 +182,17 @@ def sample(df, sample_size):
     representative = df.sample(sample_size)
     representative["label"] = 0
     non_representative = df.sample(sample_size, weights=df["pi"])
+    non_representative["label"] = 1
+    return non_representative, representative
+
+
+def sample_barometer(df, sample_size, use_age_bias):
+    internet_group = df[df["use_of_internet"] == 1]
+    representative = df.sample(sample_size)
+    representative["label"] = 0
+    if use_age_bias:
+        non_representative = internet_group.sample(sample_size, weights=df["pi"])
+    else:
+        non_representative = internet_group.sample(sample_size)
     non_representative["label"] = 1
     return non_representative, representative

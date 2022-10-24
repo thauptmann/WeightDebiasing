@@ -2,7 +2,7 @@ import torch
 import numpy as np
 from pathlib import Path
 
-from utils.data_loader import sample
+from utils.data_loader import sample_barometer
 from utils.visualisation import plot_weights
 
 from utils.metrics import (
@@ -30,25 +30,16 @@ def barometer_experiments(
     method="",
     number_of_repetitions=500,
     bias_variable=None,
-    bias_type=None,
+    use_age_bias=None,
     sample_size=1000,
 ):
     file_directory = Path(__file__).parent
     result_path = Path(file_directory, "../../results")
-    visualisation_path = result_path / method / "census" / bias_type
+    visualisation_path = result_path / method / "barometer" / bias_type
     visualisation_path.mkdir(exist_ok=True, parents=True)
     df = df.reset_index(drop=True)
 
-    equal_probability = 1 / len(df)
-    equal_logit = np.log(equal_probability / (1 - equal_probability))
-
-    if bias_type == "none":
-        df["pi"] = equal_logit
-    elif bias_type == "undersampling":
-        df["pi"] = equal_logit - (df[bias_variable] * (equal_logit * bias_strength))
-    else:
-        df["pi"] = equal_logit + (df[bias_variable] * (equal_logit * bias_strength))
-
+    df["pi"] = ((200 - df["Age"]) ** 5) / ((200 - 10) ** 5)
     df["pi"] = np.exp(df["pi"]) / (1 + np.exp(df["pi"])).values
     scaled_df, scaler = scale_df(df, columns)
 
@@ -64,8 +55,7 @@ def barometer_experiments(
     population_means = np.mean(df.drop(["pi"], axis="columns").values, axis=0)
 
     for i in trange(number_of_repetitions):
-        scaled_N, scaled_R = sample(scaled_df, sample_size)
-
+        scaled_N, scaled_R = sample_barometer(scaled_df, sample_size, use_age_bias)
         weights = propensity_method(
             scaled_N,
             scaled_R,

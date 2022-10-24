@@ -13,7 +13,7 @@ method_list = [
 ]
 
 bias_choice = ["oversampling", "undersampling", "none", "age"]
-dataset_list = ["gbs", "artificial", "census", "spanish_barometer"]
+dataset_list = ["gbs", "artificial", "census", "barometer"]
 
 
 def input_arguments():
@@ -21,5 +21,6 @@ def input_arguments():
     parser.add_argument("--dataset", default="gbs", choices=dataset_list)
     parser.add_argument("--method", default="logistic_regression", choices=method_list)
     parser.add_argument("--bias", default="none", choices=bias_choice)
+    parser.add_argument("--use_age_bias", default=False, type=bool)
 
     return parser.parse_args()

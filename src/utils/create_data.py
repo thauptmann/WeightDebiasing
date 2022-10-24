@@ -120,14 +120,47 @@ def create_correlated_normal_distribution(x, y, p):
     return correlated_samples
 
 
-barometer_cols = ["P44", "P43", "P1", "P4", "P0", "P0A", "P58"]
+barometer_cols = [
+    "P44",
+    "P43",
+    "P1",
+    "P4",
+    "P0",
+    "P58",
+    "P11",
+    "P30",
+    "P31",
+    "P46A",
+    "P12",
+    "P32",
+    "P45A",
+    "P47",
+    "TAMUNI",
+    "CCAA",
+    "ESTATUS",
+]
+
 map_cols_to_understandable_names = {
-    "P44": "age",
-    "P43": "sex",
+    # 6 Target variables
     "P1": "economical_situation_spain",
     "P4": "economical_situation_personal",
+    "P32": "ideological_self_positioning",
+    "P11": "central_government_performance",
+    "P30": "territorial_organsisation_preference",
+    "P31": "national_sentiment",
+    # 10 Covariates
+    "P46A": "frequency_of_religious_acts",
+    "P43": "sex",
+    "P44": "age",
+    "P45A": "education_level",
+    "ESTATUS": "socioeconomics_status",
+    "CCAA": "autonomous_community_of_residence",
+    "TAMUNI": "size_of_municipality_of_residence",
     "P0": "nationality",
-    "P58": "use_of_internet"
+    "P47": "marital_status",
+    "P12": "degree_of_voting_to_change_things",
+    # Delimiter for nonprobability sampling
+    "P58": "use_of_internet",
 }
 
 replace_values = {
@@ -135,22 +168,73 @@ replace_values = {
     "Mujer": 1,
     "Mala": 1,
     "Muy mala": 1,
+    "Muy buena": 0,
     "Regular": 0,
     "Buena": 0,
     "No": 0,
-    "Sí": 1
+    "Sí": 1,
+    "Se siente únicamente español/a": 1,
+    "Se siente más español/a que (gentilicio C. A.)": 0,
+    "Se siente más (gentilicio C. A.) que español/a": 0,
+    "(NO LEER) Ninguna de la anteriores": 0,
+    "Se siente únicamente (gentilicio C. A.)": 0,
+    "Se siente tan español/a como (gentilicio C. A.)": 0,
+    "N.S.": np.nan,
+    "N.C.": np.nan,
+    "Un Estado con comunidades autónomas como en la actualidad": 0,
+    "Un Estado en el que las comunidades autónomas tengan mayor a": 0,
+    "Un Estado en el que las comunidades autónomas tengan menor a": 0,
+    "Un Estado con un único Gobierno central sin autonomías": 1,
+    "Un Estado en el que se reconociese a las comunidades autónom": 0,
+    "Otros": np.nan,
+    "1 Izquierda": 1,
+    "10 Derecha": 10,
+    "No consta": np.nan,
+    "Española": 1,
+    "Española y otra": 0,
 }
+
+categorical_features = [
+    "autonomous_community_of_residence",
+    "size_of_municipality_of_residence",
+    "degree_of_voting_to_change_things",
+    "education_level",
+    "frequency_of_religious_acts",
+    "marital_status",
+    "socioeconomics_status",
+]
 
 
 def create_barometer_population(size, filename):
     save_path = Path(f"{file_path}/../../data/debiasing/")
     save_path.mkdir(exist_ok=True, parents=True)
-
     spss = pd.read_spss(f"{save_path}/spanish_barometer.sav", usecols=barometer_cols)
     spss = spss.rename(columns=map_cols_to_understandable_names)
     spss = spss.replace(replace_values)
-
-    # spss_reduced_columns =
+    spss["frequency_of_religious_acts"] = (
+        spss["frequency_of_religious_acts"]
+        .cat.add_categories("atheist_or_agnostic")
+        .fillna("atheist_or_agnostic")
+    )
+    spss = spss.drop(
+        spss[
+            (spss["autonomous_community_of_residence"] == "Ceuta (Ciudad Autónoma de)")
+            | (
+                spss["autonomous_community_of_residence"]
+                == "Melilla (Ciudad Autónoma de)"
+            )
+        ].index
+    )
+    spss[
+        "education_level" == "Educación primaria"
+    ] = "Menos de 5 años de escolarización"
+    spss["education_level"] = spss["education_level"].cat.rename_categories(
+        {
+            "Menos de 5 años de escolarización": "no_education",
+        }
+    )
+    spss = spss.dropna()
+    spss = pd.get_dummies(spss, columns=categorical_features, drop_first=True)
     spss = spss.sample(size, replace=True)
     spss.to_csv(f"{save_path}/{filename}.csv")
 
