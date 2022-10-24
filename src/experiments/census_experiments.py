@@ -28,7 +28,7 @@ def census_experiments(
     propensity_method,
     number_of_splits=10,
     method="",
-    number_of_repetitions=1,
+    number_of_repetitions=500,
     bias_variable=None,
     bias_type=None,
     sample_size=1000,
@@ -47,10 +47,12 @@ def census_experiments(
         df["pi"] = equal_logit
     elif bias_type == "undersampling":
         df["pi"] = equal_logit - (df[bias_variable] * (equal_logit * bias_strength))
+    elif bias_type == "oversampling":
+        df["pi"] = equal_logit + (df[bias_variable] * (equal_logit * bias_strength))
     elif bias_type == "age":
         df["pi"] = ((200 - df["Age"]) ** 5) / ((200 - 10) ** 5)
     else:
-        df["pi"] = equal_logit + (df[bias_variable] * (equal_logit * bias_strength))
+        return
 
     odds = np.exp(df["pi"])
     df["pi"] = odds / (1 + odds)

@@ -118,9 +118,9 @@ def plot_results_with_variance(
 def plot_mmd_with_variance(mmd_list, visualisation_path):
     mean_mmd = np.nanmean(mmd_list, axis=0)
     sd_mmd = np.nanstd(mmd_list, axis=0)
-    plt.plot(mean_mmd, color="blue")
+    plt.plot(range(0, len(mean_mmd)*10, 10) , mean_mmd, color="blue")
     plt.fill_between(
-        x=range(len(mean_mmd)),
+        x=range(0, len(mean_mmd)*10, 10),
         y1=mean_mmd - sd_mmd,
         y2=mean_mmd + sd_mmd,
         color="blue",
@@ -135,15 +135,21 @@ def plot_mmd_with_variance(mmd_list, visualisation_path):
 def plot_mean_with_variance(mean_list, representative_mean, visualisation_path):
     mean_mean = np.mean(mean_list, axis=0)
     sd_mean = np.std(mean_list, axis=0)
-    plt.plot(mean_mean, color="blue", label="Weighted Mean", linestyle="--")
     plt.plot(
-        len(mean_mean) * [representative_mean],
+        range(0, len(mean_mean) * 10, 10),
+        mean_mean,
+        color="blue",
+        label="Weighted Mean",
+        linestyle="--",
+    )
+    plt.plot(
+        (len(mean_mean) * 10) * [representative_mean],
         color="black",
         linestyle="-",
         label="Population Mean",
     )
     plt.fill_between(
-        x=range(len(mean_mean)),
+        x=range(0, len(mean_mean) * 10, 10),
         y1=mean_mean - sd_mean,
         y2=mean_mean + sd_mean,
         color="blue",
