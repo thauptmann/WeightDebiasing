@@ -153,17 +153,11 @@ def load_barometer():
     data_path = f"{file_path}/../../data/debiasing/spanish_barometer_population.csv"
     barometer = pd.read_csv(data_path, index_col="Unnamed: 0")
     columns = [
-        "frequency_of_religious_acts",
         "sex",
         "age",
-        "education_level",
-        "socioeconomics_status",
-        "autonomous_community_of_residence",
-        "size_of_municipality_of_residence",
         "nationality",
-        "marital_status",
-        "degree_of_voting_to_change_things",
-    ]
+        ]
+    columns.extend(barometer.filter(like="x").columns.tolist())
     return barometer, columns, None
 
 

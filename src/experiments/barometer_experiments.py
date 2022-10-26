@@ -14,7 +14,6 @@ from utils.metrics import (
 )
 from tqdm import trange
 import random
-from utils.visualisation import plot_results_with_variance
 
 seed = 5
 np.random.seed(seed)
@@ -29,28 +28,22 @@ def barometer_experiments(
     number_of_splits=10,
     method="",
     number_of_repetitions=500,
-    bias_variable=None,
     use_age_bias=None,
     sample_size=1000,
 ):
     file_directory = Path(__file__).parent
     result_path = Path(file_directory, "../../results")
-    visualisation_path = result_path / method / "barometer" / bias_type
+    visualisation_path = result_path / method / "barometer" / f"{use_age_bias=}"
     visualisation_path.mkdir(exist_ok=True, parents=True)
     df = df.reset_index(drop=True)
 
-    df["pi"] = ((200 - df["Age"]) ** 5) / ((200 - 10) ** 5)
+    df["pi"] = ((200 - df["age"]) ** 5) / ((200 - 10) ** 5)
     df["pi"] = np.exp(df["pi"]) / (1 + np.exp(df["pi"])).values
     scaled_df, scaler = scale_df(df, columns)
-
-    positive = np.sum(df[bias_variable].values)
-    representative_mean = positive / len(df)
 
     weighted_mmds_list = []
     asams_list = []
     weighted_means_list = []
-    mean_list = []
-    mmd_list = []
 
     population_means = np.mean(df.drop(["pi"], axis="columns").values, axis=0)
 
@@ -62,9 +55,6 @@ def barometer_experiments(
             columns,
             save_path=visualisation_path,
             number_of_splits=number_of_splits,
-            bias_variable=bias_variable,
-            mean_list=mean_list,
-            mmd_list=mmd_list,
         )
 
         weighted_mmd = maximum_mean_discrepancy_weighted(
@@ -103,11 +93,3 @@ def barometer_experiments(
             relative_biases,
         ):
             result_file.write(f"{column}: {bias}\n")
-
-    if method == "neural_network_mmd_loss":
-        plot_results_with_variance(
-            mean_list,
-            mmd_list,
-            representative_mean,
-            visualisation_path,
-        )

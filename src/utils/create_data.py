@@ -192,6 +192,7 @@ replace_values = {
     "No consta": np.nan,
     "Española": 1,
     "Española y otra": 0,
+    "Educación primaria": "Menos de 5 años de escolarización",
 }
 
 categorical_features = [
@@ -225,16 +226,20 @@ def create_barometer_population(size, filename):
             )
         ].index
     )
-    spss[
-        "education_level" == "Educación primaria"
-    ] = "Menos de 5 años de escolarización"
+    spss["autonomous_community_of_residence"] = spss[
+        "autonomous_community_of_residence"
+    ].cat.remove_categories(
+        ["Ceuta (Ciudad Autónoma de)", "Melilla (Ciudad Autónoma de)"]
+    )
     spss["education_level"] = spss["education_level"].cat.rename_categories(
         {
             "Menos de 5 años de escolarización": "no_education",
         }
     )
     spss = spss.dropna()
-    spss = pd.get_dummies(spss, columns=categorical_features, drop_first=True)
+    spss = pd.get_dummies(
+        spss, prefix="cat", columns=categorical_features, drop_first=True
+    )
     spss = spss.sample(size, replace=True)
     spss.to_csv(f"{save_path}/{filename}.csv")
 

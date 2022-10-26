@@ -95,6 +95,9 @@ def compute_model(
 
     best_mmd = torch.inf
     mmd_model = WeightingMlp(tensor_N.shape[1], latent_features, dropout).to(device)
+
+    # Save model to avoid size mismatch later
+    torch.save(mmd_model.state_dict(), model_path)
     optimizer = torch.optim.Adam(
         mmd_model.parameters(), lr=learning_rate, weight_decay=1e-5
     )

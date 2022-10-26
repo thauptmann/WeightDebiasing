@@ -21,6 +21,6 @@ def input_arguments():
     parser.add_argument("--dataset", default="gbs", choices=dataset_list)
     parser.add_argument("--method", default="logistic_regression", choices=method_list)
     parser.add_argument("--bias", default="none", choices=bias_choice)
-    parser.add_argument("--use_age_bias", default=False, type=bool)
+    parser.add_argument("--use_age_bias", action="store_true")
 
     return parser.parse_args()
