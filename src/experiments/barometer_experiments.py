@@ -27,7 +27,7 @@ def barometer_experiments(
     propensity_method,
     number_of_splits=10,
     method="",
-    number_of_repetitions=1,
+    number_of_repetitions=500,
     use_age_bias=None,
     sample_size=1000,
 ):
