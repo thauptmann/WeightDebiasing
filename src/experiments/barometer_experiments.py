@@ -27,7 +27,7 @@ def barometer_experiments(
     propensity_method,
     number_of_splits=10,
     method="",
-    number_of_repetitions=500,
+    number_of_repetitions=1,
     use_age_bias=None,
     sample_size=1000,
 ):
@@ -45,7 +45,7 @@ def barometer_experiments(
     asams_list = []
     weighted_means_list = []
 
-    population_means = np.mean(df.drop(["pi"], axis="columns").values, axis=0)
+    population_means = np.nanmean(df.drop(["pi"], axis="columns").values, axis=0)
 
     for i in trange(number_of_repetitions):
         scaled_N, scaled_R = sample_barometer(scaled_df, sample_size, use_age_bias)
@@ -64,7 +64,7 @@ def barometer_experiments(
             scaled_N, scaled_R, columns, weights
         )
         weighted_mmds_list.append(weighted_mmd)
-        asams_list.append(np.mean(weighted_asams))
+        asams_list.append(np.nanmean(weighted_asams))
 
         scaled_N[columns] = scaler.inverse_transform(scaled_N[columns])
         scaled_R[columns] = scaler.inverse_transform(scaled_R[columns])
@@ -76,7 +76,7 @@ def barometer_experiments(
         plot_weights(weights, visualisation_path / "weights", i)
         weighted_means_list.append(weighted_means)
 
-    weighted_means = np.mean(weighted_means_list, axis=0)
+    weighted_means = np.nanmean(weighted_means_list, axis=0)
     relative_biases = compute_relative_bias(weighted_means, population_means)
 
     with open(visualisation_path / "results.txt", "w") as result_file:
