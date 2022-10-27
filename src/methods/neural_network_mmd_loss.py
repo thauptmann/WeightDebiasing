@@ -70,7 +70,7 @@ def neural_network_mmd_loss_weighting(
     return weights
 
 
-@ray.remote
+@ray.remote(num_gpus=1)
 def compute_model(
     passes,
     tensor_N,
