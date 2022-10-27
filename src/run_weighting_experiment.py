@@ -18,9 +18,11 @@ from methods.random_forest import random_forest_weighting
 from methods.gradient_boosting import gradient_boosting_weighting
 from methods.ada_debiasing import ada_debiasing_weighting
 from methods.domain_adaptation import domain_adaptation_weighting
+import ray
 
 
 def weighting_experiment():
+    ray.init(num_cpus=6)
     args = input_arguments()
     dataset_name = args.dataset
     method_name = args.method
