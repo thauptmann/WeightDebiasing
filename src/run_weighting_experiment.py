@@ -22,7 +22,7 @@ import ray
 
 
 def weighting_experiment():
-    ray.init(num_cpus=6)
+    ray.init(num_cpus=12)
     args = input_arguments()
     dataset_name = args.dataset
     method_name = args.method
