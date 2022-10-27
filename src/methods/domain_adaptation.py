@@ -16,6 +16,7 @@ def domain_adaptation_weighting(N, R, columns, number_of_splits, *args, **attrib
     predictions = np.zeros(len(N))
     k_fold = KFold(n_splits=number_of_splits, shuffle=True)
     epochs = 1000
+
     for train_index, test_index in k_fold.split(N):
         train_N = N.iloc[train_index]
         test_N = N.iloc[test_index]
@@ -74,6 +75,8 @@ def compute_model(epochs, tensor_n, tensor_r, patience=100, latent_features=1):
     best_validation_loss = torch.inf
 
     domain_adaptation_model = Mlp(tensor_n.shape[1], latent_features).to(device)
+    # Save model to avoid size mismatch later
+    torch.save(domain_adaptation_model.state_dict(), model_path)
     optimizer = torch.optim.Adam(
         domain_adaptation_model.parameters(), lr=learning_rate, weight_decay=1e-5
     )
