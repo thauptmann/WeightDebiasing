@@ -7,6 +7,8 @@ from .loss import WeightedMMDLoss
 import numpy as np
 import matplotlib.pyplot as plt
 from torch.optim.lr_scheduler import ReduceLROnPlateau
+import ray
+
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
@@ -29,28 +31,33 @@ def neural_network_mmd_loss_weighting(
         int(number_of_features * 2),
     ]
     dropout_list = [0.4, 0.5]
-    best_mmd = np.inf
     best_model = None
     best_mmd_list = None
     best_mean_list = None
     if bias_values is not None:
         bias_values = torch.FloatTensor(bias_values.values).to(device)
 
-    for latent_features in latent_feature_list:
-        for dropout in dropout_list:
-            mmd_model, mmd_list, mmd, means = compute_model(
-                passes,
-                tensor_N,
-                tensor_R,
-                use_batches=use_batches,
-                latent_features=latent_features,
-                bias_values=bias_values,
-                dropout=dropout
-            )
-            if mmd < best_mmd:
-                best_model = mmd_model
-                best_mmd_list = mmd_list
-                best_mean_list = means
+    futures = [
+        compute_model.remote(
+            passes,
+            tensor_N,
+            tensor_R,
+            use_batches=use_batches,
+            latent_features=latent_features,
+            bias_values=bias_values,
+            dropout=dropout,
+        )
+        for dropout in dropout_list
+        for latent_features in latent_feature_list
+    ]
+    results = ray.get(futures)
+    mmds = [result[2] for result in results]
+    max_value = max(mmds)
+    max_index = mmds.index(max_value)
+
+    best_model = results[max_index][0]
+    best_mmd_list = results[max_index][1]
+    best_mean_list = results[max_index][3]
 
     # plot_line(best_mmd_list, save_path, "MMDs_per_pass")
     if bias_values is not None:
@@ -63,6 +70,7 @@ def neural_network_mmd_loss_weighting(
     return weights
 
 
+@ray.remote
 def compute_model(
     passes,
     tensor_N,
@@ -71,9 +79,10 @@ def compute_model(
     use_batches=False,
     latent_features=1,
     bias_values=None,
-    dropout=0.0
+    dropout=0.0,
 ):
-    model_path = Path("best_model_mmd_loss.pt")
+    Path("models").mkdir(exist_ok=True, parents=True)
+    model_path = Path(f"models/best_model_mmd_loss_{dropout}_{latent_features}.pt")
     mmd_list = []
     batch_size = 512
     learning_rate = 0.001
