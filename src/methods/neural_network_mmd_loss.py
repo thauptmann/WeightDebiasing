@@ -87,6 +87,7 @@ def compute_model(
     mmd_list = []
     batch_size = 512
     learning_rate = 0.001
+    best_mmd = torch.inf
     means = []
 
     gamma = calculate_rbf_gamma(np.append(tensor_N, tensor_R, axis=0))
@@ -103,7 +104,6 @@ def compute_model(
         start_mmd = mmd_loss_function(tensor_N, tensor_R, validation_weights)
         mmd_list.append(start_mmd.cpu().numpy())
 
-    best_mmd = torch.inf
     mmd_model = WeightingMlp(tensor_N.shape[1], latent_features, dropout).to(device)
 
     # Save model to avoid size mismatch later
@@ -161,11 +161,14 @@ def validate_model(tensor_N, tensor_R, mmd_loss_function, mmd_model):
     mmd_model.eval()
     with torch.no_grad():
         validation_weights = mmd_model(tensor_N)
-    mmd = mmd_loss_function(
-        tensor_N,
-        tensor_R,
-        validation_weights,
-    )
+    if torch.sum(validation_weights) == 0:
+        mmd = torch.inf
+    else:
+        mmd = mmd_loss_function(
+            tensor_N,
+            tensor_R,
+            validation_weights,
+        )
 
     return mmd, validation_weights
 
