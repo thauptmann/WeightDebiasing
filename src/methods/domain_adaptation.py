@@ -8,6 +8,7 @@ import numpy as np
 from torch.optim.lr_scheduler import ReduceLROnPlateau
 from torch.utils.data import TensorDataset, DataLoader
 from torch import nn
+import ray
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
@@ -16,31 +17,33 @@ def domain_adaptation_weighting(N, R, columns, number_of_splits, *args, **attrib
     predictions = np.zeros(len(N))
     k_fold = KFold(n_splits=number_of_splits, shuffle=True)
     epochs = 1000
+    number_of_features = N.shape[1]
+    latent_feature_list = [
+            number_of_features,
+            int(number_of_features * 0.75),
+            int(number_of_features * 1.25),
+        ]
 
     for train_index, test_index in k_fold.split(N):
         train_N = N.iloc[train_index]
         test_N = N.iloc[test_index]
         tensor_N = torch.FloatTensor(train_N[columns].values)
-        number_of_features = tensor_N.shape[1]
+
         tensor_test_N = torch.FloatTensor(test_N[columns].values)
 
         tensor_R = torch.FloatTensor(R[columns].values)
 
-        latent_feature_list = [
-            number_of_features,
-            int(number_of_features * 0.75),
-            int(number_of_features * 1.25),
+        futures = [
+            compute_model.remote(epochs, tensor_N, tensor_R, 100, latent_features)
+            for latent_features in latent_feature_list
         ]
-        best_loss = np.inf
-        best_model = None
 
-        for latent_features in latent_feature_list:
-            domain_adaptation_model, loss = compute_model(
-                epochs, tensor_N, tensor_R, 100, latent_features
-            )
+        results = ray.get(futures)
+        loss = [result[1] for result in results]
+        max_value = max(loss)
+        max_index = loss.index(max_value)
 
-            if loss < best_loss:
-                best_model = domain_adaptation_model
+        best_model = results[max_index][0]
 
         with torch.no_grad():
             tensor_test_N = tensor_test_N.to(device)
@@ -51,7 +54,8 @@ def domain_adaptation_weighting(N, R, columns, number_of_splits, *args, **attrib
     return weights
 
 
-def compute_model(epochs, tensor_n, tensor_r, patience=100, latent_features=1):
+@ray.remote(num_gpus=0.5)
+def compute_model(epochs, tensor_n, tensor_r, patience, latent_features):
     model_path = Path("best_model_domain_adaptation.pt")
 
     gamma = calculate_rbf_gamma(torch.concat([tensor_n, tensor_r]))

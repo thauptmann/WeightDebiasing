@@ -3,20 +3,20 @@ import torch
 import shap
 from scipy.spatial.distance import pdist
 from utils.models import WeightingMlp
+from utils.visualisation import plot_line
 from .loss import WeightedMMDLoss
 import numpy as np
 import matplotlib.pyplot as plt
 from torch.optim.lr_scheduler import ReduceLROnPlateau
 import ray
-
-
-device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+from sklearn.linear_model import LogisticRegression
+from sklearn.metrics import roc_auc_score
 
 
 def neural_network_mmd_loss_weighting(
     N, R, columns, use_batches=False, *args, **attributes
 ):
-    assert torch.cuda.is_available()
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     passes = 5
     bias_variable = attributes["bias_variable"]
     bias_values = None
@@ -59,8 +59,9 @@ def neural_network_mmd_loss_weighting(
     best_model = results[max_index][0]
     best_mmd_list = results[max_index][1]
     best_mean_list = results[max_index][3]
+    best_aurocs = results[max_index][4]
 
-    # plot_line(best_mmd_list, save_path, "MMDs_per_pass")
+    plot_line(best_aurocs, ".", "Auroc_per_pass")
     if bias_values is not None:
         attributes["mean_list"].append(best_mean_list)
         attributes["mmd_list"].append(best_mmd_list)
@@ -71,7 +72,7 @@ def neural_network_mmd_loss_weighting(
     return weights
 
 
-@ray.remote(num_gpus=0.5)
+@ray.remote(num_gpus=0)
 def compute_model(
     passes,
     tensor_N,
@@ -82,6 +83,7 @@ def compute_model(
     bias_values=None,
     dropout=0.0,
 ):
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     Path("models").mkdir(exist_ok=True, parents=True)
     model_path = Path(f"models/best_model_mmd_loss_{dropout}_{latent_features}.pt")
     mmd_list = []
@@ -89,12 +91,30 @@ def compute_model(
     learning_rate = 0.001
     best_mmd = torch.inf
     means = []
+    aurocs = []
 
     gamma = calculate_rbf_gamma(np.append(tensor_N, tensor_R, axis=0))
     mmd_loss_function = WeightedMMDLoss(gamma, len(tensor_R), device)
 
     tensor_N = tensor_N.to(device)
     tensor_R = tensor_R.to(device)
+
+    X_train = np.concatenate([tensor_N, tensor_R])
+    y_train = np.concatenate([np.ones(len(tensor_N)), np.zeros(len(tensor_R))])
+    logistic_regression = LogisticRegression()
+
+    classification_weights = np.concatenate(
+        [
+            np.ones(len(tensor_N)) / len(tensor_N),
+            (np.ones(len(tensor_R)) / len(tensor_R)),
+        ]
+    )
+    logistic_regression = logistic_regression.fit(
+        X_train, y_train, sample_weight=classification_weights
+    )
+    predictions = logistic_regression.predict(X_train)
+    auroc = roc_auc_score(y_train, predictions)
+    aurocs.append(auroc)
 
     if bias_values is not None:
         validation_weights = (torch.ones(len(tensor_N)) / len(tensor_N)).to(device)
@@ -137,6 +157,17 @@ def compute_model(
         mmd, validation_weights = validate_model(
             tensor_N, tensor_R, mmd_loss_function, mmd_model
         )
+
+        classification_weights = np.concatenate(
+            [np.squeeze(validation_weights), (np.ones(len(tensor_R)) / len(tensor_R))]
+        )
+        logistic_regression = logistic_regression.fit(
+            X_train, y_train, sample_weight=classification_weights
+        )
+        predictions = logistic_regression.predict(X_train)
+        auroc = roc_auc_score(y_train, predictions)
+        aurocs.append(auroc)
+
         mmd_list.append(mmd)
 
         if mmd < best_mmd:
@@ -154,7 +185,7 @@ def compute_model(
     mmd_model.load_state_dict(torch.load(model_path))
     mmd_model.eval()
 
-    return mmd_model, mmd_list, best_mmd, means
+    return mmd_model, mmd_list, best_mmd, means, aurocs
 
 
 def validate_model(tensor_N, tensor_R, mmd_loss_function, mmd_model):
