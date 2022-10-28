@@ -35,7 +35,6 @@ def artificial_data_experiment(
     visualisation_path.mkdir(exist_ok=True, parents=True)
     df = df.reset_index(drop=True)
     scaled_df, scaler = scale_df(df, columns)
-    bias_variable = None
 
     weighted_mmds_list = []
     asams_list = []
@@ -51,7 +50,7 @@ def artificial_data_experiment(
             columns,
             number_of_splits=number_of_splits,
             save_path=visualisation_path,
-            bias_variable=bias_variable,
+            bias_variable=None,
         )
 
         weighted_mmd = maximum_mean_discrepancy_weighted(

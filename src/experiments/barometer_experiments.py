@@ -55,6 +55,7 @@ def barometer_experiments(
             columns,
             save_path=visualisation_path,
             number_of_splits=number_of_splits,
+            bias_variable=None
         )
 
         weighted_mmd = maximum_mean_discrepancy_weighted(
