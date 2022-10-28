@@ -28,6 +28,7 @@ def neural_network_mmd_loss_weighting(
         int(number_of_features * 0.5),
         int(number_of_features * 2),
     ]
+    dropout_list = [0.2, 0.4]
     best_model = None
     best_mmd_list = None
     best_mean_list = None
@@ -42,17 +43,19 @@ def neural_network_mmd_loss_weighting(
             use_batches=use_batches,
             latent_features=latent_features,
             bias_values=bias_values,
+            dropout=dropout,
         )
+        for dropout in dropout_list
         for latent_features in latent_feature_list
     ]
     results = ray.get(futures)
     mmds = [result[2] for result in results]
-    max_value = max(mmds)
-    max_index = mmds.index(max_value)
+    min_value = min(mmds)
+    min_index = mmds.index(min_value)
 
-    best_model = results[max_index][0]
-    best_mmd_list = results[max_index][1]
-    best_mean_list = results[max_index][3]
+    best_model = results[min_index][0]
+    best_mmd_list = results[min_index][1]
+    best_mean_list = results[min_index][3]
 
     if bias_values is not None:
         attributes["mean_list"].append(best_mean_list)
@@ -64,7 +67,7 @@ def neural_network_mmd_loss_weighting(
     return weights
 
 
-@ray.remote(num_gpus=1)
+@ray.remote(num_gpus=0.5)
 def compute_model(
     passes,
     tensor_N,
@@ -73,10 +76,11 @@ def compute_model(
     use_batches=False,
     latent_features=1,
     bias_values=None,
+    dropout=0.0
 ):
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     Path("models").mkdir(exist_ok=True, parents=True)
-    model_path = Path(f"models/best_model_mmd_loss_{latent_features}.pt")
+    model_path = Path(f"models/best_model_mmd_loss_{dropout}_{latent_features}.pt")
     mmd_list = []
     batch_size = 512
     learning_rate = 0.001
@@ -97,7 +101,7 @@ def compute_model(
         start_mmd = mmd_loss_function(tensor_N, tensor_R, validation_weights)
         mmd_list.append(start_mmd.cpu().numpy())
 
-    mmd_model = WeightingMlp(tensor_N.shape[1], latent_features).to(device)
+    mmd_model = WeightingMlp(tensor_N.shape[1], latent_features, dropout).to(device)
 
     # Save model to avoid size mismatch later
     torch.save(mmd_model.state_dict(), model_path)

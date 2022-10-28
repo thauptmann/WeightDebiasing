@@ -4,16 +4,17 @@ import numpy as np
 
 
 class WeightingMlp(nn.Module):
-    def __init__(self, number_of_features, latent_features):
+    def __init__(self, number_of_features, latent_features, dropout):
         super(WeightingMlp, self).__init__()
         self.encoding = nn.Sequential(
             nn.Linear(number_of_features, latent_features),
             nn.ReLU(),
+            nn.Dropout(dropout),
             nn.BatchNorm1d(latent_features),
         )
         self.weighting = nn.Sequential(
             nn.Linear(latent_features, 1),
-            nn.Softplus(),
+            nn.ReLU(),
         )
 
     def forward(self, x):
