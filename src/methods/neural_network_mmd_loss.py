@@ -154,7 +154,7 @@ def compute_model(
     mmd_model.load_state_dict(torch.load(model_path))
     mmd_model.eval()
 
-    return mmd_model, np.squeeze(mmd_list), best_mmd, means
+    return mmd_model, mmd_list, best_mmd, means
 
 
 def validate_model(tensor_N, tensor_R, mmd_loss_function, mmd_model):
