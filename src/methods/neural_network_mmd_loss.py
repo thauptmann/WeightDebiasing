@@ -28,7 +28,7 @@ def neural_network_mmd_loss_weighting(
         int(number_of_features * 0.5),
         int(number_of_features * 2),
     ]
-    dropout_list = [0.2, 0.4]
+    dropout_list = [0.0, 0.2, 0.4]
     best_model = None
     best_mmd_list = None
     best_mean_list = None
@@ -67,7 +67,7 @@ def neural_network_mmd_loss_weighting(
     return weights
 
 
-@ray.remote(num_gpus=0.5)
+@ray.remote(num_gpus=0.3)
 def compute_model(
     passes,
     tensor_N,
