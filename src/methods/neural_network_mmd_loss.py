@@ -17,7 +17,7 @@ def neural_network_mmd_loss_weighting(
     N, R, columns, use_batches=False, *args, **attributes
 ):
     assert torch.cuda.is_available()
-    passes = 5000
+    passes = 5
     bias_variable = attributes["bias_variable"]
     bias_values = None
     if bias_variable is not None:
@@ -169,7 +169,7 @@ def validate_model(tensor_N, tensor_R, mmd_loss_function, mmd_model):
             tensor_R,
             validation_weights,
         )
-        mmd.cpu().numpy()
+        mmd = mmd.cpu().numpy()
 
     return mmd, validation_weights
 

@@ -14,7 +14,7 @@ class WeightingMlp(nn.Module):
         )
         self.weighting = nn.Sequential(
             nn.Linear(latent_features, 1),
-            nn.ReLU(),
+            nn.Softplus(),
         )
 
     def forward(self, x):
