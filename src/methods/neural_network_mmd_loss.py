@@ -162,7 +162,7 @@ def validate_model(tensor_N, tensor_R, mmd_loss_function, mmd_model):
     with torch.no_grad():
         validation_weights = mmd_model(tensor_N)
     if torch.sum(validation_weights) == 0:
-        mmd = torch.nan
+        mmd = np.nan
     else:
         mmd = mmd_loss_function(
             tensor_N,
