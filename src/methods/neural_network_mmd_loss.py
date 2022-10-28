@@ -137,7 +137,7 @@ def compute_model(
         mmd, validation_weights = validate_model(
             tensor_N, tensor_R, mmd_loss_function, mmd_model
         )
-        mmd_list.append(mmd.cpu().numpy())
+        mmd_list.append(mmd)
 
         if mmd < best_mmd:
             best_mmd = mmd
@@ -169,6 +169,7 @@ def validate_model(tensor_N, tensor_R, mmd_loss_function, mmd_model):
             tensor_R,
             validation_weights,
         )
+        mmd.cpu().numpy()
 
     return mmd, validation_weights
 
