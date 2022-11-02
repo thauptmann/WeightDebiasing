@@ -91,7 +91,7 @@ def barometer_experiments(
             f"MMDs: {np.nanmean(weighted_mmds_list)} +- "
             f"{np.nanstd(weighted_mmds_list)}\n\n"
         )
-        result_file.write("\nRelative Biases:\n")
+        result_file.write("\nBiases:\n")
         for column, bias, sd in zip(
             df.drop(["pi"], axis="columns").columns,
             mean_biases, sd_biases,
