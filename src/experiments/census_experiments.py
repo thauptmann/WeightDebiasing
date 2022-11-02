@@ -58,20 +58,22 @@ def census_experiments(
     df["pi"] = odds / (1 + odds)
     scaled_df, scaler = scale_df(df, columns)
 
-    positive = np.sum(df[bias_variable].values)
-    representative_mean = positive / len(df)
-
     weighted_mmds_list = []
     asams_list = []
     biases_list = []
     mean_list = []
     mmd_list = []
+    sample_mean_list = []
 
     for i in trange(number_of_repetitions):
         scaled_N, scaled_R = sample(scaled_df, sample_size)
         sample_means = np.mean(
             scaled_R.drop(["pi", "label"], axis="columns").values, axis=0
         )
+
+        positive = np.sum(scaled_R[bias_variable].values)
+        sample_representative_mean = positive / len(scaled_R)
+        sample_mean_list.append(sample_representative_mean)
 
         weights = propensity_method(
             scaled_N,
@@ -131,6 +133,6 @@ def census_experiments(
         plot_results_with_variance(
             mean_list,
             mmd_list,
-            representative_mean,
+            np.mean(sample_mean_list),
             visualisation_path,
         )
