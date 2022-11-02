@@ -61,8 +61,8 @@ def compute_weighted_means(N, weights):
     return np.average(N.values, weights=weights, axis=0)
 
 
-def compute_relative_bias(weighted_means, population_means):
-    return abs((weighted_means - population_means) / population_means) * 100
+def compute_bias(weighted_means, population_means):
+    return abs(weighted_means - population_means)
 
 
 def calculate_rbf_gamma(aggregate_set):

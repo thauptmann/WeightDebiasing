@@ -7,7 +7,7 @@ from utils.visualisation import plot_weights
 
 from utils.metrics import (
     average_standardised_absolute_mean_distance,
-    compute_relative_bias,
+    compute_bias,
     maximum_mean_discrepancy_weighted,
     scale_df,
     compute_weighted_means,
@@ -63,14 +63,15 @@ def census_experiments(
 
     weighted_mmds_list = []
     asams_list = []
-    weighted_means_list = []
+    biases_list = []
     mean_list = []
     mmd_list = []
 
-    population_means = np.mean(df.drop(["pi"], axis="columns").values, axis=0)
-
     for i in trange(number_of_repetitions):
         scaled_N, scaled_R = sample(scaled_df, sample_size)
+        sample_means = np.mean(
+            scaled_R.drop(["pi", "label"], axis="columns").values, axis=0
+        )
 
         weights = propensity_method(
             scaled_N,
@@ -99,11 +100,16 @@ def census_experiments(
             scaled_N.drop(["pi", "label"], axis="columns"), weights
         )
 
-        plot_weights(weights, visualisation_path / "weights", i)
-        weighted_means_list.append(weighted_means)
+        sample_means = np.mean(
+            scaled_R.drop(["pi", "label"], axis="columns").values, axis=0
+        )
+        sample_biases = compute_bias(weighted_means, sample_means)
 
-    weighted_means = np.mean(weighted_means_list, axis=0)
-    relative_biases = compute_relative_bias(weighted_means, population_means)
+        plot_weights(weights, visualisation_path / "weights", i)
+        biases_list.append(sample_biases)
+
+    mean_biases = np.nanmean(biases_list, axis=0)
+    sd_biases = np.nanstd(biases_list, axis=0)
 
     with open(visualisation_path / "results.txt", "w") as result_file:
         result_file.write(
@@ -113,12 +119,13 @@ def census_experiments(
             f"MMDs: {np.nanmean(weighted_mmds_list)} +- "
             f"{np.nanstd(weighted_mmds_list)}\n\n"
         )
-        result_file.write("\nRelative Biases:\n")
-        for column, bias in zip(
-            df.drop(["pi"], axis="columns").columns,
-            relative_biases,
+        result_file.write("\nBiases:\n")
+        for column, bias, sd in zip(
+            df.drop(["pi", "label"], axis="columns").columns,
+            mean_biases,
+            sd_biases
         ):
-            result_file.write(f"{column}: {bias}\n")
+            result_file.write(f"{column}: {bias} +- {sd}\n")
 
     if method == "neural_network_mmd_loss":
         plot_results_with_variance(

@@ -14,7 +14,7 @@ def neural_network_mmd_loss_weighting(
     N, R, columns, use_batches=False, *args, **attributes
 ):
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    passes = 5000
+    passes = 2000
     bias_variable = attributes["bias_variable"]
     bias_values = None
     if bias_variable is not None:
@@ -67,7 +67,7 @@ def neural_network_mmd_loss_weighting(
     return weights
 
 
-@ray.remote(num_gpus=0.3)
+@ray.remote(num_gpus=0.5)
 def compute_model(
     passes,
     tensor_N,
@@ -109,7 +109,7 @@ def compute_model(
         mmd_model.parameters(), lr=learning_rate, weight_decay=1e-5
     )
     scheduler = ReduceLROnPlateau(optimizer, patience=patience, threshold=0)
-    for _ in range(passes):
+    for i in range(passes):
         mmd_model.train()
         optimizer.zero_grad()
 
