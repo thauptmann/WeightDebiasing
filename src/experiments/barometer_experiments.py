@@ -93,7 +93,7 @@ def barometer_experiments(
         )
         result_file.write("\nRelative Biases:\n")
         for column, bias, sd in zip(
-            df.drop(["pi"], axis="columns").columns,
+            scaled_N.drop(["pi"], axis="columns").columns,
             mean_biases,
             sd_biases,
         ):

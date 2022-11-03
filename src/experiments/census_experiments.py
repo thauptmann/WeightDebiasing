@@ -123,7 +123,7 @@ def census_experiments(
         )
         result_file.write("\nRelative Biases:\n")
         for column, bias, sd in zip(
-            df.drop(["pi", "label"], axis="columns").columns, mean_biases, sd_biases
+            scaled_N.drop(["pi", "label"], axis="columns").columns, mean_biases, sd_biases
         ):
             result_file.write(f"{column}: {bias} +- {sd}\n")
 
