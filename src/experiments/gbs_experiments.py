@@ -3,7 +3,7 @@ import numpy as np
 from pathlib import Path
 from utils.metrics import (
     average_standardised_absolute_mean_distance,
-    compute_bias,
+    compute_relative_bias,
     maximum_mean_discrepancy_weighted,
     maximum_mean_discrepancy,
     scale_df,
@@ -73,7 +73,7 @@ def gbs_experiments(
 
     weighted_means = compute_weighted_means(scaled_N, weights)
     population_means = np.mean(scaled_R.values, axis=0)
-    relative_biases = compute_bias(weighted_means, population_means)
+    relative_biases = compute_relative_bias(weighted_means, population_means)
 
     with open(visualisation_path / "results.txt", "w") as result_file:
         result_file.write(f"{asams=}\n")

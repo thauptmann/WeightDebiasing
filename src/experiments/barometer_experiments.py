@@ -7,7 +7,7 @@ from utils.visualisation import plot_weights
 
 from utils.metrics import (
     average_standardised_absolute_mean_distance,
-    compute_bias,
+    compute_relative_bias,
     maximum_mean_discrepancy_weighted,
     scale_df,
     compute_weighted_means,
@@ -27,7 +27,7 @@ def barometer_experiments(
     propensity_method,
     number_of_splits=10,
     method="",
-    number_of_repetitions=500,
+    number_of_repetitions=100,
     use_age_bias=None,
     sample_size=1000,
 ):
@@ -75,7 +75,7 @@ def barometer_experiments(
         sample_means = np.mean(
             scaled_R.drop(["pi", "label"], axis="columns").values, axis=0
         )
-        sample_biases = compute_bias(weighted_means, sample_means)
+        sample_biases = compute_relative_bias(weighted_means, sample_means)
 
         plot_weights(weights, visualisation_path / "weights", i)
         biases_list.append(sample_biases)
@@ -91,9 +91,10 @@ def barometer_experiments(
             f"MMDs: {np.nanmean(weighted_mmds_list)} +- "
             f"{np.nanstd(weighted_mmds_list)}\n\n"
         )
-        result_file.write("\nBiases:\n")
+        result_file.write("\nRelative Biases:\n")
         for column, bias, sd in zip(
             df.drop(["pi"], axis="columns").columns,
-            mean_biases, sd_biases,
+            mean_biases,
+            sd_biases,
         ):
             result_file.write(f"{column}: {bias} +- {sd}\n")

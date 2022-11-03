@@ -8,7 +8,7 @@ from utils.metrics import (
     maximum_mean_discrepancy_weighted,
     scale_df,
     compute_weighted_means,
-    compute_bias,
+    compute_relative_bias,
 )
 import random
 from tqdm import trange
@@ -26,7 +26,7 @@ def artificial_data_experiment(
     number_of_splits=10,
     bins=100,
     method="",
-    number_of_repetitions=500,
+    number_of_repetitions=100,
     sample_size=1000,
 ):
     file_directory = Path(__file__).parent
@@ -70,7 +70,7 @@ def artificial_data_experiment(
         sample_means = np.mean(
             scaled_R.drop(["pi", "label"], axis="columns").values, axis=0
         )
-        sample_biases = compute_bias(weighted_means, sample_means)
+        sample_biases = compute_relative_bias(weighted_means, sample_means)
 
         biases_list.append(sample_biases)
 
@@ -85,7 +85,7 @@ def artificial_data_experiment(
             f"MMDs: {np.nanmean(weighted_mmds_list)} +- "
             f"{np.nanstd(weighted_mmds_list)}\n"
         )
-        result_file.write("\nBiases:\n")
+        result_file.write("\nRelative Biases:\n")
         for column, bias, sd in zip(
             scaled_df.drop(["pi"], axis="columns").columns, mean_biases, sd_biases
         ):
