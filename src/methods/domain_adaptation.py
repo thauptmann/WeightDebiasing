@@ -19,10 +19,11 @@ def domain_adaptation_weighting(N, R, columns, number_of_splits, *args, **attrib
     epochs = 1000
     number_of_features = N.shape[1]
     latent_feature_list = [
-            number_of_features,
-            int(number_of_features * 0.75),
-            int(number_of_features * 1.25),
-        ]
+        number_of_features,
+        int(number_of_features * 0.75),
+        int(number_of_features * 1.25),
+    ]
+    dropout_list = [0.0, 0.2, 0.4]
 
     for train_index, test_index in k_fold.split(N):
         train_N = N.iloc[train_index]
@@ -34,8 +35,11 @@ def domain_adaptation_weighting(N, R, columns, number_of_splits, *args, **attrib
         tensor_R = torch.FloatTensor(R[columns].values)
 
         futures = [
-            compute_model.remote(epochs, tensor_N, tensor_R, 100, latent_features)
+            compute_model.remote(
+                epochs, tensor_N, tensor_R, 100, latent_features, dropout
+            )
             for latent_features in latent_feature_list
+            for dropout in dropout_list
         ]
 
         results = ray.get(futures)
@@ -55,8 +59,11 @@ def domain_adaptation_weighting(N, R, columns, number_of_splits, *args, **attrib
 
 
 @ray.remote(num_gpus=0.5)
-def compute_model(epochs, tensor_n, tensor_r, patience, latent_features):
-    model_path = Path("best_model_domain_adaptation.pt")
+def compute_model(epochs, tensor_n, tensor_r, patience, latent_features, dropout):
+    Path("models").mkdir(exist_ok=True, parents=True)
+    model_path = Path(
+        f"models/best_model_domain_adaptation_{latent_features}_{dropout}.pt"
+    )
 
     gamma = calculate_rbf_gamma(torch.concat([tensor_n, tensor_r]))
     mmd_loss_function = MMDLoss(gamma, device)
@@ -78,7 +85,9 @@ def compute_model(epochs, tensor_n, tensor_r, patience, latent_features):
 
     best_validation_loss = torch.inf
 
-    domain_adaptation_model = Mlp(tensor_n.shape[1], latent_features).to(device)
+    domain_adaptation_model = Mlp(tensor_n.shape[1], latent_features, dropout).to(
+        device
+    )
     # Save model to avoid size mismatch later
     torch.save(domain_adaptation_model.state_dict(), model_path)
     optimizer = torch.optim.Adam(
