@@ -29,7 +29,7 @@ def barometer_experiments(
     method="",
     number_of_repetitions=100,
     use_age_bias=None,
-    sample_size=1000,
+    sample_size=2000,
 ):
     file_directory = Path(__file__).parent
     result_path = Path(file_directory, "../../results")

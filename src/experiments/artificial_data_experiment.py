@@ -27,7 +27,7 @@ def artificial_data_experiment(
     bins=100,
     method="",
     number_of_repetitions=100,
-    sample_size=1000,
+    sample_size=2000,
 ):
     file_directory = Path(__file__).parent
     result_path = Path(file_directory, "../../results")

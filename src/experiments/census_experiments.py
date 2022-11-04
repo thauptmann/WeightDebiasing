@@ -31,7 +31,7 @@ def census_experiments(
     number_of_repetitions=100,
     bias_variable=None,
     bias_type=None,
-    sample_size=1000,
+    sample_size=2000,
     bias_strength=0.02,
 ):
     file_directory = Path(__file__).parent
@@ -123,7 +123,9 @@ def census_experiments(
         )
         result_file.write("\nRelative Biases:\n")
         for column, bias, sd in zip(
-            scaled_N.drop(["pi", "label"], axis="columns").columns, mean_biases, sd_biases
+            scaled_N.drop(["pi", "label"], axis="columns").columns,
+            mean_biases,
+            sd_biases,
         ):
             result_file.write(f"{column}: {bias} +- {sd}\n")
 
