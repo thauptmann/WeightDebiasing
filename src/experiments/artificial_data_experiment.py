@@ -24,10 +24,9 @@ def artificial_data_experiment(
     columns,
     propensity_method,
     number_of_splits=10,
-    bins=100,
     method="",
     number_of_repetitions=100,
-    sample_size=2000,
+    bias_sample_size=2000,
 ):
     file_directory = Path(__file__).parent
     result_path = Path(file_directory, "../../results")
@@ -41,7 +40,7 @@ def artificial_data_experiment(
     biases_list = []
 
     for _ in trange(number_of_repetitions):
-        scaled_N, scaled_R = sample(scaled_df, sample_size)
+        scaled_N, scaled_R = sample(scaled_df, bias_sample_size)
         weights = propensity_method(
             scaled_N,
             scaled_R,

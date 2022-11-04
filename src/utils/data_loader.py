@@ -172,10 +172,10 @@ def load_dataset(dataset_name):
         return load_barometer()
 
 
-def sample(df, sample_size):
-    representative = df.sample(sample_size)
+def sample(df, bias_sample_size, reference_sample_size=2000):
+    representative = df.sample(reference_sample_size)
     representative["label"] = 0
-    non_representative = df.sample(sample_size, weights=df["pi"])
+    non_representative = df.sample(bias_sample_size, weights=df["pi"])
     non_representative["label"] = 1
     return non_representative, representative
 

@@ -125,12 +125,6 @@ def compute_model(
             training_data = tensor_N
             reference_data = tensor_R
 
-        training_indices = np.random.choice(len(tensor_N), len(tensor_N))
-        training_data = tensor_N[training_indices]
-
-        reference_indices = np.random.choice(len(tensor_N), len(tensor_N))
-        reference_data = tensor_R[reference_indices]
-
         train_weights = mmd_model(training_data)
         mmd_loss = mmd_loss_function_train(training_data, reference_data, train_weights)
         if not torch.isnan(mmd_loss) and not torch.isinf(mmd_loss):
