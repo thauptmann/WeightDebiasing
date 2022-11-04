@@ -51,7 +51,7 @@ def load_census_data():
     df = pd.read_csv(
         f"{file_path}/../../data/Census_Income/adult.data",
         names=columns,
-        na_values=["-1", -1, " ?"],
+        na_values=["-1", "-1", " ?"],
     )
     df, preprocessed_columns = preprocess_census(df, census_bias)
     return df, preprocessed_columns, census_bias

@@ -30,6 +30,7 @@ def barometer_experiments(
     number_of_repetitions=100,
     use_age_bias=None,
     sample_size=2000,
+    bias_sample_size=100
 ):
     file_directory = Path(__file__).parent
     result_path = Path(file_directory, "../../results")
@@ -93,7 +94,7 @@ def barometer_experiments(
         )
         result_file.write("\nRelative Biases:\n")
         for column, bias, sd in zip(
-            scaled_N.drop(["pi"], axis="columns").columns,
+            df.drop(["pi"], axis="columns").columns,
             mean_biases,
             sd_biases,
         ):

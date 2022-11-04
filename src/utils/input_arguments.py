@@ -18,9 +18,10 @@ dataset_list = ["gbs", "artificial", "census", "barometer"]
 
 def input_arguments():
     parser = argparse.ArgumentParser()
-    parser.add_argument("--dataset", default="gbs", choices=dataset_list)
-    parser.add_argument("--method", default="logistic_regression", choices=method_list)
-    parser.add_argument("--bias", default="none", choices=bias_choice)
+    parser.add_argument("--dataset", choices=dataset_list, required=True)
+    parser.add_argument("--method", choices=method_list, required=True)
+    parser.add_argument("--bias",  choices=bias_choice, required=True)
     parser.add_argument("--use_age_bias", action="store_true")
+    parser.add_argument("--bias_sample_size", type=int, required=True)
 
     return parser.parse_args()

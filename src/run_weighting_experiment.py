@@ -26,6 +26,7 @@ def weighting_experiment():
     args = input_arguments()
     dataset_name = args.dataset
     method_name = args.method
+    bias_sample_size = args.bias_sample_size
     data, columns, bias_variable = load_dataset(dataset_name)
 
     compute_weights_function = get_weighting_function(method_name)
@@ -36,6 +37,7 @@ def weighting_experiment():
             columns,
             compute_weights_function,
             method=method_name,
+            bias_sample_size=bias_sample_size
         )
     elif dataset_name == "census":
         bias = args.bias
@@ -46,6 +48,7 @@ def weighting_experiment():
             method=method_name,
             bias_variable=bias_variable,
             bias_type=bias,
+            bias_sample_size=bias_sample_size
         )
     elif dataset_name == "barometer":
         use_age_bias = args.use_age_bias
@@ -55,6 +58,7 @@ def weighting_experiment():
             compute_weights_function,
             method=method_name,
             use_age_bias=use_age_bias,
+            bias_sample_size=bias_sample_size
         )
     else:
         weights = gbs_experiments(
@@ -64,6 +68,7 @@ def weighting_experiment():
             compute_weights_function,
             method=method_name,
             bias_variable=bias_variable,
+            bias_sample_size=bias_sample_size
         )
         if dataset_name == "allensbach":
             N = data[data["label"] == 1]

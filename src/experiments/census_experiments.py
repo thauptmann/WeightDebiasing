@@ -33,6 +33,7 @@ def census_experiments(
     bias_type=None,
     sample_size=2000,
     bias_strength=0.02,
+    bias_sample_size=100
 ):
     file_directory = Path(__file__).parent
     result_path = Path(file_directory, "../../results")
@@ -123,7 +124,7 @@ def census_experiments(
         )
         result_file.write("\nRelative Biases:\n")
         for column, bias, sd in zip(
-            scaled_N.drop(["pi", "label"], axis="columns").columns,
+            df.drop(["pi"], axis="columns").columns,
             mean_biases,
             sd_biases,
         ):
