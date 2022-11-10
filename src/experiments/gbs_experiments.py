@@ -28,7 +28,7 @@ def gbs_experiments(
     bins=100,
     method="",
     bias_variable=None,
-    bias_sample_size=bias_sample_size
+    bias_sample_size=0,
 ):
     result_path = Path("../results")
     visualisation_path = result_path / method / dataset

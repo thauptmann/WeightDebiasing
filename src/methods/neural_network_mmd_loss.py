@@ -14,12 +14,14 @@ def neural_network_mmd_loss_weighting(
     N, R, columns, use_batches=False, *args, **attributes
 ):
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    passes = 2000
+    passes = 5000
     bias_variable = attributes["bias_variable"]
     bias_values = None
     if bias_variable is not None:
         bias_values = N[bias_variable]
 
+    print(len(N))
+    print(len(N.drop_duplicates()))
     tensor_N = torch.FloatTensor(N[columns].values)
     tensor_R = torch.FloatTensor(R[columns].values)
     number_of_features = tensor_N.shape[1]
@@ -28,7 +30,7 @@ def neural_network_mmd_loss_weighting(
         int(number_of_features * 0.5),
         int(number_of_features * 2),
     ]
-    dropout_list = [0.0, 0.2, 0.4]
+    dropout_list = [0.0, 0.2]
     best_model = None
     best_mmd_list = None
     best_mean_list = None
@@ -67,7 +69,7 @@ def neural_network_mmd_loss_weighting(
     return weights
 
 
-@ray.remote(num_gpus=0.5)
+@ray.remote(num_gpus=0)
 def compute_model(
     passes,
     tensor_N,
@@ -89,7 +91,7 @@ def compute_model(
 
     gamma = calculate_rbf_gamma(np.append(tensor_N, tensor_R, axis=0))
     mmd_loss_function = WeightedMMDLoss(gamma, len(tensor_R), device)
-    mmd_loss_function_train = WeightedMMDLoss(gamma, len(tensor_N), device)
+    mmd_loss_function_train = WeightedMMDLoss(gamma, len(tensor_R), device)
 
     tensor_N = tensor_N.to(device)
     tensor_R = tensor_R.to(device)
@@ -160,15 +162,15 @@ def validate_model(tensor_N, tensor_R, mmd_loss_function, mmd_model):
     mmd_model.eval()
     with torch.no_grad():
         validation_weights = mmd_model(tensor_N)
-    if torch.sum(validation_weights) == 0:
-        mmd = np.nan
-    else:
-        mmd = mmd_loss_function(
-            tensor_N,
-            tensor_R,
-            validation_weights,
-        )
-        mmd = mmd.cpu().numpy()
+        if torch.sum(validation_weights) == 0:
+            mmd = np.nan
+        else:
+            mmd = mmd_loss_function(
+                tensor_N,
+                tensor_R,
+                validation_weights,
+            )
+            mmd = mmd.cpu().numpy()
 
     return mmd, validation_weights
 

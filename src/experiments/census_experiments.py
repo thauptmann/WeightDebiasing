@@ -28,7 +28,7 @@ def census_experiments(
     propensity_method,
     number_of_splits=10,
     method="",
-    number_of_repetitions=100,
+    number_of_repetitions=2,
     bias_variable=None,
     bias_type=None,
     sample_size=2000,
@@ -67,7 +67,7 @@ def census_experiments(
     sample_mean_list = []
 
     for i in trange(number_of_repetitions):
-        scaled_N, scaled_R = sample(scaled_df, sample_size)
+        scaled_N, scaled_R = sample(scaled_df, bias_sample_size, sample_size)
         sample_means = np.mean(
             scaled_R.drop(["pi", "label"], axis="columns").values, axis=0
         )
