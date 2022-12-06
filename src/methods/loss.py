@@ -24,7 +24,7 @@ class WeightedMMDLoss(nn.Module):
         return 1 / (2 * (sigma**2))
 
     def forward(self, N, R, weights):
-        weights = torch.squeeze(weights / torch.sum(weights))
+        weights = torch.squeeze(weights)
 
         if self.gamma is None:
             concated = torch.concat([N, R], dim=0)
@@ -56,7 +56,6 @@ class AsamLoss(nn.Module):
         super(AsamLoss, self).__init__()
 
     def forward(self, N, R, weights):
-        weights = weights / sum(weights)
         weighted_N = torch.mul(N, weights)
         weighted_means_non_representative = torch.sum(weighted_N, axis=0)
         weighted_variance = torch.mul(

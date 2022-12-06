@@ -30,7 +30,8 @@ def barometer_experiments(
     number_of_repetitions=100,
     use_age_bias=None,
     sample_size=2000,
-    bias_sample_size=100
+    bias_sample_size=100,
+    drop_duplicates=False,
 ):
     file_directory = Path(__file__).parent
     result_path = Path(file_directory, "../../results")
@@ -48,6 +49,8 @@ def barometer_experiments(
 
     for i in trange(number_of_repetitions):
         scaled_N, scaled_R = sample_barometer(scaled_df, sample_size, use_age_bias)
+        if drop_duplicates:
+            scaled_N = scaled_N.drop_duplicates()
         weights = propensity_method(
             scaled_N,
             scaled_R,

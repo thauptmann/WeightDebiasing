@@ -20,15 +20,12 @@ def neural_network_mmd_loss_weighting(
     if bias_variable is not None:
         bias_values = N[bias_variable]
 
-    print(len(N))
-    print(len(N.drop_duplicates()))
     tensor_N = torch.FloatTensor(N[columns].values)
     tensor_R = torch.FloatTensor(R[columns].values)
     number_of_features = tensor_N.shape[1]
     latent_feature_list = [
         number_of_features,
-        int(number_of_features * 0.5),
-        int(number_of_features * 2),
+        int((number_of_features + 1) * 0.5),
     ]
     dropout_list = [0.0, 0.2]
     best_model = None
@@ -78,7 +75,7 @@ def compute_model(
     use_batches=False,
     latent_features=1,
     bias_values=None,
-    dropout=0.0
+    dropout=0.0,
 ):
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     Path("models").mkdir(exist_ok=True, parents=True)
@@ -88,6 +85,7 @@ def compute_model(
     learning_rate = 0.001
     best_mmd = torch.inf
     means = []
+    representative_means = torch.mean(tensor_R, dim=1)
 
     gamma = calculate_rbf_gamma(np.append(tensor_N, tensor_R, axis=0))
     mmd_loss_function = WeightedMMDLoss(gamma, len(tensor_R), device)

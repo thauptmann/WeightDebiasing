@@ -27,6 +27,7 @@ def artificial_data_experiment(
     method="",
     number_of_repetitions=100,
     bias_sample_size=2000,
+    drop_duplicates=False
 ):
     file_directory = Path(__file__).parent
     result_path = Path(file_directory, "../../results")
@@ -41,6 +42,8 @@ def artificial_data_experiment(
 
     for _ in trange(number_of_repetitions):
         scaled_N, scaled_R = sample(scaled_df, bias_sample_size)
+        if drop_duplicates:
+            scaled_N = scaled_N.drop_duplicates()
         weights = propensity_method(
             scaled_N,
             scaled_R,

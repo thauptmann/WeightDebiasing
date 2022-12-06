@@ -29,6 +29,7 @@ def gbs_experiments(
     method="",
     bias_variable=None,
     bias_sample_size=0,
+    drop_duplicates=False,
 ):
     result_path = Path("../results")
     visualisation_path = result_path / method / dataset
@@ -36,6 +37,8 @@ def gbs_experiments(
     df = df.sample(frac=1)
     scaled_df, scaler = scale_df(df, columns)
     scaled_N = scaled_df[scaled_df["label"] == 1]
+    if drop_duplicates:
+        scaled_N = scaled_N.drop_duplicates()
     scaled_R = scaled_df[scaled_df["label"] == 0]
     non_representative_size = len(scaled_df[scaled_df["label"] == 1])
     representative_size = len(scaled_df[scaled_df["label"] == 0])
