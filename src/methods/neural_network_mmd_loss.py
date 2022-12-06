@@ -88,7 +88,7 @@ def compute_model(
     learning_rate = 0.001
     best_mmd = torch.inf
     means = []
-    representative_means = torch.mean(tensor_R, dim=0)
+    representative_means = torch.mean(tensor_R, dim=0).to(device)
 
     gamma = calculate_rbf_gamma(np.append(tensor_N, tensor_R, axis=0))
     mmd_loss_function = WeightedMMDLoss(gamma, len(tensor_R), device)
