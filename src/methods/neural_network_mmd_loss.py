@@ -10,9 +10,6 @@ from torch.optim.lr_scheduler import ReduceLROnPlateau
 import ray
 
 
-mse_loss = torch.nn.MSELoss()
-
-
 def neural_network_mmd_loss_weighting(
     N, R, columns, use_batches=False, *args, **attributes
 ):
@@ -88,7 +85,6 @@ def compute_model(
     learning_rate = 0.001
     best_mmd = torch.inf
     means = []
-    representative_means = torch.mean(tensor_R, dim=0).to(device)
 
     gamma = calculate_rbf_gamma(np.append(tensor_N, tensor_R, axis=0))
     mmd_loss_function = WeightedMMDLoss(gamma, len(tensor_R), device)
@@ -101,7 +97,6 @@ def compute_model(
         validation_weights = (torch.ones(len(tensor_N)) / len(tensor_N)).to(device)
         positive_value = torch.sum(bias_values * validation_weights.squeeze())
         means.append(positive_value.cpu())
-
         start_mmd = mmd_loss_function(tensor_N, tensor_R, validation_weights)
         mmd_list.append(start_mmd.cpu().numpy())
 
@@ -129,13 +124,9 @@ def compute_model(
             reference_data = tensor_R
 
         train_weights = mmd_model(training_data)
-        non_representative_means = torch.sum(
-            (training_data * train_weights[:, None]), dim=0
-        )
         mmd_loss = mmd_loss_function_train(training_data, reference_data, train_weights)
         if not torch.isnan(mmd_loss) and not torch.isinf(mmd_loss):
-            means_loss = mse_loss(representative_means, non_representative_means)
-            loss = mmd_loss + means_loss
+            loss = mmd_loss
             loss.backward()
             optimizer.step()
 
@@ -151,9 +142,7 @@ def compute_model(
 
         scheduler.step(mmd)
         if bias_values is not None:
-            validation_weights = (validation_weights / sum(validation_weights)).to(
-                device
-            )
+            validation_weights = validation_weights.to(device)
             positive_value = torch.sum(bias_values * validation_weights.squeeze())
             means.append(positive_value.cpu())
 

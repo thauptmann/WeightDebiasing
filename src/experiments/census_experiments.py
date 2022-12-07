@@ -28,10 +28,10 @@ def census_experiments(
     propensity_method,
     number_of_splits=10,
     method="",
-    number_of_repetitions=3,
+    number_of_repetitions=500,
     bias_variable=None,
     bias_type=None,
-    sample_size=2000,
+    sample_size=3000,
     bias_strength=0.02,
     bias_sample_size=100,
     drop_duplicates=False,
@@ -78,8 +78,10 @@ def census_experiments(
         positive = np.sum(scaled_R[bias_variable].values)
         sample_representative_mean = positive / len(scaled_R)
         sample_mean_list.append(sample_representative_mean)
+        print(sample_representative_mean)
+        print(np.mean(sample_mean_list))
 
-        weights = propensity_method(
+        """ weights = propensity_method(
             scaled_N,
             scaled_R,
             columns,
@@ -88,7 +90,8 @@ def census_experiments(
             bias_variable=bias_variable,
             mean_list=mean_list,
             mmd_list=mmd_list,
-        )
+        ) """
+        weights = np.ones((len(scaled_N))) / len(scaled_N)
 
         weighted_mmd = maximum_mean_discrepancy_weighted(
             scaled_N[columns].values, scaled_R[columns].values, weights
