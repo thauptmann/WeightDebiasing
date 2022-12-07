@@ -28,7 +28,7 @@ def census_experiments(
     propensity_method,
     number_of_splits=10,
     method="",
-    number_of_repetitions=3,
+    number_of_repetitions=100,
     bias_variable=None,
     bias_type=None,
     sample_size=2000,
