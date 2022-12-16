@@ -3,7 +3,7 @@ import torch
 import shap
 from scipy.spatial.distance import pdist
 from utils.models import WeightingMlp
-from ..utils.loss import WeightedMMDLoss
+from utils.loss import WeightedMMDLoss
 import numpy as np
 import matplotlib.pyplot as plt
 from torch.optim.lr_scheduler import OneCycleLR

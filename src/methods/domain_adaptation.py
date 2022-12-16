@@ -1,9 +1,8 @@
-from pathlib import Path
 from sklearn.model_selection import KFold
 import torch
 from scipy.spatial.distance import pdist
 from utils.models import Mlp
-from ..utils.loss import MMDLoss
+from utils.loss import MMDLoss
 import numpy as np
 from torch.optim.lr_scheduler import ReduceLROnPlateau
 from torch.utils.data import TensorDataset, DataLoader

@@ -1,7 +1,5 @@
-import numpy as np
 from sklearn.linear_model import LogisticRegression
 import pandas as pd
-from sklearn.model_selection import KFold
 
 
 def logistic_regression_weighting(N, R, columns, number_of_splits, *args, **attributes):

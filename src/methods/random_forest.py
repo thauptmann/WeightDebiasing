@@ -1,7 +1,6 @@
 from sklearn.ensemble import RandomForestClassifier
-from sklearn.model_selection import GridSearchCV, KFold
+from sklearn.model_selection import GridSearchCV
 import pandas as pd
-import numpy as np
 
 param_grid = {"max_depth": [2, 3, 5], "n_estimators": [25, 50, 100]}
 
