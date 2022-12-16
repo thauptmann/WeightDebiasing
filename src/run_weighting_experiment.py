@@ -36,7 +36,6 @@ def weighting_experiment():
             compute_weights_function,
             method=method_name,
             bias_sample_size=bias_sample_size,
-            drop_duplicates=args.drop_duplicates
         )
     elif dataset_name == "census":
         bias = args.bias
@@ -58,7 +57,6 @@ def weighting_experiment():
             method=method_name,
             use_age_bias=use_age_bias,
             bias_sample_size=bias_sample_size,
-            drop_duplicates=args.drop_duplicates
         )
     else:
         weights = gbs_experiments(
@@ -69,7 +67,6 @@ def weighting_experiment():
             method=method_name,
             bias_variable=bias_variable,
             bias_sample_size=bias_sample_size,
-            drop_duplicates=args.drop_duplicates
         )
         if dataset_name == "allensbach":
             N = data[data["label"] == 1]
