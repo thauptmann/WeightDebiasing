@@ -27,18 +27,17 @@ def census_experiments(
     df,
     columns,
     propensity_method,
-    number_of_splits=5,
+    number_of_splits=10,
     method="",
     number_of_repetitions=100,
     bias_variable=None,
     bias_type=None,
-    sample_size=1000,
     bias_strength=0.02,
-    bias_sample_size=100,
+    bias_sample_size=1000,
 ):
     file_directory = Path(__file__).parent
     result_path = Path(file_directory, "../../results")
-    visualisation_path = result_path / method / "census" / bias_type
+    visualisation_path = result_path / method / "census" / bias_type / bias_sample_size
     visualisation_path.mkdir(exist_ok=True, parents=True)
     df = df.reset_index(drop=True)
 
@@ -70,7 +69,7 @@ def census_experiments(
     sample_mean_list = []
 
     for i in trange(number_of_repetitions):
-        scaled_N, scaled_R = sample(scaled_df, bias_sample_size, sample_size)
+        scaled_N, scaled_R = sample(scaled_df, bias_sample_size)
         sample_means = np.mean(
             scaled_R.drop(["pi", "label"], axis="columns").values, axis=0
         )

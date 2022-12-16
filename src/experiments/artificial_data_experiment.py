@@ -27,11 +27,10 @@ def artificial_data_experiment(
     method="",
     number_of_repetitions=100,
     bias_sample_size=1000,
-    drop_duplicates=False
 ):
     file_directory = Path(__file__).parent
     result_path = Path(file_directory, "../../results")
-    visualisation_path = result_path / method / "artificial"
+    visualisation_path = result_path / method / "artificial" / bias_sample_size
     visualisation_path.mkdir(exist_ok=True, parents=True)
     df = df.reset_index(drop=True)
     scaled_df, scaler = scale_df(df, columns)
@@ -42,8 +41,7 @@ def artificial_data_experiment(
 
     for _ in trange(number_of_repetitions):
         scaled_N, scaled_R = sample(scaled_df, bias_sample_size)
-        if drop_duplicates:
-            scaled_N = scaled_N.drop_duplicates()
+        
         weights = propensity_method(
             scaled_N,
             scaled_R,

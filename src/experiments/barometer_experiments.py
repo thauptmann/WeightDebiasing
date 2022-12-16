@@ -29,13 +29,14 @@ def barometer_experiments(
     method="",
     number_of_repetitions=100,
     use_age_bias=None,
-    sample_size=2000,
-    bias_sample_size=100,
-    drop_duplicates=False,
+    sample_size=1000,
+    bias_sample_size=1000,
 ):
     file_directory = Path(__file__).parent
     result_path = Path(file_directory, "../../results")
-    visualisation_path = result_path / method / "barometer" / f"{use_age_bias=}"
+    visualisation_path = (
+        result_path / method / "barometer" / f"{use_age_bias=}" / bias_sample_size
+    )
     visualisation_path.mkdir(exist_ok=True, parents=True)
     df = df.reset_index(drop=True)
 
@@ -48,9 +49,9 @@ def barometer_experiments(
     biases_list = []
 
     for i in trange(number_of_repetitions):
-        scaled_N, scaled_R = sample_barometer(scaled_df, sample_size, use_age_bias)
-        if drop_duplicates:
-            scaled_N = scaled_N.drop_duplicates()
+        scaled_N, scaled_R = sample_barometer(
+            scaled_df, sample_size, bias_sample_size, use_age_bias
+        )
         weights = propensity_method(
             scaled_N,
             scaled_R,

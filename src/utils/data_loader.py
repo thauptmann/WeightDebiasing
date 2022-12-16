@@ -172,7 +172,7 @@ def load_dataset(dataset_name):
         return load_barometer()
 
 
-def sample(df, bias_sample_size, reference_sample_size=2000):
+def sample(df, bias_sample_size, reference_sample_size=1000):
     representative = df.sample(reference_sample_size)
     representative["label"] = 0
     non_representative = df.sample(bias_sample_size, weights=df["pi"])
@@ -180,13 +180,13 @@ def sample(df, bias_sample_size, reference_sample_size=2000):
     return non_representative, representative
 
 
-def sample_barometer(df, sample_size, use_age_bias):
+def sample_barometer(df, sample_size, bias_size, use_age_bias):
     internet_group = df[df["use_of_internet"] == 1]
     representative = df.sample(sample_size)
     representative["label"] = 0
     if use_age_bias:
-        non_representative = internet_group.sample(sample_size, weights=df["pi"])
+        non_representative = internet_group.sample(bias_size, weights=df["pi"])
     else:
-        non_representative = internet_group.sample(sample_size)
+        non_representative = internet_group.sample(bias_size)
     non_representative["label"] = 1
     return non_representative, representative
