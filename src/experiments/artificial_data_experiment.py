@@ -30,7 +30,7 @@ def artificial_data_experiment(
 ):
     file_directory = Path(__file__).parent
     result_path = Path(file_directory, "../../results")
-    visualisation_path = result_path / method / "artificial" / bias_sample_size
+    visualisation_path = result_path / method / "artificial" / str(bias_sample_size)
     visualisation_path.mkdir(exist_ok=True, parents=True)
     df = df.reset_index(drop=True)
     scaled_df, scaler = scale_df(df, columns)

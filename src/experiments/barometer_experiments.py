@@ -35,7 +35,7 @@ def barometer_experiments(
     file_directory = Path(__file__).parent
     result_path = Path(file_directory, "../../results")
     visualisation_path = (
-        result_path / method / "barometer" / f"{use_age_bias=}" / bias_sample_size
+        result_path / method / "barometer" / f"{use_age_bias=}" / str(bias_sample_size)
     )
     visualisation_path.mkdir(exist_ok=True, parents=True)
     df = df.reset_index(drop=True)

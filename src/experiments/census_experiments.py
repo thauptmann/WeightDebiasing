@@ -37,7 +37,7 @@ def census_experiments(
 ):
     file_directory = Path(__file__).parent
     result_path = Path(file_directory, "../../results")
-    visualisation_path = result_path / method / "census" / bias_type / bias_sample_size
+    visualisation_path = result_path / method / "census" / bias_type / str(bias_sample_size)
     visualisation_path.mkdir(exist_ok=True, parents=True)
     df = df.reset_index(drop=True)
 
