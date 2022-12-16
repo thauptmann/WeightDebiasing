@@ -20,7 +20,7 @@ def input_arguments():
     parser = argparse.ArgumentParser()
     parser.add_argument("--dataset", choices=dataset_list, required=True)
     parser.add_argument("--method", choices=method_list, required=True)
-    parser.add_argument("--bias",  choices=bias_choice, required=True)
+    parser.add_argument("--bias",  choices=bias_choice, default="none")
     parser.add_argument("--use_age_bias", action="store_true")
     parser.add_argument("--drop_duplicates", action="store_true")
     parser.add_argument("--bias_sample_size", type=int, required=True)
