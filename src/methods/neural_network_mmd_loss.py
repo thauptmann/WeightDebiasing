@@ -24,14 +24,14 @@ def neural_network_mmd_loss_weighting(
     number_of_features = tensor_N.shape[1]
 
     if bias_values is not None:
-        bias_values_train = torch.FloatTensor(bias_values.values).to(device)
+        bias_values = torch.FloatTensor(bias_values.values).to(device)
 
     model, mmd_list, mean_list = compute_model(
         passes,
         tensor_N,
         tensor_R,
         latent_features=number_of_features,
-        bias_values=bias_values_train,
+        bias_values=bias_values,
     )
 
     if bias_values is not None:

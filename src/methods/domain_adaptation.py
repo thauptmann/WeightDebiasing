@@ -74,7 +74,7 @@ def compute_model(epochs, N, R, patience, latent_features, dropout, number_of_sp
         test_N = N.iloc[test_index]
         tensor_N = torch.FloatTensor(train_N.values)
         tensor_test_N = torch.FloatTensor(test_N.values)
-        gamma = calculate_rbf_gamma(torch.concat([train_N, tensor_r]))
+        gamma = calculate_rbf_gamma(torch.concat([tensor_N, tensor_r]))
         mmd_loss_function = MMDLoss(gamma, device)
 
         tensor_n = tensor_N.to(device)
