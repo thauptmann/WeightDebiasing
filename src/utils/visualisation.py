@@ -110,12 +110,13 @@ def plot_results_with_variance(
     mmd_list,
     representative_ratio,
     visualisation_path,
+    suffix="",
 ):
-    plot_mmd_with_variance(mmd_list, visualisation_path)
-    plot_mean_with_variance(ratio_list, representative_ratio, visualisation_path)
+    plot_mmd_with_variance(mmd_list, visualisation_path, suffix)
+    plot_mean_with_variance(ratio_list, representative_ratio, visualisation_path, suffix)
 
 
-def plot_mmd_with_variance(mmd_list, visualisation_path):
+def plot_mmd_with_variance(mmd_list, visualisation_path, suffix):
     mean_mmd = np.nanmean(mmd_list, axis=0)
     sd_mmd = np.nanstd(mmd_list, axis=0)
     plt.plot(range(len(mean_mmd)) , mean_mmd, color="blue")
@@ -128,13 +129,13 @@ def plot_mmd_with_variance(mmd_list, visualisation_path):
     )
     plt.ylabel("Weighted MMD")
     plt.xlabel("Pass")
-    plt.savefig(Path(visualisation_path) / "weighted_mmd.pdf")
+    plt.savefig(Path(visualisation_path) / f"weighted_mmd_{suffix}.pdf")
     plt.clf()
 
 
-def plot_mean_with_variance(mean_list, representative_mean, visualisation_path):
-    mean_mean = np.mean(mean_list, axis=0)
-    sd_mean = np.std(mean_list, axis=0)
+def plot_mean_with_variance(mean_list, representative_mean, visualisation_path, suffix):
+    mean_mean = np.nanmean(mean_list, axis=0)
+    sd_mean = np.nanstd(mean_list, axis=0)
     plt.plot(
         range(len(mean_mean)),
         mean_mean,
@@ -158,5 +159,5 @@ def plot_mean_with_variance(mean_list, representative_mean, visualisation_path):
     plt.ylabel("Mean")
     plt.xlabel("Pass")
     plt.legend()
-    plt.savefig(Path(visualisation_path) / "weighted_mean.pdf")
+    plt.savefig(Path(visualisation_path) / f"weighted_mean_{suffix}.pdf")
     plt.clf()

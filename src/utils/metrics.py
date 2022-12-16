@@ -3,6 +3,7 @@ from scipy.spatial.distance import pdist
 from sklearn.metrics import roc_curve
 from sklearn.metrics.pairwise import rbf_kernel
 from sklearn.preprocessing import StandardScaler
+import torch
 
 
 def interpolate_roc(y_test, y_predict, iteration):
@@ -54,7 +55,6 @@ def average_standardised_absolute_mean_distance(N, R, columns, weights=None):
     )
     standardised_absolute_mean_distances = abs(means_difference / middle_variance)
     return standardised_absolute_mean_distances
-
 
 def compute_weighted_means(N, weights):
     weights = weights / sum(weights)
@@ -117,14 +117,9 @@ def compute_weighted_maximum_mean_discrepancy(gamma, x, y, weights):
 def maximum_mean_discrepancy_weighted(x, y, weights, gamma=None):
     weights = weights / sum(weights)
     if gamma is None:
-        gamma = calculate_rbf_gamma_weighted(np.append(x, y, axis=0))
+        gamma = calculate_rbf_gamma(np.append(x, y, axis=0))
     return compute_weighted_maximum_mean_discrepancy(gamma, x, y, weights)
 
-
-def calculate_rbf_gamma_weighted(aggregate_set):
-    all_distances = pdist(aggregate_set, "euclid")
-    sigma = np.median(all_distances)
-    return 1 / (2 * (sigma**2))
 
 
 def compute_ratio(bias_values, weights):

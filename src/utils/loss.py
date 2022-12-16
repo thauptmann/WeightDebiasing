@@ -7,16 +7,26 @@ euclidean_distance_fn = torch.nn.PairwiseDistance(2)
 
 # Weighted MMD loss
 class WeightedMMDLoss(nn.Module):
-    def __init__(self, gamma, len_R, device):
+    def __init__(self, gamma, R, device):
         super(WeightedMMDLoss, self).__init__()
         self.gamma = gamma
+        len_R = len(R)
         self.weights_R = (torch.ones(len_R) / len_R).to(device)
         self.device = device
+
+        y_y_rbf_matrix = torch.matmul(
+            torch.unsqueeze(self.weights_R, 1), torch.unsqueeze(self.weights_R, 0)
+        ) * self.rbf_kernel(R, R, gamma)
+        self.y_y_mean = y_y_rbf_matrix.sum().to(device)
 
     def rbf_kernel(self, source, target, gamma):
         distance_matrix = torch.cdist(source, target, p=2)
         squared_distance_matrix = distance_matrix.pow(2)
         return torch.exp(-gamma * squared_distance_matrix)
+
+    def linear_kernel(self, source, target, gamma):
+        dot_product_matrix = torch.mm(source, target.T)
+        return dot_product_matrix
 
     def calculate_rbf_gamma(self, aggregate_set):
         all_distances = euclidean_distance_fn(aggregate_set, p=2)
@@ -26,29 +36,20 @@ class WeightedMMDLoss(nn.Module):
     def forward(self, N, R, weights):
         weights = torch.squeeze(weights)
 
-        if self.gamma is None:
-            concated = torch.concat([N, R], dim=0)
-            gamma = self.calculate_rbf_gamma(concated)
-        else:
-            gamma = self.gamma
-
         x_x_rbf_matrix = torch.matmul(
             torch.unsqueeze(weights, 1), torch.unsqueeze(weights, 0)
-        ) * self.rbf_kernel(N, N, gamma)
+        ) * self.rbf_kernel(N, N, self.gamma)
         x_x_mean = x_x_rbf_matrix.sum()
 
-        y_y_rbf_matrix = torch.matmul(
-            torch.unsqueeze(self.weights_R, 1), torch.unsqueeze(self.weights_R, 0)
-        ) * self.rbf_kernel(R, R, gamma)
-        y_y_mean = y_y_rbf_matrix.sum()
+        
         weight_matrix = torch.matmul(
             torch.unsqueeze(weights, 1), torch.unsqueeze(self.weights_R, 0)
         )
-        x_y_rbf_matrix = weight_matrix * self.rbf_kernel(N, R, gamma)
+        x_y_rbf_matrix = weight_matrix * self.rbf_kernel(N, R, self.gamma)
         x_y_mean = x_y_rbf_matrix.sum()
 
-        maximum_mean_discrepancy_value = x_x_mean + y_y_mean - 2 * x_y_mean
-        return torch.sqrt(maximum_mean_discrepancy_value)
+        maximum_mean_discrepancy_value = x_x_mean + self.y_y_mean - 2 * x_y_mean
+        return maximum_mean_discrepancy_value
 
 
 class AsamLoss(nn.Module):
@@ -72,7 +73,6 @@ class AsamLoss(nn.Module):
             (variance_representative + weighted_variance_non_representative) / 2
         )
         loss = torch.abs(means_difference / middle_variance)
-
         return torch.mean(loss)
 
 

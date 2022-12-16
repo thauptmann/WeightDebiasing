@@ -12,6 +12,7 @@ from utils.metrics import (
     scale_df,
     compute_weighted_means,
 )
+from utils.metrics import calculate_rbf_gamma
 from tqdm import trange
 import random
 from utils.visualisation import plot_results_with_variance
@@ -26,15 +27,14 @@ def census_experiments(
     df,
     columns,
     propensity_method,
-    number_of_splits=10,
+    number_of_splits=5,
     method="",
     number_of_repetitions=100,
     bias_variable=None,
     bias_type=None,
-    sample_size=2000,
+    sample_size=1000,
     bias_strength=0.02,
     bias_sample_size=100,
-    drop_duplicates=False,
 ):
     file_directory = Path(__file__).parent
     result_path = Path(file_directory, "../../results")
@@ -60,6 +60,8 @@ def census_experiments(
     df["pi"] = odds / (1 + odds)
     scaled_df, scaler = scale_df(df, columns)
 
+    gamma = calculate_rbf_gamma(scaled_df)
+
     weighted_mmds_list = []
     asams_list = []
     biases_list = []
@@ -69,8 +71,6 @@ def census_experiments(
 
     for i in trange(number_of_repetitions):
         scaled_N, scaled_R = sample(scaled_df, bias_sample_size, sample_size)
-        if drop_duplicates:
-            scaled_N = scaled_N.drop_duplicates()
         sample_means = np.mean(
             scaled_R.drop(["pi", "label"], axis="columns").values, axis=0
         )
@@ -90,8 +90,19 @@ def census_experiments(
             mmd_list=mmd_list,
         )
 
+        if method == "neural_network_mmd_loss":
+            biases_path = visualisation_path / "biases"
+            biases_path.mkdir(exist_ok=True)
+            plot_results_with_variance(
+                [mean_list[-1]],
+                [mmd_list[-1]],
+                np.nanmean(sample_mean_list),
+                biases_path,
+                i,
+            )
+
         weighted_mmd = maximum_mean_discrepancy_weighted(
-            scaled_N[columns].values, scaled_R[columns].values, weights
+            scaled_N[columns].values, scaled_R[columns].values, weights, gamma
         )
         weighted_asams = average_standardised_absolute_mean_distance(
             scaled_N, scaled_R, columns, weights

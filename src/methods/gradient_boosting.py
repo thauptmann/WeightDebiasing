@@ -1,7 +1,7 @@
 import pandas as pd
 import numpy as np
 
-from sklearn.model_selection import GridSearchCV, KFold
+from sklearn.model_selection import GridSearchCV
 from sklearn.ensemble import GradientBoostingClassifier
 
 param_grid = {
@@ -12,16 +12,11 @@ param_grid = {
 
 
 def gradient_boosting_weighting(N, R, columns, number_of_splits, *args, **kwargs):
-    predictions = np.zeros(len(N))
-    k_fold = KFold(n_splits=number_of_splits, shuffle=True)
-    for train_index, test_index in k_fold.split(N):
-        train_N = N.iloc[train_index]
-        test_N = N.iloc[test_index]
-        train = pd.concat([train_N, R])
-        clf = train_gradient_boosting(
-            train[columns], train.label, int(number_of_splits / 2)
-        )
-        predictions[test_index] = clf.predict_proba(test_N[columns])[:, 1]
+    train = pd.concat([N, R])
+    clf = train_gradient_boosting(
+        train[columns], train.label, int(number_of_splits / 2)
+    )
+    predictions = clf.predict_proba(N[columns])[:, 1]
     weights = (1 - predictions) / predictions
     return weights
 

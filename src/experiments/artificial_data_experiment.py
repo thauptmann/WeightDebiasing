@@ -26,7 +26,7 @@ def artificial_data_experiment(
     number_of_splits=10,
     method="",
     number_of_repetitions=100,
-    bias_sample_size=2000,
+    bias_sample_size=1000,
     drop_duplicates=False
 ):
     file_directory = Path(__file__).parent

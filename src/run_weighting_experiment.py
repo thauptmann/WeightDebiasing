@@ -18,11 +18,9 @@ from methods.random_forest import random_forest_weighting
 from methods.gradient_boosting import gradient_boosting_weighting
 from methods.ada_debiasing import ada_debiasing_weighting
 from methods.domain_adaptation import domain_adaptation_weighting
-import ray
 
 
 def weighting_experiment():
-    ray.init(num_cpus=12)
     args = input_arguments()
     dataset_name = args.dataset
     method_name = args.method
@@ -50,7 +48,6 @@ def weighting_experiment():
             bias_variable=bias_variable,
             bias_type=bias,
             bias_sample_size=bias_sample_size,
-            drop_duplicates=args.drop_duplicates
         )
     elif dataset_name == "barometer":
         use_age_bias = args.use_age_bias

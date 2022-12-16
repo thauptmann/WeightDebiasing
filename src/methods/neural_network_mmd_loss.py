@@ -3,18 +3,17 @@ import torch
 import shap
 from scipy.spatial.distance import pdist
 from utils.models import WeightingMlp
-from .loss import WeightedMMDLoss
+from ..utils.loss import WeightedMMDLoss
 import numpy as np
 import matplotlib.pyplot as plt
-from torch.optim.lr_scheduler import ReduceLROnPlateau
-import ray
+from torch.optim.lr_scheduler import OneCycleLR
 
 
 def neural_network_mmd_loss_weighting(
-    N, R, columns, use_batches=False, *args, **attributes
+    N, R, columns, *args, **attributes
 ):
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    passes = 2500
+    passes = 1000
     bias_variable = attributes["bias_variable"]
     bias_values = None
     if bias_variable is not None:
@@ -23,75 +22,50 @@ def neural_network_mmd_loss_weighting(
     tensor_N = torch.FloatTensor(N[columns].values)
     tensor_R = torch.FloatTensor(R[columns].values)
     number_of_features = tensor_N.shape[1]
-    latent_feature_list = [
-        number_of_features,
-        int((number_of_features + 1) * 0.5),
-    ]
-    dropout_list = [0.0, 0.2]
-    best_model = None
-    best_mmd_list = None
-    best_mean_list = None
-    if bias_values is not None:
-        bias_values = torch.FloatTensor(bias_values.values).to(device)
-
-    futures = [
-        compute_model.remote(
-            passes,
-            tensor_N,
-            tensor_R,
-            use_batches=use_batches,
-            latent_features=latent_features,
-            bias_values=bias_values,
-            dropout=dropout,
-        )
-        for dropout in dropout_list
-        for latent_features in latent_feature_list
-    ]
-    results = ray.get(futures)
-    mmds = [result[2] for result in results]
-    min_value = min(mmds)
-    min_index = mmds.index(min_value)
-
-    best_model = results[min_index][0]
-    best_mmd_list = results[min_index][1]
-    best_mean_list = results[min_index][3]
 
     if bias_values is not None:
-        attributes["mean_list"].append(best_mean_list)
-        attributes["mmd_list"].append(best_mmd_list)
+        bias_values_train = torch.FloatTensor(bias_values.values).to(device)
+
+    model, mmd_list, mean_list = compute_model(
+        passes,
+        tensor_N,
+        tensor_R,
+        latent_features=number_of_features,
+        bias_values=bias_values_train,
+    )
+
+    if bias_values is not None:
+        attributes["mean_list"].append(mean_list)
+        attributes["mmd_list"].append(mmd_list)
 
     with torch.no_grad():
         tensor_N = tensor_N.to(device)
-        weights = best_model(tensor_N).cpu().squeeze().numpy()
+        weights = model(tensor_N).cpu().squeeze().numpy()
     return weights
 
 
-@ray.remote(num_gpus=0.5)
 def compute_model(
     passes,
     tensor_N,
     tensor_R,
-    patience=250,
-    use_batches=False,
     latent_features=1,
     bias_values=None,
-    dropout=0.0,
 ):
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     Path("models").mkdir(exist_ok=True, parents=True)
-    model_path = Path(f"models/best_model_mmd_loss_{dropout}_{latent_features}.pt")
+    model_path = Path(f"models/best_model_mmd_loss_{latent_features}.pt")
     mmd_list = []
-    batch_size = 512
-    learning_rate = 0.001
+    learning_rate = 0.1
     best_mmd = torch.inf
     means = []
 
     gamma = calculate_rbf_gamma(np.append(tensor_N, tensor_R, axis=0))
-    mmd_loss_function = WeightedMMDLoss(gamma, len(tensor_R), device)
-    mmd_loss_function_train = WeightedMMDLoss(gamma, len(tensor_R), device)
 
     tensor_N = tensor_N.to(device)
     tensor_R = tensor_R.to(device)
+
+    mmd_loss_function = WeightedMMDLoss(gamma, tensor_R, device)
+    mmd_loss_function_train = WeightedMMDLoss(gamma, tensor_R, device)
 
     if bias_values is not None:
         validation_weights = (torch.ones(len(tensor_N)) / len(tensor_N)).to(device)
@@ -100,35 +74,25 @@ def compute_model(
         start_mmd = mmd_loss_function(tensor_N, tensor_R, validation_weights)
         mmd_list.append(start_mmd.cpu().numpy())
 
-    mmd_model = WeightingMlp(tensor_N.shape[1], latent_features, dropout).to(device)
+    mmd_model = WeightingMlp(tensor_N.shape[1], latent_features).to(device)
 
     # Save model to avoid size mismatch later
     torch.save(mmd_model.state_dict(), model_path)
     optimizer = torch.optim.Adam(
         mmd_model.parameters(), lr=learning_rate, weight_decay=1e-5
     )
-    scheduler = ReduceLROnPlateau(optimizer, patience=patience, threshold=0)
+    scheduler = OneCycleLR(optimizer, max_lr=learning_rate / 10, total_steps=passes)
     for _ in range(passes):
         mmd_model.train()
         optimizer.zero_grad()
 
-        if use_batches:
-            training_indices = np.random.choice(batch_size, batch_size)
-            training_data = tensor_N[training_indices]
-            reference_indices = np.random.choice(
-                len(tensor_R), len(tensor_R), replace=True
-            )
-            reference_data = tensor_R[reference_indices]
-        else:
-            training_data = tensor_N
-            reference_data = tensor_R
-
-        train_weights = mmd_model(training_data)
-        mmd_loss = mmd_loss_function_train(training_data, reference_data, train_weights)
+        train_weights = mmd_model(tensor_N)
+        mmd_loss = mmd_loss_function_train(tensor_N, tensor_R, train_weights)
         if not torch.isnan(mmd_loss) and not torch.isinf(mmd_loss):
             loss = mmd_loss
             loss.backward()
             optimizer.step()
+            scheduler.step()
 
         mmd, validation_weights = validate_model(
             tensor_N, tensor_R, mmd_loss_function, mmd_model
@@ -140,7 +104,6 @@ def compute_model(
             best_mmd = mmd
             torch.save(mmd_model.state_dict(), model_path)
 
-        scheduler.step(mmd)
         if bias_values is not None:
             validation_weights = validation_weights.to(device)
             positive_value = torch.sum(bias_values * validation_weights.squeeze())
@@ -149,7 +112,7 @@ def compute_model(
     mmd_model.load_state_dict(torch.load(model_path))
     mmd_model.eval()
 
-    return mmd_model, mmd_list, best_mmd, means
+    return mmd_model, mmd_list, means
 
 
 def validate_model(tensor_N, tensor_R, mmd_loss_function, mmd_model):
