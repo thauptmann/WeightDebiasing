@@ -18,6 +18,7 @@ from methods.random_forest import random_forest_weighting
 from methods.gradient_boosting import gradient_boosting_weighting
 from methods.ada_debiasing import ada_debiasing_weighting
 from methods.domain_adaptation import domain_adaptation_weighting
+from methods.random import random_weighting
 
 
 def weighting_experiment():
@@ -94,6 +95,8 @@ def get_weighting_function(method_name):
         compute_weights_function = partial(
             neural_network_mmd_loss_weighting, use_batches=True
         )
+    elif method_name == "random":
+        compute_weights_function = random_weighting
     else:
         compute_weights_function = naive_weighting
 

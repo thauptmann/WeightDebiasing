@@ -1,15 +1,16 @@
 import torch
 import numpy as np
 from pathlib import Path
+from methods.domain_adaptation import calculate_rbf_gamma
 from utils.metrics import (
     average_standardised_absolute_mean_distance,
     compute_relative_bias,
     maximum_mean_discrepancy_weighted,
-    maximum_mean_discrepancy,
     scale_df,
     compute_weighted_means,
 )
 import random
+import json
 from utils.visualisation import plot_results
 
 seed = 5
@@ -34,10 +35,14 @@ def gbs_experiments(
     visualisation_path = result_path / method / dataset
     visualisation_path.mkdir(exist_ok=True, parents=True)
     df = df.sample(frac=1)
-    scaled_df, scaler = scale_df(df, columns)
+    scale_columns = df.drop(["pi"], axis="columns").columns
+    scaled_df, scaler = scale_df(df, scale_columns)
+
+    gamma = calculate_rbf_gamma(scaled_df[columns])
+
     scaled_N = scaled_df[scaled_df["label"] == 1]
     scaled_R = scaled_df[scaled_df["label"] == 0]
-    
+
     non_representative_size = len(scaled_df[scaled_df["label"] == 1])
     representative_size = len(scaled_df[scaled_df["label"] == 0])
     scaled_df.loc[scaled_df["label"] == 1, "weights"] = (
@@ -56,33 +61,37 @@ def gbs_experiments(
         bias_variable=bias_variable,
     )
 
-    mmd = maximum_mean_discrepancy(scaled_N[columns].values, scaled_R[columns].values)
-    asams_values = average_standardised_absolute_mean_distance(
-        scaled_N, scaled_R, columns
-    )
     weighted_mmd = maximum_mean_discrepancy_weighted(
-        scaled_N[columns].values, scaled_R[columns].values, weights
+        scaled_N.drop(["pi", "label"], axis="columns").values,
+        scaled_R.drop(["pi", "label"], axis="columns").values,
+        weights,
+        gamma,
     )
     weighted_asams = average_standardised_absolute_mean_distance(
-        scaled_N, scaled_R, columns, weights
+        scaled_N.drop(["pi", "label"], axis="columns").values,
+        scaled_R.drop(["pi", "label"], axis="columns").values,
+        weights,
     )
 
-    scaled_N[columns] = scaler.inverse_transform(scaled_N[columns])
-    scaled_R[columns] = scaler.inverse_transform(scaled_R[columns])
-    scaled_df[columns] = scaler.inverse_transform(scaled_df[columns])
-
-    asams = [np.mean(asams_values), np.mean(weighted_asams)]
+    scaled_N[scale_columns] = scaler.inverse_transform(scaled_N[scale_columns])
+    scaled_R[scale_columns] = scaler.inverse_transform(scaled_R[scale_columns])
+    scaled_df[scale_columns] = scaler.inverse_transform(scaled_df[scale_columns])
 
     weighted_means = compute_weighted_means(scaled_N, weights)
     population_means = np.mean(scaled_R.values, axis=0)
     relative_biases = compute_relative_bias(weighted_means, population_means)
 
-    with open(visualisation_path / "results.txt", "w") as result_file:
-        result_file.write(f"{asams=}\n")
-        result_file.write(f"MMDs: {mmd}, {weighted_mmd}\n")
-        result_file.write("\nRelative Bias:\n")
-        for column, relative_bias in zip(scaled_df.columns, relative_biases):
-            result_file.write(f"{column}: {relative_bias}\n")
+    result_dict = {
+        "ASAMS": {"mean": np.nanmean(weighted_asams), "sd": np.nanstd(weighted_asams)},
+        "MMDs": {"mean": np.nanmean(weighted_mmd)},
+        "sd": {np.nanstd(weighted_mmd)},
+    }
+    for column, bias in zip(
+        scaled_df.drop(["pi"], axis="columns").columns, relative_biases
+    ):
+        result_dict[f"{column}_relative_bias"] = bias
+    with open(visualisation_path / "results.json", "w") as result_file:
+        result_file.write(json.dumps(result_dict))
 
     plot_results(
         bins,

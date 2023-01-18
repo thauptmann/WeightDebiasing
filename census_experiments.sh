@@ -13,11 +13,6 @@ python src/run_weighting_experiment.py --dataset census --method random_forest -
 python src/run_weighting_experiment.py --dataset census --method random_forest --bias undersampling --bias_sample_size 1000
 python src/run_weighting_experiment.py --dataset census --method random_forest --bias age --bias_sample_size 1000
 
-python src/run_weighting_experiment.py --dataset census --method gradient_boosting --bias none --bias_sample_size 1000
-python src/run_weighting_experiment.py --dataset census --method gradient_boosting --bias oversampling --bias_sample_size 1000
-python src/run_weighting_experiment.py --dataset census --method gradient_boosting --bias undersampling --bias_sample_size 1000
-python src/run_weighting_experiment.py --dataset census --method gradient_boosting --bias age --bias_sample_size 1000
-
 python src/run_weighting_experiment.py --dataset census --method neural_network_classifier --bias none --bias_sample_size 1000
 python src/run_weighting_experiment.py --dataset census --method neural_network_classifier --bias oversampling --bias_sample_size 1000
 python src/run_weighting_experiment.py --dataset census --method neural_network_classifier --bias undersampling --bias_sample_size 1000
@@ -32,3 +27,8 @@ python src/run_weighting_experiment.py --dataset census --method domain_adaptati
 python src/run_weighting_experiment.py --dataset census --method domain_adaptation --bias oversampling --bias_sample_size 1000
 python src/run_weighting_experiment.py --dataset census --method domain_adaptation --bias undersampling --bias_sample_size 1000
 python src/run_weighting_experiment.py --dataset census --method domain_adaptation --bias age --bias_sample_size 1000
+
+python src/run_weighting_experiment.py --dataset census --method random --bias none --bias_sample_size 1000
+python src/run_weighting_experiment.py --dataset census --method random --bias oversampling --bias_sample_size 1000
+python src/run_weighting_experiment.py --dataset census --method random --bias undersampling --bias_sample_size 1000
+python src/run_weighting_experiment.py --dataset census --method random --bias age --bias_sample_size 1000

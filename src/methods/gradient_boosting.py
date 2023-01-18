@@ -13,7 +13,7 @@ param_grid = {
 def gradient_boosting_weighting(N, R, columns, number_of_splits, *args, **kwargs):
     train = pd.concat([N, R])
     clf = train_gradient_boosting(
-        train[columns], train.label, int(number_of_splits / 2)
+        train[columns], train.label, number_of_splits
     )
     predictions = clf.predict_proba(N[columns])[:, 1]
     weights = (1 - predictions) / predictions

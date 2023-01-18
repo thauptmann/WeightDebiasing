@@ -10,6 +10,7 @@ method_list = [
     "none",
     "adaDebias",
     "domain_adaptation",
+    "random",
 ]
 
 bias_choice = ["oversampling", "undersampling", "none", "age"]

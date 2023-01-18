@@ -37,10 +37,7 @@ def calculate_median_rocs(rocs):
     return median_rocs
 
 
-def average_standardised_absolute_mean_distance(N, R, columns, weights=None):
-    N = N[columns]
-    R = R[columns]
-
+def average_standardised_absolute_mean_distance(N, R, weights=None):
     if weights is None:
         weights = np.ones(len(N))
     means_representative = np.mean(R, axis=0)

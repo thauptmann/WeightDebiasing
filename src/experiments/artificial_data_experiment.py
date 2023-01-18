@@ -1,6 +1,8 @@
 import torch
 import numpy as np
 from pathlib import Path
+import json
+from methods.domain_adaptation import calculate_rbf_gamma
 
 from utils.data_loader import sample
 from utils.metrics import (
@@ -33,7 +35,9 @@ def artificial_data_experiment(
     visualisation_path = result_path / method / "artificial" / str(bias_sample_size)
     visualisation_path.mkdir(exist_ok=True, parents=True)
     df = df.reset_index(drop=True)
-    scaled_df, scaler = scale_df(df, columns)
+    scale_columns = df.drop(["pi"], axis="columns").columns
+    scaled_df, scaler = scale_df(df, scale_columns)
+    gamma = calculate_rbf_gamma(scaled_df[columns])
 
     weighted_mmds_list = []
     asams_list = []
@@ -42,6 +46,7 @@ def artificial_data_experiment(
     for _ in trange(number_of_repetitions):
         scaled_N, scaled_R = sample(scaled_df, bias_sample_size)
         
+
         weights = propensity_method(
             scaled_N,
             scaled_R,
@@ -52,17 +57,22 @@ def artificial_data_experiment(
         )
 
         weighted_mmd = maximum_mean_discrepancy_weighted(
-            scaled_N[columns].values, scaled_R[columns].values, weights
+            scaled_N.drop(["pi", "label"], axis="columns").values,
+            scaled_R.drop(["pi", "label"], axis="columns").values,
+            weights,
+            gamma,
         )
         weighted_asams = average_standardised_absolute_mean_distance(
-            scaled_N, scaled_R, columns, weights
+            scaled_N.drop(["pi", "label"], axis="columns").values,
+            scaled_R.drop(["pi", "label"], axis="columns").values,
+            weights,
         )
 
         asams_list.append(weighted_asams)
         weighted_mmds_list.append(weighted_mmd)
 
-        scaled_N[columns] = scaler.inverse_transform(scaled_N[columns])
-        scaled_R[columns] = scaler.inverse_transform(scaled_R[columns])
+        scaled_N[scale_columns] = scaler.inverse_transform(scaled_N[scale_columns])
+        scaled_R[scale_columns] = scaler.inverse_transform(scaled_R[scale_columns])
         weighted_means = compute_weighted_means(
             scaled_N.drop(["label", "pi"], axis="columns"), weights
         )
@@ -77,16 +87,16 @@ def artificial_data_experiment(
     mean_biases = np.nanmean(biases_list, axis=0)
     sd_biases = np.nanstd(biases_list, axis=0)
 
-    with open(visualisation_path / "results.txt", "w") as result_file:
-        result_file.write(
-            f"ASAMS: {np.nanmean(asams_list)} +- {np.nanstd(asams_list)}\n"
-        )
-        result_file.write(
-            f"MMDs: {np.nanmean(weighted_mmds_list)} +- "
-            f"{np.nanstd(weighted_mmds_list)}\n"
-        )
-        result_file.write("\nRelative Biases:\n")
-        for column, bias, sd in zip(
-            scaled_df.drop(["pi"], axis="columns").columns, mean_biases, sd_biases
-        ):
-            result_file.write(f"{column}: {bias} +- {sd}\n")
+    result_dict = {
+        "ASAMS": {"mean": np.nanmean(asams_list), "sd": np.nanstd(asams_list)},
+        "MMDs": {
+            "mean": np.nanmean(weighted_mmds_list),
+            "sd": np.nanstd(weighted_mmds_list),
+        },
+    }
+    for column, bias, sd in zip(
+        scaled_df.drop(["pi"], axis="columns").columns, mean_biases, sd_biases
+    ):
+        result_dict[f"{column}_relative_bias"] = {"mean": bias, "sd": sd}
+    with open(visualisation_path / "results.json", "w") as result_file:
+        result_file.write(json.dumps(result_dict))

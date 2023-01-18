@@ -1,4 +1,5 @@
 import torch
+import json
 import numpy as np
 from pathlib import Path
 
@@ -37,7 +38,9 @@ def census_experiments(
 ):
     file_directory = Path(__file__).parent
     result_path = Path(file_directory, "../../results")
-    visualisation_path = result_path / method / "census" / bias_type / str(bias_sample_size)
+    visualisation_path = (
+        result_path / method / "census" / bias_type / str(bias_sample_size)
+    )
     visualisation_path.mkdir(exist_ok=True, parents=True)
     df = df.reset_index(drop=True)
 
@@ -57,9 +60,10 @@ def census_experiments(
 
     odds = np.exp(df["pi"])
     df["pi"] = odds / (1 + odds)
-    scaled_df, scaler = scale_df(df, columns)
+    scale_columns = df.drop(["pi"], axis="columns").columns
+    scaled_df, scaler = scale_df(df, scale_columns)
 
-    gamma = calculate_rbf_gamma(scaled_df)
+    gamma = calculate_rbf_gamma(scaled_df[columns])
 
     weighted_mmds_list = []
     asams_list = []
@@ -101,16 +105,22 @@ def census_experiments(
             )
 
         weighted_mmd = maximum_mean_discrepancy_weighted(
-            scaled_N[columns].values, scaled_R[columns].values, weights, gamma
+            scaled_N.drop(["pi", "label"], axis="columns").values,
+            scaled_R.drop(["pi", "label"], axis="columns").values,
+            weights,
+            gamma,
         )
         weighted_asams = average_standardised_absolute_mean_distance(
-            scaled_N, scaled_R, columns, weights
+            scaled_N.drop(["pi", "label"], axis="columns").values,
+            scaled_R.drop(["pi", "label"], axis="columns").values,
+            weights,
         )
+        
         weighted_mmds_list.append(weighted_mmd)
         asams_list.append(np.mean(weighted_asams))
 
-        scaled_N[columns] = scaler.inverse_transform(scaled_N[columns])
-        scaled_R[columns] = scaler.inverse_transform(scaled_R[columns])
+        scaled_N[scale_columns] = scaler.inverse_transform(scaled_N[scale_columns])
+        scaled_R[scale_columns] = scaler.inverse_transform(scaled_R[scale_columns])
 
         weighted_means = compute_weighted_means(
             scaled_N.drop(["pi", "label"], axis="columns"), weights
@@ -127,21 +137,19 @@ def census_experiments(
     mean_biases = np.nanmean(biases_list, axis=0)
     sd_biases = np.nanstd(biases_list, axis=0)
 
-    with open(visualisation_path / "results.txt", "w") as result_file:
-        result_file.write(
-            f"ASAMS: {np.nanmean(asams_list)} +- {np.nanstd(asams_list)}\n"
-        )
-        result_file.write(
-            f"MMDs: {np.nanmean(weighted_mmds_list)} +- "
-            f"{np.nanstd(weighted_mmds_list)}\n\n"
-        )
-        result_file.write("\nRelative Biases:\n")
-        for column, bias, sd in zip(
-            df.drop(["pi"], axis="columns").columns,
-            mean_biases,
-            sd_biases,
-        ):
-            result_file.write(f"{column}: {bias} +- {sd}\n")
+    result_dict = {
+        "ASAMS": {"mean": np.nanmean(asams_list), "sd": np.nanstd(asams_list)},
+        "MMDs": {
+            "mean": np.nanmean(weighted_mmds_list),
+            "sd": np.nanstd(weighted_mmds_list),
+        },
+    }
+    for column, bias, sd in zip(
+        scaled_df.drop(["pi"], axis="columns").columns, mean_biases, sd_biases
+    ):
+        result_dict[f"{column}_relative_bias"] = {"mean": bias, "sd": sd}
+    with open(visualisation_path / "results.json", "w") as result_file:
+        result_file.write(json.dumps(result_dict))
 
     if method == "neural_network_mmd_loss":
         plot_results_with_variance(
