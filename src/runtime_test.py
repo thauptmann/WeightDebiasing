@@ -1,14 +1,10 @@
 from functools import partial
 from pathlib import Path
-import numpy as np
-
 from utils.data_loader import load_dataset
 from utils.metrics import scale_df
-
 from methods.logistic_regression import logistic_regression_weighting
 from methods.naive_weighting import naive_weighting
 from methods.neural_network_mmd_loss import neural_network_mmd_loss_weighting
-
 from methods.neural_network_classifier import neural_network_weighting
 from methods.random_forest import random_forest_weighting
 from methods.gradient_boosting import gradient_boosting_weighting
@@ -19,7 +15,8 @@ from utils.input_arguments import method_list
 from utils.data_loader import sample
 
 import json
-import time
+import timeit
+from tqdm import tqdm
 
 
 def runtime_experiment():
@@ -39,25 +36,23 @@ def runtime_experiment():
     scale_columns = df.drop(["pi"], axis="columns").columns
     scaled_df, _ = scale_df(df, scale_columns)
     scaled_N, scaled_R = sample(scaled_df, bias_sample_size)
-    
-    for method_name in method_list:
+
+    for method_name in tqdm(method_list):
         method = get_weighting_function(method_name)
-        runtime = []
-        for _ in range(repeats):
-            start_time = time.time()
-            _ = method(
+
+        time = timeit.timeit(
+            lambda: method(
                 scaled_N,
                 scaled_R,
                 columns,
                 number_of_splits=number_of_splits,
                 save_path="",
                 bias_variable=None,
-            )
-            end_time = time.time()
-            elapsed_time_in_ms = (start_time - end_time) * 1000
-            runtime.append(elapsed_time_in_ms)
-        result_dict[method_name] = {"mean": np.mean(runtime), "sd": np.std(runtime)}
-    
+            ),
+            number=repeats,
+        )
+        result_dict[method_name] = time / repeats
+
     with open(save_path / "runtimes.json", "w") as result_file:
         result_file.write(json.dumps(result_dict))
 

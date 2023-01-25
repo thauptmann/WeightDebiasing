@@ -19,18 +19,17 @@ def load_gbs():
         "woechentlicheArbeitszeit",
         "Resilienz",
     ]
-    return allensbach, allensbach_columns, None
+    return allensbach, allensbach_columns
 
 
 def load_artificial_data():
     artificial_data_path = f"{file_path}/../../data/debiasing/artificial.csv"
     artificial = pd.read_csv(artificial_data_path, index_col="Unnamed: 0")
     columns = artificial.filter(like="x").columns
-    return artificial, columns, None
+    return artificial, columns
 
 
-def load_census_data():
-    census_bias = "Above_Below 50K"
+def load_census_data(census_bias="Above_Below 50K"):
     columns = [
         "Age",
         "Workclass",
@@ -54,7 +53,7 @@ def load_census_data():
         na_values=["-1", "-1", " ?"],
     )
     df, preprocessed_columns = preprocess_census(df, census_bias)
-    return df, preprocessed_columns, census_bias
+    return df, preprocessed_columns
 
 
 def preprocess_census(df, census_bias):
@@ -149,44 +148,18 @@ def preprocess_census(df, census_bias):
     return df, census_columns
 
 
-def load_barometer():
-    data_path = f"{file_path}/../../data/debiasing/spanish_barometer_population.csv"
-    barometer = pd.read_csv(data_path, index_col="Unnamed: 0")
-    columns = [
-        "sex",
-        "age",
-        "nationality",
-        ]
-    columns.extend(barometer.filter(like="x").columns.tolist())
-    return barometer, columns, None
-
-
-def load_dataset(dataset_name):
+def load_dataset(dataset_name, census_bias):
     if dataset_name == "gbs":
         return load_gbs()
     elif dataset_name == "artificial":
         return load_artificial_data()
     elif dataset_name == "census":
-        return load_census_data()
-    elif dataset_name == "barometer":
-        return load_barometer()
+        return load_census_data(census_bias)
 
 
 def sample(df, bias_sample_size, reference_sample_size=1000):
     representative = df.sample(reference_sample_size)
     representative["label"] = 0
     non_representative = df.sample(bias_sample_size, weights=df["pi"])
-    non_representative["label"] = 1
-    return non_representative, representative
-
-
-def sample_barometer(df, sample_size, bias_size, use_age_bias):
-    internet_group = df[df["use_of_internet"] == 1]
-    representative = df.sample(sample_size)
-    representative["label"] = 0
-    if use_age_bias:
-        non_representative = internet_group.sample(bias_size, weights=df["pi"])
-    else:
-        non_representative = internet_group.sample(bias_size)
     non_representative["label"] = 1
     return non_representative, representative

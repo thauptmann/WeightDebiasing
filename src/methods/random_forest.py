@@ -15,6 +15,6 @@ def random_forest_weighting(N, R, columns, number_of_splits, *args, **kwargs):
 
 def train_forest(X_train, y_train, number_of_splits):
     forest = RandomForestClassifier()
-    clf = GridSearchCV(forest, param_grid, cv=number_of_splits, n_jobs=-1)
+    clf = GridSearchCV(forest, param_grid, cv=number_of_splits, n_jobs=-1, scoring="neg_log_loss")
     clf = clf.fit(X_train, y_train)
     return clf

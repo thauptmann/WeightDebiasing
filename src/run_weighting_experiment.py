@@ -7,7 +7,6 @@ from utils.statistics import logistic_regression
 from experiments.artificial_data_experiment import artificial_data_experiment
 from experiments.census_experiments import census_experiments
 from experiments.gbs_experiments import gbs_experiments
-from experiments.barometer_experiments import barometer_experiments
 
 from methods.logistic_regression import logistic_regression_weighting
 from methods.naive_weighting import naive_weighting
@@ -26,7 +25,7 @@ def weighting_experiment():
     dataset_name = args.dataset
     method_name = args.method
     bias_sample_size = args.bias_sample_size
-    data, columns, bias_variable = load_dataset(dataset_name)
+    data, columns = load_dataset(dataset_name, args.bias_variable)
 
     compute_weights_function = get_weighting_function(method_name)
 
@@ -45,18 +44,8 @@ def weighting_experiment():
             columns,
             compute_weights_function,
             method=method_name,
-            bias_variable=bias_variable,
+            bias_variable=args.bias_variable,
             bias_type=bias,
-            bias_sample_size=bias_sample_size,
-        )
-    elif dataset_name == "barometer":
-        use_age_bias = args.use_age_bias
-        weights = barometer_experiments(
-            data,
-            columns,
-            compute_weights_function,
-            method=method_name,
-            use_age_bias=use_age_bias,
             bias_sample_size=bias_sample_size,
         )
     else:
@@ -66,7 +55,7 @@ def weighting_experiment():
             dataset_name,
             compute_weights_function,
             method=method_name,
-            bias_variable=bias_variable,
+            bias_variable=args.bias_variable,
             bias_sample_size=bias_sample_size,
         )
         if dataset_name == "allensbach":

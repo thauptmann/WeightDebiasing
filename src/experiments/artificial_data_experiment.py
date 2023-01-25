@@ -6,7 +6,7 @@ from methods.domain_adaptation import calculate_rbf_gamma
 
 from utils.data_loader import sample
 from utils.metrics import (
-    average_standardised_absolute_mean_distance,
+    strictly_standardized_mean_difference,
     maximum_mean_discrepancy_weighted,
     scale_df,
     compute_weighted_means,
@@ -40,12 +40,12 @@ def artificial_data_experiment(
     gamma = calculate_rbf_gamma(scaled_df[columns])
 
     weighted_mmds_list = []
-    asams_list = []
+    dataset_ssmd_list = []
     biases_list = []
+    parameter_ssmd_list = []
 
     for _ in trange(number_of_repetitions):
         scaled_N, scaled_R = sample(scaled_df, bias_sample_size)
-        
 
         weights = propensity_method(
             scaled_N,
@@ -62,14 +62,15 @@ def artificial_data_experiment(
             weights,
             gamma,
         )
-        weighted_asams = average_standardised_absolute_mean_distance(
+        weighted_ssmd = strictly_standardized_mean_difference(
             scaled_N.drop(["pi", "label"], axis="columns").values,
             scaled_R.drop(["pi", "label"], axis="columns").values,
             weights,
         )
 
-        asams_list.append(weighted_asams)
+        dataset_ssmd_list.append(np.mean(weighted_ssmd))
         weighted_mmds_list.append(weighted_mmd)
+        parameter_ssmd_list.append(weighted_ssmd)
 
         scaled_N[scale_columns] = scaler.inverse_transform(scaled_N[scale_columns])
         scaled_R[scale_columns] = scaler.inverse_transform(scaled_R[scale_columns])
@@ -87,16 +88,31 @@ def artificial_data_experiment(
     mean_biases = np.nanmean(biases_list, axis=0)
     sd_biases = np.nanstd(biases_list, axis=0)
 
+    mean_ssmds = np.nanmean(parameter_ssmd_list, axis=0)
+    sd_ssmds = np.nanstd(parameter_ssmd_list, axis=0)
+
     result_dict = {
-        "ASAMS": {"mean": np.nanmean(asams_list), "sd": np.nanstd(asams_list)},
+        "SSMD": {
+            "mean": np.nanmean(dataset_ssmd_list),
+            "sd": np.nanstd(dataset_ssmd_list),
+        },
         "MMDs": {
             "mean": np.nanmean(weighted_mmds_list),
             "sd": np.nanstd(weighted_mmds_list),
         },
     }
-    for column, bias, sd in zip(
-        scaled_df.drop(["pi"], axis="columns").columns, mean_biases, sd_biases
+    for column, bias_mean, bias_sd, ssmd_mean, ssmd_sd in zip(
+        scaled_df.drop(["pi"], axis="columns").columns,
+        mean_biases,
+        sd_biases,
+        mean_ssmds,
+        sd_ssmds,
     ):
-        result_dict[f"{column}_relative_bias"] = {"mean": bias, "sd": sd}
+        result_dict[f"{column}_relative_bias"] = {
+            "bias mean": bias_mean,
+            "bias sd": bias_sd,
+            "ssmd mean": ssmd_mean,
+            "ssmd sd": ssmd_sd,
+        }
     with open(visualisation_path / "results.json", "w") as result_file:
         result_file.write(json.dumps(result_dict))

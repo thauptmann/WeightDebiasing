@@ -37,7 +37,7 @@ def calculate_median_rocs(rocs):
     return median_rocs
 
 
-def average_standardised_absolute_mean_distance(N, R, weights=None):
+def strictly_standardized_mean_difference(N, R, weights=None):
     if weights is None:
         weights = np.ones(len(N))
     means_representative = np.mean(R, axis=0)
@@ -48,10 +48,11 @@ def average_standardised_absolute_mean_distance(N, R, weights=None):
     )
     means_difference = means_representative - weighted_means_non_representative
     middle_variance = np.sqrt(
-        (variance_representative + weighted_variance_non_representative) / 2
+        (variance_representative + weighted_variance_non_representative)
     )
     standardised_absolute_mean_distances = abs(means_difference / middle_variance)
     return standardised_absolute_mean_distances
+
 
 def compute_weighted_means(N, weights):
     weights = weights / sum(weights)
@@ -116,7 +117,6 @@ def maximum_mean_discrepancy_weighted(x, y, weights, gamma=None):
     if gamma is None:
         gamma = calculate_rbf_gamma(np.append(x, y, axis=0))
     return compute_weighted_maximum_mean_discrepancy(gamma, x, y, weights)
-
 
 
 def compute_ratio(bias_values, weights):

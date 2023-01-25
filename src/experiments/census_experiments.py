@@ -7,7 +7,7 @@ from utils.data_loader import sample
 from utils.visualisation import plot_weights
 
 from utils.metrics import (
-    average_standardised_absolute_mean_distance,
+    strictly_standardized_mean_difference,
     compute_relative_bias,
     maximum_mean_discrepancy_weighted,
     scale_df,
@@ -33,13 +33,18 @@ def census_experiments(
     number_of_repetitions=100,
     bias_variable=None,
     bias_type=None,
-    bias_strength=0.02,
+    bias_strength=0.05,
     bias_sample_size=1000,
 ):
     file_directory = Path(__file__).parent
     result_path = Path(file_directory, "../../results")
     visualisation_path = (
-        result_path / method / "census" / bias_type / str(bias_sample_size)
+        result_path
+        / method
+        / "census"
+        / bias_variable
+        / bias_type
+        / str(bias_sample_size)
     )
     visualisation_path.mkdir(exist_ok=True, parents=True)
     df = df.reset_index(drop=True)
@@ -50,16 +55,17 @@ def census_experiments(
     if bias_type == "none":
         df["pi"] = equal_logit
     elif bias_type == "undersampling":
-        df["pi"] = equal_logit - (df[bias_variable] * (equal_logit * bias_strength))
+        df["pi"] = equal_logit - (df[bias_variable] * equal_logit * bias_strength)
     elif bias_type == "oversampling":
-        df["pi"] = equal_logit + (df[bias_variable] * (equal_logit * bias_strength))
+        df["pi"] = equal_logit + (df[bias_variable] * equal_logit * bias_strength)
     elif bias_type == "age":
         df["pi"] = ((200 - df["Age"]) ** 5) / ((200 - 10) ** 5)
     else:
-        return
+        df["pi"] = equal_logit
 
-    odds = np.exp(df["pi"])
-    df["pi"] = odds / (1 + odds)
+    if bias_type != "age":
+        odds = np.exp(df["pi"])
+        df["pi"] = odds / (1 + odds)
     scale_columns = df.drop(["pi"], axis="columns").columns
     scaled_df, scaler = scale_df(df, scale_columns)
 
@@ -110,12 +116,12 @@ def census_experiments(
             weights,
             gamma,
         )
-        weighted_asams = average_standardised_absolute_mean_distance(
+        weighted_asams = strictly_standardized_mean_difference(
             scaled_N.drop(["pi", "label"], axis="columns").values,
             scaled_R.drop(["pi", "label"], axis="columns").values,
             weights,
         )
-        
+
         weighted_mmds_list.append(weighted_mmd)
         asams_list.append(np.mean(weighted_asams))
 

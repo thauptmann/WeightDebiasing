@@ -3,7 +3,7 @@ import numpy as np
 from pathlib import Path
 from methods.domain_adaptation import calculate_rbf_gamma
 from utils.metrics import (
-    average_standardised_absolute_mean_distance,
+    strictly_standardized_mean_difference,
     compute_relative_bias,
     maximum_mean_discrepancy_weighted,
     scale_df,
@@ -11,7 +11,7 @@ from utils.metrics import (
 )
 import random
 import json
-from utils.visualisation import plot_results
+from utils.visualisation import plot_gbs_results
 
 seed = 5
 np.random.seed(seed)
@@ -29,13 +29,14 @@ def gbs_experiments(
     bins=100,
     method="",
     bias_variable=None,
-    bias_sample_size=1000,
+    *args,
+    **attributes,
 ):
     result_path = Path("../results")
     visualisation_path = result_path / method / dataset
     visualisation_path.mkdir(exist_ok=True, parents=True)
     df = df.sample(frac=1)
-    scale_columns = df.drop(["pi"], axis="columns").columns
+    scale_columns = df.columns
     scaled_df, scaler = scale_df(df, scale_columns)
 
     gamma = calculate_rbf_gamma(scaled_df[columns])
@@ -58,7 +59,7 @@ def gbs_experiments(
         columns,
         save_path=visualisation_path,
         number_of_splits=number_of_splits,
-        bias_variable=bias_variable,
+        bias_variable=None,
     )
 
     weighted_mmd = maximum_mean_discrepancy_weighted(
@@ -67,7 +68,7 @@ def gbs_experiments(
         weights,
         gamma,
     )
-    weighted_asams = average_standardised_absolute_mean_distance(
+    weighted_asams = strictly_standardized_mean_difference(
         scaled_N.drop(["pi", "label"], axis="columns").values,
         scaled_R.drop(["pi", "label"], axis="columns").values,
         weights,
@@ -81,11 +82,7 @@ def gbs_experiments(
     population_means = np.mean(scaled_R.values, axis=0)
     relative_biases = compute_relative_bias(weighted_means, population_means)
 
-    result_dict = {
-        "ASAMS": {"mean": np.nanmean(weighted_asams), "sd": np.nanstd(weighted_asams)},
-        "MMDs": {"mean": np.nanmean(weighted_mmd)},
-        "sd": {np.nanstd(weighted_mmd)},
-    }
+    result_dict = {"ASAMS": weighted_asams, "MMDs": weighted_mmd}
     for column, bias in zip(
         scaled_df.drop(["pi"], axis="columns").columns, relative_biases
     ):
@@ -93,7 +90,7 @@ def gbs_experiments(
     with open(visualisation_path / "results.json", "w") as result_file:
         result_file.write(json.dumps(result_dict))
 
-    plot_results(
+    plot_gbs_results(
         bins,
         scaled_N,
         scaled_R,

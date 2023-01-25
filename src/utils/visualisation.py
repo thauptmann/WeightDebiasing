@@ -90,7 +90,7 @@ def plot_ratio(values, representative_ratio, title, path):
     plt.clf()
 
 
-def plot_results(
+def plot_gbs_results(
     bins,
     N,
     R,
@@ -113,13 +113,15 @@ def plot_results_with_variance(
     suffix="",
 ):
     plot_mmd_with_variance(mmd_list, visualisation_path, suffix)
-    plot_mean_with_variance(ratio_list, representative_ratio, visualisation_path, suffix)
+    plot_mean_with_variance(
+        ratio_list, representative_ratio, visualisation_path, suffix
+    )
 
 
 def plot_mmd_with_variance(mmd_list, visualisation_path, suffix):
     mean_mmd = np.nanmean(mmd_list, axis=0)
     sd_mmd = np.nanstd(mmd_list, axis=0)
-    plt.plot(range(len(mean_mmd)) , mean_mmd, color="blue")
+    plt.plot(range(len(mean_mmd)), mean_mmd, color="blue")
     plt.fill_between(
         x=range(len(mean_mmd)),
         y1=mean_mmd - sd_mmd,
