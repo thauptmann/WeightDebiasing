@@ -1,45 +1,17 @@
 import numpy as np
 from scipy.spatial.distance import pdist
-from sklearn.metrics import roc_curve
 from sklearn.metrics.pairwise import rbf_kernel
 from sklearn.preprocessing import StandardScaler
+from scipy.stats import wasserstein_distance
+import ot
 import torch
-
-
-def interpolate_roc(y_test, y_predict, iteration):
-    interpolation_points = 250
-    median_fpr = np.linspace(0, 1, interpolation_points)
-    fpr, tpr, _ = roc_curve(y_test, y_predict)
-    interp_tpr = np.interp(median_fpr, fpr, tpr)
-    interp_tpr[0] = 0.0
-    return median_fpr, interp_tpr, [iteration] * interpolation_points
-
-
-def calculate_median_roc(rocs):
-    rocs = np.array(rocs)
-    median_fpr = np.median(rocs[:, 0], axis=0)
-    median_tpr = np.median(rocs[:, 1], axis=0)
-    std_tpr = np.std(rocs[:, 1], axis=0)
-    removed_samples = rocs[0, 2]
-    return median_fpr, median_tpr, std_tpr, removed_samples
-
-
-def calculate_median_rocs(rocs):
-    rocs = np.array(rocs)
-    median_rocs = []
-    for i in range(rocs.shape[1]):
-        rocs_at_iteration = rocs[:, i]
-        median_fpr = np.median(rocs_at_iteration[:, 0], axis=0)
-        median_tpr = np.median(rocs_at_iteration[:, 1], axis=0)
-        std_tpr = np.std(rocs_at_iteration[:, 1], axis=0)
-        removed_samples = rocs_at_iteration[0, 3]
-        median_rocs.append((median_fpr, median_tpr, std_tpr, removed_samples))
-    return median_rocs
 
 
 def strictly_standardized_mean_difference(N, R, weights=None):
     if weights is None:
         weights = np.ones(len(N))
+    N = N.numpy()
+    R = R.numpy()
     means_representative = np.mean(R, axis=0)
     weighted_means_non_representative = np.average(N, axis=0, weights=weights)
     variance_representative = np.var(R, axis=0)
@@ -56,7 +28,7 @@ def strictly_standardized_mean_difference(N, R, weights=None):
 
 def compute_weighted_means(N, weights):
     weights = weights / sum(weights)
-    return np.average(N.values, weights=weights, axis=0)
+    return np.average(N, weights=weights, axis=0)
 
 
 def compute_relative_bias(weighted_means, population_means):
@@ -119,10 +91,60 @@ def maximum_mean_discrepancy_weighted(x, y, weights, gamma=None):
     return compute_weighted_maximum_mean_discrepancy(gamma, x, y, weights)
 
 
-def compute_ratio(bias_values, weights):
-    weights = np.squeeze(weights / np.sum(weights))
-    one_indices = np.argwhere(bias_values == 1)
-    zero_indices = np.argwhere(bias_values == 0)
-    positive = np.sum(weights[one_indices])
-    negative = np.sum(weights[zero_indices])
-    return positive / negative
+def compute_metrics(scaled_N, scaled_R, weights, scaler, scale_columns, gamma):
+    wasserstein_distances = []
+    if isinstance(weights, (np.ndarray)):
+        weights = torch.DoubleTensor(weights)
+    scaled_N_dropped = torch.DoubleTensor(
+        scaled_N.drop(["pi", "label"], axis="columns").values
+    )
+    scaled_R_dropped = torch.DoubleTensor(
+        scaled_R.drop(["pi", "label"], axis="columns").values
+    )
+
+    weighted_mmd = maximum_mean_discrepancy_weighted(
+        scaled_N_dropped,
+        scaled_R_dropped,
+        weights,
+        gamma,
+    )
+    weighted_ssmd = strictly_standardized_mean_difference(
+        scaled_N_dropped,
+        scaled_R_dropped,
+        weights,
+    )
+
+    data_set_wasserstein = WassersteinMetric(
+        scaled_N_dropped, scaled_R_dropped, weights
+    )
+
+    for i in range(scaled_N_dropped.shape[1]):
+        u_values = scaled_N_dropped[:, i]
+        v_values = scaled_R_dropped[:, i]
+
+        wasserstein_distance_value = wasserstein_distance(u_values, v_values, weights)
+        wasserstein_distances.append(wasserstein_distance_value)
+
+    scaled_N_dropped = scaler.inverse_transform(scaled_N[scale_columns])
+    scaled_R_dropped = scaler.inverse_transform(scaled_R[scale_columns])
+    weighted_means = compute_weighted_means(scaled_N_dropped, weights)
+
+    sample_means = np.mean(scaled_R_dropped, axis=0)
+    sample_biases = compute_relative_bias(weighted_means, sample_means)
+
+    return (
+        weighted_mmd,
+        weighted_ssmd,
+        sample_biases,
+        wasserstein_distances,
+        data_set_wasserstein,
+    )
+
+
+def WassersteinMetric(N, R, weights, method="emd"):
+    uniform_weights = (torch.ones(len(R), dtype=torch.float64) / len(R)).to(R)
+    M = ot.dist(N, R)
+    if method == "emd":
+        return ot.emd2(weights, uniform_weights, M)
+    else:
+        return ot.sinkhorn2(weights, uniform_weights, M, reg=1)

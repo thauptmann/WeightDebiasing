@@ -4,6 +4,7 @@ from utils.models import Mlp
 from torch import nn
 from sklearn.metrics import accuracy_score
 from torch.optim.lr_scheduler import OneCycleLR
+import numpy as np
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
@@ -21,7 +22,8 @@ def neural_network_weighting(N, R, columns, *args, **attributes):
         prediction = model(tensor_N).cpu().squeeze()
     predictions = nn.Sigmoid()(prediction)
     weights = (1 - predictions) / predictions
-    return weights
+    weights = weights.numpy().astype(np.float64)
+    return weights / weights.sum()
 
 
 def compute_model(

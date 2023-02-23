@@ -1,5 +1,5 @@
 import pandas as pd
-
+import numpy as np
 from sklearn.model_selection import GridSearchCV
 from sklearn.ensemble import GradientBoostingClassifier
 
@@ -17,7 +17,8 @@ def gradient_boosting_weighting(N, R, columns, number_of_splits, *args, **kwargs
     )
     predictions = clf.predict_proba(N[columns])[:, 1]
     weights = (1 - predictions) / predictions
-    return weights
+    weights = weights.numpy().astype(np.float64)
+    return weights / weights.sum()
 
 
 def train_gradient_boosting(X_train, y_train, number_of_splits):

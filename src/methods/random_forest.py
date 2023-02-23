@@ -1,6 +1,7 @@
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.model_selection import GridSearchCV
 import pandas as pd
+import numpy as np
 
 param_grid = {"max_depth": [2, 3, 5], "n_estimators": [25, 50, 100]}
 
@@ -10,7 +11,8 @@ def random_forest_weighting(N, R, columns, number_of_splits, *args, **kwargs):
     clf = train_forest(train[columns], train.label, number_of_splits)
     predictions = clf.predict_proba(N[columns])[:, 1]
     weights = (1 - predictions) / predictions
-    return weights
+    weights = weights.numpy().astype(np.float64)
+    return weights / weights.sum()
 
 
 def train_forest(X_train, y_train, number_of_splits):

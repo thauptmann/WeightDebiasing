@@ -2,10 +2,11 @@ import torch
 from pathlib import Path
 from utils.metrics import calculate_rbf_gamma
 from utils.models import Mlp
-from utils.loss import MMDLoss
+from utils.loss import WeightedMMDLoss
 from torch import nn
 from sklearn.metrics import accuracy_score
 from torch.optim.lr_scheduler import OneCycleLR
+import numpy as np
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 mmd_loss_weight = 0.1
@@ -24,7 +25,8 @@ def domain_adaptation_weighting(N, R, columns, *args, **attributes):
         prediction = model(tensor_N).cpu().squeeze()
     predictions = nn.Sigmoid()(prediction)
     weights = (1 - predictions) / predictions
-    return weights
+    weights = weights.numpy().astype(np.float64)
+    return weights / weights.sum()
 
 
 def compute_model(
@@ -42,7 +44,7 @@ def compute_model(
     model_path = Path(f"models/best_model_domain_adaptation.pt")
 
     gamma = calculate_rbf_gamma(torch.concat([tensor_n, tensor_r]))
-    mmd_loss_function = MMDLoss(gamma, device)
+    mmd_loss_function = WeightedMMDLoss(gamma, device)
 
     dataset = torch.concat([tensor_n, tensor_r]).to(device)
     targets = torch.concat([torch.ones(len(tensor_n)), torch.zeros(len(tensor_r))])

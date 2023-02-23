@@ -11,11 +11,13 @@ method_list = [
     "adaDebias",
     "domain_adaptation",
     "random",
+    "mrs",
 ]
 
 bias_choice = ["oversampling", "undersampling", "none", "age", "complex"]
-dataset_list = ["gbs", "artificial", "census"]
+dataset_list = ["gbs", "artificial", "census", "folktables"]
 bias_variables = ["Above_Below 50K", "Age", ""]
+loss_choices = ["mmd_rbf", "wasserstein", "mmd_linear"]
 
 
 def input_arguments():
@@ -28,5 +30,6 @@ def input_arguments():
     parser.add_argument(
         "--bias_variable", type=str, choices=bias_variables, default="Above_Below 50K"
     )
+    parser.add_argument("--loss_choice", type=str, choices=loss_choices, default="mmd")
 
     return parser.parse_args()

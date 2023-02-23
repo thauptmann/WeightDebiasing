@@ -43,7 +43,7 @@ def cv_bootstrap_prediction(N, R, number_of_splits, columns, cv):
     preds_r = np.zeros(len(R))
     bootstrap_iterations = 10
 
-    kf = KFold(n_splits=number_of_splits, shuffle=True)
+    kf = KFold(n_splits=cv, shuffle=True)
     for split_n, split_r in zip(kf.split(N), kf.split(R)):
         train_index, test_index = split_n
         train_index_r, test_index_r = split_r
@@ -52,11 +52,11 @@ def cv_bootstrap_prediction(N, R, number_of_splits, columns, cv):
         n = min(len(R_train), len(N_train))
         bootstrap_predictions = []
         bootstrap_predictions_r = []
-        for j in range(bootstrap_iterations):
+        for _ in range(bootstrap_iterations):
             bootstrap = pd.concat(
                 [N_train.sample(n=n, replace=True), R_train.sample(n=n, replace=True)]
             )
-            clf = grid_search(bootstrap[columns], bootstrap.label, cv)
+            clf = grid_search(bootstrap[columns], bootstrap.label, number_of_splits)
             bootstrap_predictions.append(clf.predict_proba(N_test[columns])[:, 1])
             bootstrap_predictions_r.append(clf.predict_proba(R_test[columns])[:, 1])
         preds[test_index] = np.mean(bootstrap_predictions, axis=0)
@@ -80,7 +80,7 @@ def auc_prediction(N, R, columns, cv=5):
 
 
 def MRS(
-    N, R, columns, number_of_splits=5, n_drop: int = 1, cv=5, temperature_sampling=True
+    N, R, columns, number_of_splits=5, n_drop: int = 5, cv=5, temperature_sampling=True
 ):
     """
     MRS Algorithm
@@ -108,27 +108,23 @@ def MRS(
         temperature = 1
     drop_ids = temperature_sample(preds, temperature, n_drop)
 
-    return N.drop(N.index[drop_ids])
+    return N.drop(N.index[drop_ids]), drop_ids
 
 
-def repeated_MRS(
-    N, R,
-    columns,
-    number_of_splits,
-    temperature_sampling=True,
-    number_of_iterations=None,
-    
-):
-    drop=1,
+def repeated_MRS(N, R, columns, number_of_splits, *args, **attributes):
+    drop = 5
+    eps = 0.01
+    temperature_sampling = (True,)
     cv = 5
-    weights = []
-    if number_of_iterations is None:
-        number_of_iterations = int(len(N) / drop)
+    weights = np.ones(len(N))
+    best_weights = weights[:]
+    number_of_iterations = len(N) // drop
+    number_of_splits = 5
 
-    best_auc = auc
+    best_auc = np.inf
 
-    for i in range(number_of_iterations):
-        N = MRS(
+    for _ in range(number_of_iterations):
+        N, drop_ids = MRS(
             N,
             R,
             columns,
@@ -137,21 +133,21 @@ def repeated_MRS(
             cv=cv,
             temperature_sampling=temperature_sampling,
         )
+        weights[drop_ids] = 0
 
         auc = auc_prediction(
             N,
             R,
             columns,
-            drop,
-            i + 1,
             cv,
         )
 
-        if auc == 0.5:
-            
-            
+        if auc < 0.5 + eps and auc > 0.5 - eps:
             break
+
         elif abs(auc - 0.5) < abs(best_auc - 0.5):
             best_auc = auc
+            best_weights = weights[:]
 
-    return weights
+    best_weights = best_weights.numpy().astype(np.float64)
+    return best_weights / best_weights.sum()

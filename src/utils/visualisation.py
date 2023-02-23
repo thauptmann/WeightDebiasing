@@ -6,17 +6,6 @@ from pathlib import Path
 sns.set_theme(style="darkgrid")
 
 
-def plot_line(values, path, title="", plot_random_line=False):
-    beautified_title = title.replace("_", " ")
-    plt.plot(values, color="blue", linestyle="-", label=beautified_title)
-    if plot_random_line:
-        plt.plot(len(values) * [0.5], color="black", linestyle="--", label="Random")
-    plt.ylabel(beautified_title)
-    plt.xlabel("Iteration")
-    plt.savefig(Path(path) / f"{title}.pdf")
-    plt.clf()
-
-
 def plot_cumulative_distribution(N, R, file_name, weights):
     plot_directory = file_name / "cumulative_distributions"
     plot_directory.mkdir(exist_ok=True)
@@ -108,30 +97,34 @@ def plot_gbs_results(
 def plot_results_with_variance(
     ratio_list,
     mmd_list,
+    wasserstein_list,
     representative_ratio,
     visualisation_path,
     suffix="",
+    plot_mean=False
 ):
-    plot_mmd_with_variance(mmd_list, visualisation_path, suffix)
-    plot_mean_with_variance(
-        ratio_list, representative_ratio, visualisation_path, suffix
-    )
+    plot_metric_with_variance(mmd_list, visualisation_path, suffix, "MMD")
+    plot_metric_with_variance(wasserstein_list, visualisation_path, suffix, "Wasserstein")
+    if plot_mean:
+        plot_mean_with_variance(
+            ratio_list, representative_ratio, visualisation_path, suffix
+        )
 
 
-def plot_mmd_with_variance(mmd_list, visualisation_path, suffix):
-    mean_mmd = np.nanmean(mmd_list, axis=0)
-    sd_mmd = np.nanstd(mmd_list, axis=0)
-    plt.plot(range(len(mean_mmd)), mean_mmd, color="blue")
+def plot_metric_with_variance(metric_list, visualisation_path, suffix, metric):
+    mean_metric = np.nanmean(metric_list, axis=0)
+    sd_metric = np.nanstd(metric_list, axis=0)
+    plt.plot(range(len(mean_metric)), mean_metric, color="blue")
     plt.fill_between(
-        x=range(len(mean_mmd)),
-        y1=mean_mmd - sd_mmd,
-        y2=mean_mmd + sd_mmd,
+        x=range(len(mean_metric)),
+        y1=mean_metric - sd_metric,
+        y2=mean_metric + sd_metric,
         color="blue",
         alpha=0.5,
     )
-    plt.ylabel("Weighted MMD")
+    plt.ylabel(f"Weighted {metric}")
     plt.xlabel("Pass")
-    plt.savefig(Path(visualisation_path) / f"weighted_mmd_{suffix}.pdf")
+    plt.savefig(Path(visualisation_path) / f"weighted_{metric}_{suffix}.pdf")
     plt.clf()
 
 

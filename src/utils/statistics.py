@@ -18,5 +18,4 @@ def logistic_regression(allensbach_gbs, weights):
     results_weighted = model_all.fit()
     lr_pvalue_weighted = results_weighted.pvalues[1]
 
-    print(f"{lr_pvalue_gbs=}")
-    print(f"{lr_pvalue_weighted=}")
+    return lr_pvalue_gbs, lr_pvalue_weighted

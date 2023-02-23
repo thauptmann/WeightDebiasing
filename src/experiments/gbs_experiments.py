@@ -2,15 +2,10 @@ import torch
 import numpy as np
 from pathlib import Path
 from methods.domain_adaptation import calculate_rbf_gamma
-from utils.metrics import (
-    strictly_standardized_mean_difference,
-    compute_relative_bias,
-    maximum_mean_discrepancy_weighted,
-    scale_df,
-    compute_weighted_means,
-)
+from utils.metrics import compute_metrics, scale_df
 import random
 import json
+from utils.statistics import logistic_regression
 from utils.visualisation import plot_gbs_results
 
 seed = 5
@@ -62,31 +57,24 @@ def gbs_experiments(
         bias_variable=None,
     )
 
-    weighted_mmd = maximum_mean_discrepancy_weighted(
-        scaled_N.drop(["pi", "label"], axis="columns").values,
-        scaled_R.drop(["pi", "label"], axis="columns").values,
-        weights,
-        gamma,
-    )
-    weighted_asams = strictly_standardized_mean_difference(
-        scaled_N.drop(["pi", "label"], axis="columns").values,
-        scaled_R.drop(["pi", "label"], axis="columns").values,
-        weights,
+    weighted_mmd, weighted_ssmd, sample_biases, wasserstein_distances = compute_metrics(
+        scaled_N, scaled_R, weights, scaler, scale_columns, gamma
     )
 
-    scaled_N[scale_columns] = scaler.inverse_transform(scaled_N[scale_columns])
-    scaled_R[scale_columns] = scaler.inverse_transform(scaled_R[scale_columns])
-    scaled_df[scale_columns] = scaler.inverse_transform(scaled_df[scale_columns])
-
-    weighted_means = compute_weighted_means(scaled_N, weights)
-    population_means = np.mean(scaled_R.values, axis=0)
-    relative_biases = compute_relative_bias(weighted_means, population_means)
-
-    result_dict = {"ASAMS": weighted_asams, "MMDs": weighted_mmd}
+    result_dict = {"SSMD": weighted_ssmd, "MMDs": weighted_mmd}
     for column, bias in zip(
-        scaled_df.drop(["pi"], axis="columns").columns, relative_biases
+        scaled_df.drop(["pi"], axis="columns").columns, sample_biases
     ):
         result_dict[f"{column}_relative_bias"] = bias
+
+    lr_pvalue_gbs, lr_pvalue_weighted = logistic_regression(
+        N[columns + ["Wahlteilnahme"]], weights
+    )
+
+    result_dict["logistig regression p values"] = {
+        "GBS": lr_pvalue_gbs,
+        "Weighted": lr_pvalue_weighted,
+    }
     with open(visualisation_path / "results.json", "w") as result_file:
         result_file.write(json.dumps(result_dict))
 
@@ -98,4 +86,4 @@ def gbs_experiments(
         weights,
     )
 
-    return weights
+    N = df[df["label"] == 1]

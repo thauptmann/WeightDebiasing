@@ -1,5 +1,6 @@
 import pandas as pd
 import pathlib
+from folktables import ACSDataSource, ACSEmployment
 
 file_path = pathlib.Path(__file__).parent
 
@@ -155,6 +156,8 @@ def load_dataset(dataset_name, census_bias):
         return load_artificial_data()
     elif dataset_name == "census":
         return load_census_data(census_bias)
+    elif dataset_name == "folktables":
+        return load_folktables_data()
 
 
 def sample(df, bias_sample_size, reference_sample_size=1000):
@@ -163,3 +166,18 @@ def sample(df, bias_sample_size, reference_sample_size=1000):
     non_representative = df.sample(bias_sample_size, weights=df["pi"])
     non_representative["label"] = 1
     return non_representative, representative
+
+def sample_folk(country, state, bias_sample_size, reference_sample_size=1000):
+    representative = country.sample(reference_sample_size)
+    representative["label"] = 0
+    non_representative = state.sample(bias_sample_size)
+    non_representative["label"] = 1
+    return non_representative, representative
+
+
+def load_folktables_data():
+    data_source = ACSDataSource(survey_year='2018', horizon='1-Year', survey='person')
+    acs_data = data_source.get_data(states=["AL"], download=True)
+    features, label, group = ACSEmployment.df_to_numpy(acs_data)
+
+    return data_source

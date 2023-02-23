@@ -2,11 +2,11 @@ from functools import partial
 
 from utils.data_loader import load_dataset
 from utils.input_arguments import input_arguments
-from utils.statistics import logistic_regression
 
 from experiments.artificial_data_experiment import artificial_data_experiment
 from experiments.census_experiments import census_experiments
 from experiments.gbs_experiments import gbs_experiments
+from experiments.folktables_experiments import folktables_experiments
 
 from methods.logistic_regression import logistic_regression_weighting
 from methods.naive_weighting import naive_weighting
@@ -17,7 +17,7 @@ from methods.random_forest import random_forest_weighting
 from methods.gradient_boosting import gradient_boosting_weighting
 from methods.ada_debiasing import ada_debiasing_weighting
 from methods.domain_adaptation import domain_adaptation_weighting
-from methods.random import random_weighting
+from methods.maximum_representative_subsample import repeated_MRS
 
 
 def weighting_experiment():
@@ -36,10 +36,11 @@ def weighting_experiment():
             compute_weights_function,
             method=method_name,
             bias_sample_size=bias_sample_size,
+            loss_function=args.loss_choice,
         )
     elif dataset_name == "census":
         bias = args.bias
-        weights = census_experiments(
+        census_experiments(
             data,
             columns,
             compute_weights_function,
@@ -47,9 +48,10 @@ def weighting_experiment():
             bias_variable=args.bias_variable,
             bias_type=bias,
             bias_sample_size=bias_sample_size,
+            loss_function=args.loss_choice,
         )
-    else:
-        weights = gbs_experiments(
+    elif dataset_name == "folktables":
+        folktables_experiments(
             data,
             columns,
             dataset_name,
@@ -57,10 +59,19 @@ def weighting_experiment():
             method=method_name,
             bias_variable=args.bias_variable,
             bias_sample_size=bias_sample_size,
+            loss_function=args.loss_choice,
         )
-        if dataset_name == "allensbach":
-            N = data[data["label"] == 1]
-            logistic_regression(N[columns + ["Wahlteilnahme"]], weights)
+    else:
+        gbs_experiments(
+            data,
+            columns,
+            dataset_name,
+            compute_weights_function,
+            method=method_name,
+            bias_variable=args.bias_variable,
+            bias_sample_size=bias_sample_size,
+            loss_function=args.loss_choice,
+        )
 
 
 def get_weighting_function(method_name):
@@ -84,8 +95,8 @@ def get_weighting_function(method_name):
         compute_weights_function = partial(
             neural_network_mmd_loss_weighting, use_batches=True
         )
-    elif method_name == "random":
-        compute_weights_function = random_weighting
+    elif method_name == "mrs":
+        compute_weights_function = repeated_MRS
     else:
         compute_weights_function = naive_weighting
 
