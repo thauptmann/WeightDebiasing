@@ -1,34 +1,30 @@
-import torch
 import numpy as np
 from pathlib import Path
 from methods.domain_adaptation import calculate_rbf_gamma
 from utils.metrics import compute_metrics, scale_df
-import random
 import json
 from utils.statistics import logistic_regression
 from utils.visualisation import plot_gbs_results
 
-seed = 5
-np.random.seed(seed)
-random.seed(seed)
-torch.manual_seed(seed)
 eps = 1e-20
 
 
 def gbs_experiments(
     df,
     columns,
-    dataset,
     propensity_method,
     number_of_splits=10,
-    bins=100,
     method="",
+    loss_function=None,
+    bias_sample_size=1000,
     bias_variable=None,
-    *args,
-    **attributes,
 ):
     result_path = Path("../results")
-    visualisation_path = result_path / method / dataset
+    if method == "neural_network_mmd_loss":
+        method = f"{method}_{loss_function}"
+    visualisation_path = (
+        result_path / method / "folktables" / bias_variable / str(bias_sample_size)
+    )
     visualisation_path.mkdir(exist_ok=True, parents=True)
     df = df.sample(frac=1)
     scale_columns = df.columns
@@ -58,7 +54,7 @@ def gbs_experiments(
     )
 
     weighted_mmd, weighted_ssmd, sample_biases, wasserstein_distances = compute_metrics(
-        scaled_N, scaled_R, weights, scaler, scale_columns, gamma
+        scaled_N[columns], scaled_R[columns], weights, scaler, scale_columns, gamma
     )
 
     result_dict = {"SSMD": weighted_ssmd, "MMDs": weighted_mmd}
@@ -78,6 +74,7 @@ def gbs_experiments(
     with open(visualisation_path / "results.json", "w") as result_file:
         result_file.write(json.dumps(result_dict))
 
+    bins = 100
     plot_gbs_results(
         bins,
         scaled_N,

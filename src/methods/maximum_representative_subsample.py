@@ -1,8 +1,9 @@
 import numpy as np
 import pandas as pd
 from sklearn.metrics import roc_auc_score
-from sklearn.model_selection import GridSearchCV, KFold, StratifiedKFold
+from sklearn.model_selection import GridSearchCV, KFold
 from sklearn.tree import DecisionTreeClassifier
+from utils.metrics import auc_prediction
 
 
 def grid_search(X_train, y_train, cv=5):
@@ -62,21 +63,6 @@ def cv_bootstrap_prediction(N, R, number_of_splits, columns, cv):
         preds[test_index] = np.mean(bootstrap_predictions, axis=0)
         preds_r[test_index_r] = np.mean(bootstrap_predictions_r, axis=0)
     return preds, preds_r
-
-
-def auc_prediction(N, R, columns, cv=5):
-    data = pd.concat([N, R])
-    auroc_scores = []
-    kf = StratifiedKFold(n_splits=5, shuffle=True)
-    for train, test in kf.split(data[columns], data["label"]):
-        train, test = data.iloc[train], data.iloc[test]
-        y_train = train["label"]
-        clf = grid_search(train[columns], y_train, cv)
-        y_predict = clf.predict_proba(test[columns])[:, 1]
-        y_test = test["label"]
-        auroc_scores.append(roc_auc_score(y_test, y_predict))
-
-    return np.mean(auroc_scores)
 
 
 def MRS(

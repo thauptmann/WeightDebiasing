@@ -7,44 +7,37 @@ euclidean_distance_fn = torch.nn.PairwiseDistance(2)
 
 # Weighted MMD loss
 class WeightedMMDLoss(nn.Module):
-    def __init__(self, gamma, R, device, kernel="rbf"):
+    def __init__(self, gamma, N, R, device):
         super(WeightedMMDLoss, self).__init__()
+        self.weights_R = (torch.ones(len(R), dtype=torch.double) / len(R)).to(device)
+        self.n_n_rbf_matrix = self.rbf_kernel(N, N, gamma)
+        self.n_r_rbf_matrix = self.rbf_kernel(N, R, gamma)
         self.gamma = gamma
-        self.kernel = self.rbf_kernel if kernel == "rbf" else self.linear_kernel
-        len_R = len(R)
-        self.weights_R = (torch.ones(len_R, dtype=torch.double) / len_R).to(device)
+        self.R = R
 
-        y_y_rbf_matrix = torch.matmul(
+        r_r_rbf_matrix = torch.matmul(
             torch.unsqueeze(self.weights_R, 1), torch.unsqueeze(self.weights_R, 0)
-        ) * self.kernel(R, R, gamma)
-        self.y_y_mean = y_y_rbf_matrix.sum().to(device)
+        ) * self.rbf_kernel(R, R, gamma)
+        self.r_r_mean = r_r_rbf_matrix.sum().to(device)
 
     def rbf_kernel(self, source, target, gamma):
         distance_matrix = torch.cdist(source, target, p=2)
         squared_distance_matrix = distance_matrix.pow(2)
         return torch.exp(-gamma * squared_distance_matrix)
 
-    def linear_kernel(self, source, target, gamma):
-        dot_product_matrix = torch.mm(source, target.T)
-        return dot_product_matrix
+    def forward(self, weights):
+        n_n_mean = (
+            torch.matmul(torch.unsqueeze(weights, 1), torch.unsqueeze(weights, 0))
+            * self.n_n_rbf_matrix
+        ).sum()
+        n_r_mean = (
+            torch.matmul(
+                torch.unsqueeze(weights, 1), torch.unsqueeze(self.weights_R, 0)
+            )
+            * self.n_r_rbf_matrix
+        ).sum()
 
-    def forward(self, N, R, weights=None):
-        if weights is None:
-            weights = (torch.ones(len(N), dtype=torch.double) / len(N)).to(self.N)
-
-        x_x_rbf_matrix = torch.matmul(
-            torch.unsqueeze(weights, 1), torch.unsqueeze(weights, 0)
-        ) * self.kernel(N, N, self.gamma)
-        x_x_mean = x_x_rbf_matrix.sum()
-
-        weight_matrix = torch.matmul(
-            torch.unsqueeze(weights, 1), torch.unsqueeze(self.weights_R, 0)
-        )
-        x_y_rbf_matrix = weight_matrix * self.kernel(N, R, self.gamma)
-        x_y_mean = x_y_rbf_matrix.sum()
-
-        maximum_mean_discrepancy_value = x_x_mean + self.y_y_mean - 2 * x_y_mean
-        return torch.sqrt(maximum_mean_discrepancy_value)
+        return torch.sqrt(n_n_mean + self.r_r_mean - 2 * n_r_mean)
 
 
 class AsamLoss(nn.Module):

@@ -1,28 +1,18 @@
-import torch
 import json
 import numpy as np
 from pathlib import Path
 
-from utils.data_loader import sample, sample_folk
+from utils.data_loader import sample_folk
 from utils.visualisation import plot_weights
 
 from utils.metrics import (
     compute_metrics,
-    strictly_standardized_mean_difference,
-    compute_relative_bias,
-    maximum_mean_discrepancy_weighted,
     scale_df,
-    compute_weighted_means,
 )
 from utils.metrics import calculate_rbf_gamma
 from tqdm import trange
-import random
 from utils.visualisation import plot_results_with_variance
 
-seed = 5
-np.random.seed(seed)
-random.seed(seed)
-torch.manual_seed(seed)
 
 
 def folktables_experiments(
@@ -33,30 +23,24 @@ def folktables_experiments(
     method="",
     number_of_repetitions=100,
     bias_variable=None,
-    bias_type=None,
-    bias_strength=0.05,
     bias_sample_size=1000,
     loss_function=None,
 ):
     file_directory = Path(__file__).parent
     result_path = Path(file_directory, "../../results")
+    if method == "neural_network_mmd_loss":
+        method = f"{method}_{loss_function}"
     visualisation_path = (
-        result_path
-        / method
-        / "folktables"
-        / bias_variable
-        / bias_type
-        / str(bias_sample_size)
+        result_path / method / "folktables" / bias_variable / str(bias_sample_size)
     )
     visualisation_path.mkdir(exist_ok=True, parents=True)
-    df = df.reset_index(drop=True)
-
-    equal_probability = 1 / len(df)
-
-    scale_columns = df.drop(["pi"], axis="columns").columns
+    scale_columns = ["AGEP", "WKHP", "PINCP"]
     scaled_df, scaler = scale_df(df, scale_columns)
 
-    gamma = calculate_rbf_gamma(scaled_df[columns])
+    country = scaled_df[scaled_df["label"] == 0]
+    state = scaled_df[scaled_df["label"] == 1]
+
+    gamma = calculate_rbf_gamma(scaled_df[columns][:1000])
 
     weighted_mmds_list = []
     biases_list = []
@@ -66,11 +50,10 @@ def folktables_experiments(
     dataset_ssmd_list = []
     parameter_ssmd_list = []
     wasserstein_parameter_list = []
-    data_set_wasserstein_list = []
     wasserstein_list = []
 
     for i in trange(number_of_repetitions):
-        scaled_N, scaled_R = sample_folk(scaled_df, bias_sample_size)
+        scaled_N, scaled_R = sample_folk(country, state, bias_sample_size)
 
         positive = np.sum(scaled_R[bias_variable].values)
         sample_representative_mean = positive / len(scaled_R)
@@ -89,7 +72,7 @@ def folktables_experiments(
             loss_function=loss_function,
         )
 
-        if method == "neural_network_mmd_loss":
+        if "mmd" in method:
             biases_path = visualisation_path / "biases"
             biases_path.mkdir(exist_ok=True)
             plot_results_with_variance(
@@ -107,17 +90,15 @@ def folktables_experiments(
             weighted_ssmd,
             sample_biases,
             wasserstein_distances,
-            data_set_wasserstein,
-        ) = compute_metrics(scaled_N, scaled_R, weights, scaler, scale_columns, gamma)
+        ) = compute_metrics(scaled_N[columns], scaled_R[columns], weights, scaler, scale_columns, gamma)
 
         plot_weights(weights, visualisation_path / "weights", i)
 
         biases_list.append(sample_biases)
-        dataset_ssmd_list.append(np.mean(weighted_ssmd))
+        dataset_ssmd_list.append(np.nanmean(weighted_ssmd))
         parameter_ssmd_list.append(weighted_ssmd)
         weighted_mmds_list.append(weighted_mmd)
         wasserstein_parameter_list.append(wasserstein_distances)
-        data_set_wasserstein_list.append(data_set_wasserstein)
 
     mean_biases = np.nanmean(biases_list, axis=0)
     sd_biases = np.nanstd(biases_list, axis=0)
@@ -137,12 +118,9 @@ def folktables_experiments(
             "mean": np.nanmean(weighted_mmds_list),
             "sd": np.nanstd(weighted_mmds_list),
         },
-        "Wassersteins": {
-            "mean": np.nanmean(data_set_wasserstein_list),
-            "sd": np.nanstd(data_set_wasserstein_list),
-        },
     }
-    for index, column in enumerate(scaled_df.drop(["pi"], axis="columns").columns):
+    
+    for index, column in enumerate(scaled_df.drop(["label"], axis="columns").columns):
         result_dict[f"{column}_relative_bias"] = {
             "bias mean": mean_biases[index],
             "bias sd": sd_biases[index],
@@ -160,7 +138,6 @@ def folktables_experiments(
             mean_list,
             mmd_list,
             wasserstein_list,
-            data_set_wasserstein_list,
             np.mean(sample_mean_list),
             visualisation_path,
             True,

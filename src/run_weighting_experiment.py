@@ -7,6 +7,7 @@ from experiments.artificial_data_experiment import artificial_data_experiment
 from experiments.census_experiments import census_experiments
 from experiments.gbs_experiments import gbs_experiments
 from experiments.folktables_experiments import folktables_experiments
+from experiments.mrs_experiments import mrs_data_experiment
 
 from methods.logistic_regression import logistic_regression_weighting
 from methods.naive_weighting import naive_weighting
@@ -18,6 +19,16 @@ from methods.gradient_boosting import gradient_boosting_weighting
 from methods.ada_debiasing import ada_debiasing_weighting
 from methods.domain_adaptation import domain_adaptation_weighting
 from methods.maximum_representative_subsample import repeated_MRS
+from methods.kmm import kernel_mean_matching
+import numpy as np
+import random
+import torch
+
+
+seed = 5
+np.random.seed(seed)
+random.seed(seed)
+torch.manual_seed(seed)
 
 
 def weighting_experiment():
@@ -25,7 +36,7 @@ def weighting_experiment():
     dataset_name = args.dataset
     method_name = args.method
     bias_sample_size = args.bias_sample_size
-    data, columns = load_dataset(dataset_name, args.bias_variable)
+    data, columns = load_dataset(dataset_name, args.bias)
 
     compute_weights_function = get_weighting_function(method_name)
 
@@ -37,6 +48,7 @@ def weighting_experiment():
             method=method_name,
             bias_sample_size=bias_sample_size,
             loss_function=args.loss_choice,
+            number_of_repetitions=args.number_of_repetitions,
         )
     elif dataset_name == "census":
         bias = args.bias
@@ -49,28 +61,39 @@ def weighting_experiment():
             bias_type=bias,
             bias_sample_size=bias_sample_size,
             loss_function=args.loss_choice,
+            number_of_repetitions=args.number_of_repetitions,
         )
     elif dataset_name == "folktables":
         folktables_experiments(
             data,
             columns,
-            dataset_name,
             compute_weights_function,
             method=method_name,
             bias_variable=args.bias_variable,
             bias_sample_size=bias_sample_size,
             loss_function=args.loss_choice,
+            number_of_repetitions=args.number_of_repetitions,
+        )
+    elif dataset_name == "mrs_census":
+        mrs_data_experiment(
+            data,
+            columns,
+            compute_weights_function,
+            method=method_name,
+            bias_type=args.bias,
+            loss_function=args.loss_choice,
+            number_of_repetitions=args.number_of_repetitions,
         )
     else:
         gbs_experiments(
             data,
             columns,
-            dataset_name,
             compute_weights_function,
             method=method_name,
             bias_variable=args.bias_variable,
             bias_sample_size=bias_sample_size,
             loss_function=args.loss_choice,
+            number_of_repetitions=args.number_of_repetitions,
         )
 
 
@@ -97,6 +120,8 @@ def get_weighting_function(method_name):
         )
     elif method_name == "mrs":
         compute_weights_function = repeated_MRS
+    elif method_name == "kmm":
+        compute_weights_function = kernel_mean_matching
     else:
         compute_weights_function = naive_weighting
 

@@ -1,17 +1,18 @@
 import numpy as np
 from scipy.spatial.distance import pdist
+from sklearn.metrics import roc_auc_score
 from sklearn.metrics.pairwise import rbf_kernel
+from sklearn.model_selection import GridSearchCV, StratifiedKFold
 from sklearn.preprocessing import StandardScaler
 from scipy.stats import wasserstein_distance
-import ot
+from sklearn.tree import DecisionTreeClassifier
 import torch
+import pandas as pd
 
 
 def strictly_standardized_mean_difference(N, R, weights=None):
     if weights is None:
         weights = np.ones(len(N))
-    N = N.numpy()
-    R = R.numpy()
     means_representative = np.mean(R, axis=0)
     weighted_means_non_representative = np.average(N, axis=0, weights=weights)
     variance_representative = np.var(R, axis=0)
@@ -27,7 +28,6 @@ def strictly_standardized_mean_difference(N, R, weights=None):
 
 
 def compute_weighted_means(N, weights):
-    weights = weights / sum(weights)
     return np.average(N, weights=weights, axis=0)
 
 
@@ -62,74 +62,93 @@ def compute_maximum_mean_discrepancy(gamma, x, y):
 
 def scale_df(df, columns):
     scaler = StandardScaler()
-    scaled = df.copy(deep=True)
-    scaled[columns] = scaler.fit_transform(df[columns])
-    return scaled, scaler
+    df[columns] = scaler.fit_transform(df[columns])
+    return df, scaler
 
 
-def compute_weighted_maximum_mean_discrepancy(gamma, x, y, weights):
+def compute_weighted_maximum_mean_discrepancy(
+    gamma, x, y, weights, x_x_rbf_matrix=None, y_y_rbf_matrix=None, x_y_rbf_matrix=None
+):
     weights_y = np.ones(len(y)) / len(y)
-    x_x_rbf_matrix = np.matmul(
-        np.expand_dims(weights, 1), np.expand_dims(weights, 0)
-    ) * rbf_kernel(x, x, gamma=gamma)
-    x_x_mean = x_x_rbf_matrix.sum()
+    if x_x_rbf_matrix is None:
+        x_x_rbf_matrix = rbf_kernel(x, x, gamma=gamma)
+    weights_x_x = np.matmul(np.expand_dims(weights, 1), np.expand_dims(weights, 0))
+    x_x_mean = (weights_x_x * x_x_rbf_matrix).sum()
 
-    y_y_rbf_matrix = rbf_kernel(y, y, gamma=gamma)
-    y_y_mean = y_y_rbf_matrix.mean()
-    weight_matrix = np.matmul(np.expand_dims(weights, 1), np.expand_dims(weights_y, 0))
-    x_y_rbf_matrix = weight_matrix * rbf_kernel(x, y, gamma=gamma)
-    x_y_mean = x_y_rbf_matrix.sum()
+    if y_y_rbf_matrix is None:
+        y_y_rbf_matrix = rbf_kernel(y, y, gamma=gamma)
+    weight_matrix_y_y = np.matmul(
+        np.expand_dims(weights_y, 1), np.expand_dims(weights_y, 0)
+    )
+    y_y_mean = (weight_matrix_y_y * y_y_rbf_matrix).sum()
+
+    if x_y_rbf_matrix is None:
+        x_y_rbf_matrix = rbf_kernel(x, y, gamma=gamma)
+    weight_matrix_x_y = np.matmul(
+        np.expand_dims(weights, 1), np.expand_dims(weights_y, 0)
+    )
+    x_y_mean = (weight_matrix_x_y * x_y_rbf_matrix).sum()
 
     maximum_mean_discrepancy_value = x_x_mean + y_y_mean - 2 * x_y_mean
     return np.sqrt(maximum_mean_discrepancy_value)
 
 
-def maximum_mean_discrepancy_weighted(x, y, weights, gamma=None):
+def weighted_maximum_mean_discrepancy(
+    x,
+    y,
+    weights,
+    gamma=None,
+    x_x_rbf_matrix=None,
+    y_y_rbf_matrix=None,
+    x_y_rbf_matrix=None,
+):
     weights = weights / sum(weights)
     if gamma is None:
         gamma = calculate_rbf_gamma(np.append(x, y, axis=0))
-    return compute_weighted_maximum_mean_discrepancy(gamma, x, y, weights)
+    return compute_weighted_maximum_mean_discrepancy(
+        gamma, x, y, weights, x_x_rbf_matrix, y_y_rbf_matrix, x_y_rbf_matrix
+    )
 
 
-def compute_metrics(scaled_N, scaled_R, weights, scaler, scale_columns, gamma):
+def compute_metrics(scaled_N, scaled_R, weights, scaler, scale_columns, columns, gamma):
     wasserstein_distances = []
     if isinstance(weights, (np.ndarray)):
         weights = torch.DoubleTensor(weights)
-    scaled_N_dropped = torch.DoubleTensor(
-        scaled_N.drop(["pi", "label"], axis="columns").values
-    )
-    scaled_R_dropped = torch.DoubleTensor(
-        scaled_R.drop(["pi", "label"], axis="columns").values
-    )
+    scaled_N_dropped = torch.DoubleTensor(scaled_N[columns].values)
+    scaled_R_dropped = torch.DoubleTensor(scaled_R[columns].values)
 
-    weighted_mmd = maximum_mean_discrepancy_weighted(
+    weighted_mmd = weighted_maximum_mean_discrepancy(
         scaled_N_dropped,
         scaled_R_dropped,
         weights,
         gamma,
     )
     weighted_ssmd = strictly_standardized_mean_difference(
-        scaled_N_dropped,
-        scaled_R_dropped,
+        scaled_N,
+        scaled_R,
         weights,
     )
 
-    data_set_wasserstein = WassersteinMetric(
-        scaled_N_dropped, scaled_R_dropped, weights
+    weighted_ssmd_dataset = np.mean(
+        strictly_standardized_mean_difference(
+            scaled_N_dropped.numpy(),
+            scaled_R_dropped.numpy(),
+            weights,
+        )
     )
 
-    for i in range(scaled_N_dropped.shape[1]):
-        u_values = scaled_N_dropped[:, i]
-        v_values = scaled_R_dropped[:, i]
+    for i in range(scaled_N.values.shape[1]):
+        u_values = scaled_N.values[:, i]
+        v_values = scaled_R.values[:, i]
 
         wasserstein_distance_value = wasserstein_distance(u_values, v_values, weights)
         wasserstein_distances.append(wasserstein_distance_value)
 
-    scaled_N_dropped = scaler.inverse_transform(scaled_N[scale_columns])
-    scaled_R_dropped = scaler.inverse_transform(scaled_R[scale_columns])
-    weighted_means = compute_weighted_means(scaled_N_dropped, weights)
+    scaled_N[scale_columns] = scaler.inverse_transform(scaled_N[scale_columns])
+    scaled_R[scale_columns] = scaler.inverse_transform(scaled_R[scale_columns])
+    weighted_means = compute_weighted_means(scaled_N, weights)
 
-    sample_means = np.mean(scaled_R_dropped, axis=0)
+    sample_means = np.mean(scaled_R, axis=0)
     sample_biases = compute_relative_bias(weighted_means, sample_means)
 
     return (
@@ -137,14 +156,37 @@ def compute_metrics(scaled_N, scaled_R, weights, scaler, scale_columns, gamma):
         weighted_ssmd,
         sample_biases,
         wasserstein_distances,
-        data_set_wasserstein,
+        weighted_ssmd_dataset,
     )
 
 
-def WassersteinMetric(N, R, weights, method="emd"):
-    uniform_weights = (torch.ones(len(R), dtype=torch.float64) / len(R)).to(R)
-    M = ot.dist(N, R)
-    if method == "emd":
-        return ot.emd2(weights, uniform_weights, M)
-    else:
-        return ot.sinkhorn2(weights, uniform_weights, M, reg=1)
+def auc_prediction(N, R, columns, weights, cv=5):
+    data = pd.concat([N, R])
+    representative_weights = np.ones(len(R)) * (len(R) / len(data))
+    weights = np.concatenate([weights, representative_weights])
+    clf = grid_search(data[columns], data.label, weights, cv)
+    y_predict = clf.predict_proba(data[columns])[:, 1]
+    auroc_score = roc_auc_score(data.label, y_predict)
+
+    return auroc_score
+
+
+def grid_search(X_train, y_train, weights, cv=5):
+    clf = DecisionTreeClassifier()
+    path = clf.cost_complexity_pruning_path(X_train, y_train, sample_weight=weights)
+    ccp_alphas = path.ccp_alphas
+    ccp_alphas[ccp_alphas < 0] = 0
+    ccp_alphas = list(set(ccp_alphas[:-1]))
+    param_grid = {"ccp_alpha": ccp_alphas}
+    grid = GridSearchCV(
+        DecisionTreeClassifier(),
+        param_grid,
+        cv=cv,
+        n_jobs=-1,
+    )
+    grid.fit(
+        X_train,
+        y_train,
+        sample_weight=weights,
+    )
+    return grid.best_estimator_

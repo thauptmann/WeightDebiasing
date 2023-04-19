@@ -4,27 +4,19 @@ import numpy as np
 
 
 class WeightingMlp(nn.Module):
-    def __init__(self, number_of_features, latent_features, allow_zero_weights=False):
+    def __init__(self, number_of_features, latent_features):
         super(WeightingMlp, self).__init__()
         self.weighting = nn.Sequential(
             nn.Linear(number_of_features, latent_features, dtype=torch.double),
-            nn.ReLU(),
-            nn.BatchNorm1d(latent_features, dtype=torch.double),
+            nn.LeakyReLU(),
             nn.Linear(latent_features, 1, dtype=torch.double),
         )
         self.softmax = torch.nn.Softmax(dim=0)
-        self.relu = nn.ReLU()
-        self.allow_zero_weights = allow_zero_weights
 
     def forward(self, x):
         weights = self.weighting(x).flatten()
-        
-        if self.allow_zero_weights:
-            weights = self.relu(weights)
-            weights = weights / torch.sum(weights)
-            return weights
-        else:
-            return self.softmax(weights)
+        weights = self.softmax(weights)
+        return  weights
 
 
 class Mlp(nn.Module):

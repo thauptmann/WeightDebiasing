@@ -59,10 +59,10 @@ def plot_asams(weighted_asams, asams, columns, plot_directory):
     plt.clf()
 
 
-def plot_weights(weights, path, iteration, bins=50):
+def plot_weights(weights, path, iteration, title="", bins=50):
     path.mkdir(exist_ok=True)
     weights = weights / sum(weights)
-    sns.histplot(x=weights, bins=bins)
+    sns.histplot(x=weights, bins=bins).set_title(title)
     same_weights_positition = 1 / len(weights)
     plt.axvline(same_weights_positition, color="k")
     plt.savefig(f"{path}/weights_{iteration}.pdf", bbox_inches="tight")
@@ -97,14 +97,12 @@ def plot_gbs_results(
 def plot_results_with_variance(
     ratio_list,
     mmd_list,
-    wasserstein_list,
     representative_ratio,
     visualisation_path,
     suffix="",
-    plot_mean=False
+    plot_mean=False,
 ):
     plot_metric_with_variance(mmd_list, visualisation_path, suffix, "MMD")
-    plot_metric_with_variance(wasserstein_list, visualisation_path, suffix, "Wasserstein")
     if plot_mean:
         plot_mean_with_variance(
             ratio_list, representative_ratio, visualisation_path, suffix

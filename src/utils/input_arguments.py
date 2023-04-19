@@ -12,11 +12,28 @@ method_list = [
     "domain_adaptation",
     "random",
     "mrs",
+    "kmm",
+    "kliep",
 ]
 
-bias_choice = ["oversampling", "undersampling", "none", "age", "complex"]
-dataset_list = ["gbs", "artificial", "census", "folktables"]
-bias_variables = ["Above_Below 50K", "Age", ""]
+bias_choice = [
+    "oversampling",
+    "undersampling",
+    "none",
+    "age",
+    "complex",
+    "less_negative_class",
+    "less_positive_class",
+    "none",
+    "mean_difference",
+]
+dataset_list = ["gbs", "artificial", "census", "folktables", "mrs_census"]
+bias_variables = [
+    "Above_Below 50K",
+    "Age",
+    "",
+    "PINCP",
+]
 loss_choices = ["mmd_rbf", "wasserstein", "mmd_linear"]
 
 
@@ -31,5 +48,6 @@ def input_arguments():
         "--bias_variable", type=str, choices=bias_variables, default="Above_Below 50K"
     )
     parser.add_argument("--loss_choice", type=str, choices=loss_choices, default="mmd")
+    parser.add_argument("--number_of_repetitions", default=100, type=int)
 
     return parser.parse_args()

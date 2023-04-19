@@ -1,4 +1,3 @@
-import torch
 import numpy as np
 from pathlib import Path
 import json
@@ -6,15 +5,10 @@ from methods.domain_adaptation import calculate_rbf_gamma
 
 from utils.data_loader import sample
 from utils.metrics import compute_metrics, scale_df
-import random
 from tqdm import trange
 
-from utils.visualisation import plot_results_with_variance
+from utils.visualisation import plot_results_with_variance, plot_weights
 
-seed = 5
-np.random.seed(seed)
-random.seed(seed)
-torch.manual_seed(seed)
 
 
 def artificial_data_experiment(
@@ -29,11 +23,7 @@ def artificial_data_experiment(
 ):
     file_directory = Path(__file__).parent
     result_path = Path(file_directory, "../../results")
-    if method == "neural_network_mmd_loss":
-        method = f"{method}_{loss_function}"
-    visualisation_path = (
-        result_path / method / "artificial" / str(bias_sample_size)
-    )
+    visualisation_path = result_path / method / "artificial" / str(bias_sample_size)
     visualisation_path.mkdir(exist_ok=True, parents=True)
     df = df.reset_index(drop=True)
     scale_columns = df.drop(["pi"], axis="columns").columns
@@ -45,11 +35,9 @@ def artificial_data_experiment(
     biases_list = []
     parameter_ssmd_list = []
     wasserstein_parameter_list = []
-    data_set_wasserstein_list = []
-    mmd_list = []
-    wasserstein_list = []
 
     for i in trange(number_of_repetitions):
+        mmd_list = []
         scaled_N, scaled_R = sample(scaled_df, bias_sample_size)
 
         weights = propensity_method(
@@ -61,7 +49,6 @@ def artificial_data_experiment(
             bias_variable=None,
             loss_function=loss_function,
             mmd_list=mmd_list,
-            wasserstein_list=wasserstein_list,
         )
 
         (
@@ -69,15 +56,24 @@ def artificial_data_experiment(
             weighted_ssmd,
             sample_biases,
             wasserstein_distances,
-            wasserstein_data_set,
-        ) = compute_metrics(scaled_N, scaled_R, weights, scaler, scale_columns, gamma)
+            weighted_ssmd_dataset,
+        ) = compute_metrics(
+            scaled_N.drop(["pi", "label"], axis="columns"),
+            scaled_R.drop(["pi", "label"], axis="columns"),
+            weights,
+            scaler,
+            scale_columns,
+            columns,
+            gamma,
+        )
 
-        dataset_ssmd_list.append(np.mean(weighted_ssmd))
+        dataset_ssmd_list.append(weighted_ssmd_dataset)
         weighted_mmds_list.append(weighted_mmd)
         parameter_ssmd_list.append(weighted_ssmd)
         biases_list.append(sample_biases)
         wasserstein_parameter_list.append(wasserstein_distances)
-        data_set_wasserstein_list.append(wasserstein_data_set)
+
+        plot_weights(weights, visualisation_path / "weights", i)
 
         if "neural_network_mmd_loss" in method:
             biases_path = visualisation_path / "biases"
@@ -85,7 +81,6 @@ def artificial_data_experiment(
             plot_results_with_variance(
                 [],
                 [mmd_list[-1]],
-                [wasserstein_list[-1]],
                 [],
                 biases_path,
                 i,
@@ -109,13 +104,11 @@ def artificial_data_experiment(
             "mean": np.nanmean(weighted_mmds_list),
             "sd": np.nanstd(weighted_mmds_list),
         },
-        "Wassersteins": {
-            "mean": np.nanmean(data_set_wasserstein_list),
-            "sd": np.nanstd(data_set_wasserstein_list),
-        },
     }
 
-    for index, column in enumerate(scaled_df.drop(["pi"], axis="columns").columns):
+    for index, column in enumerate(
+        scaled_N.drop(["label", "pi"], axis="columns").columns
+    ):
         result_dict[f"{column}_relative_bias"] = {
             "bias mean": mean_biases[index],
             "bias sd": sd_biases[index],
@@ -132,8 +125,6 @@ def artificial_data_experiment(
         plot_results_with_variance(
             [],
             mmd_list,
-            wasserstein_list,
-            data_set_wasserstein_list,
             "",
             visualisation_path,
             False,
