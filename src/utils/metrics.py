@@ -1,13 +1,19 @@
 import numpy as np
 from scipy.spatial.distance import pdist
-from sklearn.metrics import roc_auc_score
+from sklearn.metrics import (
+    roc_auc_score,
+    accuracy_score,
+    precision_score,
+    recall_score,
+    mean_squared_error,
+)
 from sklearn.metrics.pairwise import rbf_kernel
 from sklearn.model_selection import GridSearchCV, StratifiedKFold
 from sklearn.preprocessing import StandardScaler
 from scipy.stats import wasserstein_distance
 from sklearn.tree import DecisionTreeClassifier
 import torch
-import pandas as pd
+from catboost import CatBoostClassifier, Pool, CatBoostRegressor
 
 
 def strictly_standardized_mean_difference(N, R, weights=None):
@@ -67,30 +73,31 @@ def scale_df(df, columns):
 
 
 def compute_weighted_maximum_mean_discrepancy(
-    gamma, x, y, weights, x_x_rbf_matrix=None, y_y_rbf_matrix=None, x_y_rbf_matrix=None
+    gamma, n, r, weights, n_n_rbf_matrix=None, r_r_rbf_matrix=None, n_r_rbf_matrix=None
 ):
-    weights_y = np.ones(len(y)) / len(y)
-    if x_x_rbf_matrix is None:
-        x_x_rbf_matrix = rbf_kernel(x, x, gamma=gamma)
-    weights_x_x = np.matmul(np.expand_dims(weights, 1), np.expand_dims(weights, 0))
-    x_x_mean = (weights_x_x * x_x_rbf_matrix).sum()
+    weights_r = np.ones(len(r)) / len(r)
 
-    if y_y_rbf_matrix is None:
-        y_y_rbf_matrix = rbf_kernel(y, y, gamma=gamma)
-    weight_matrix_y_y = np.matmul(
-        np.expand_dims(weights_y, 1), np.expand_dims(weights_y, 0)
+    if n_n_rbf_matrix is None:
+        n_n_rbf_matrix = rbf_kernel(n, n, gamma=gamma)
+    weights_n_n = np.matmul(np.expand_dims(weights, 1), np.expand_dims(weights, 0))
+    n_n_mean = (weights_n_n * n_n_rbf_matrix).sum()
+
+    if r_r_rbf_matrix is None:
+        r_r_rbf_matrix = rbf_kernel(r, r, gamma=gamma)
+    weight_matrix_r_r = np.matmul(
+        np.expand_dims(weights_r, 1), np.expand_dims(weights_r, 0)
     )
-    y_y_mean = (weight_matrix_y_y * y_y_rbf_matrix).sum()
+    r_r_mean = (weight_matrix_r_r * r_r_rbf_matrix).sum()
 
-    if x_y_rbf_matrix is None:
-        x_y_rbf_matrix = rbf_kernel(x, y, gamma=gamma)
-    weight_matrix_x_y = np.matmul(
-        np.expand_dims(weights, 1), np.expand_dims(weights_y, 0)
+    if n_r_rbf_matrix is None:
+        n_r_rbf_matrix = rbf_kernel(n, r, gamma=gamma)
+    weight_matrix_n_r = np.matmul(
+        np.expand_dims(weights, 1), np.expand_dims(weights_r, 0)
     )
-    x_y_mean = (weight_matrix_x_y * x_y_rbf_matrix).sum()
+    n_r_mean = (weight_matrix_n_r * n_r_rbf_matrix).sum()
 
-    maximum_mean_discrepancy_value = x_x_mean + y_y_mean - 2 * x_y_mean
-    return np.sqrt(maximum_mean_discrepancy_value)
+    mmd = n_n_mean + r_r_mean - 2 * n_r_mean
+    return np.sqrt(mmd)
 
 
 def weighted_maximum_mean_discrepancy(
@@ -102,7 +109,6 @@ def weighted_maximum_mean_discrepancy(
     y_y_rbf_matrix=None,
     x_y_rbf_matrix=None,
 ):
-    weights = weights / sum(weights)
     if gamma is None:
         gamma = calculate_rbf_gamma(np.append(x, y, axis=0))
     return compute_weighted_maximum_mean_discrepancy(
@@ -160,33 +166,63 @@ def compute_metrics(scaled_N, scaled_R, weights, scaler, scale_columns, columns,
     )
 
 
-def auc_prediction(N, R, columns, weights, cv=5):
-    data = pd.concat([N, R])
-    representative_weights = np.ones(len(R)) * (len(R) / len(data))
-    weights = np.concatenate([weights, representative_weights])
-    clf = grid_search(data[columns], data.label, weights, cv)
-    y_predict = clf.predict_proba(data[columns])[:, 1]
-    auroc_score = roc_auc_score(data.label, y_predict)
+def compute_classification_metrics(N, R, columns, weights, label):
+    clf = train_classifier(N[columns], N[label], weights)
+    y_probabilities = clf.predict_proba(R[columns])[:, 1]
+    auroc_score = roc_auc_score(R[label], y_probabilities)
+    accuracy = accuracy_score(R[label], y_probabilities.round())
+    precision = precision_score(R[label], y_probabilities.round())
+    recall = recall_score(R[label], y_probabilities.round())
 
-    return auroc_score
+    return auroc_score, accuracy, precision, recall
 
 
-def grid_search(X_train, y_train, weights, cv=5):
+def compute_regression_metrics(N, R, columns, weights, label):
+    clf = train_classifier(N[columns], N[label], weights)
+    y_prediction = clf.predict(R[columns])
+    mse = mean_squared_error(R[label], y_prediction)
+    return mse
+
+
+def train_classifier(X, y, weights):
+    train_pool = Pool(X, y, weight=weights)
+    clf = CatBoostClassifier(verbose=0)
+    clf.fit(train_pool)
+    return clf
+
+
+def train_regressor(X, y, weights):
+    train_pool = Pool(X, y, weight=weights)
+    clf = CatBoostRegressor(verbose=0)
+    clf.fit(train_pool)
+    return clf
+
+
+def compute_test_metrics_mrs(data, columns, drop, iteration, cv=5, calculate_roc=False):
+    auroc_scores = []
+    rocs = []
+    median_roc = None
+    mean_roc = None
+    kf = StratifiedKFold(n_splits=5, shuffle=True)
+    for train, test in kf.split(data[columns], data["label"]):
+        train, test = data.iloc[train], data.iloc[test]
+        y_train = train["label"]
+        clf = grid_search(train[columns], y_train, cv)
+        y_predict = clf.predict_proba(test[columns])[:, 1]
+        y_test = test["label"]
+        auroc_scores.append(roc_auc_score(y_test, y_predict))
+
+    return np.mean(auroc_scores), median_roc, mean_roc
+
+
+def grid_search(X_train, y_train, cv=5):
     clf = DecisionTreeClassifier()
-    path = clf.cost_complexity_pruning_path(X_train, y_train, sample_weight=weights)
-    ccp_alphas = path.ccp_alphas
+    path = clf.cost_complexity_pruning_path(X_train, y_train)
+    ccp_alphas, impurities = path.ccp_alphas, path.impurities
     ccp_alphas[ccp_alphas < 0] = 0
-    ccp_alphas = list(set(ccp_alphas[:-1]))
     param_grid = {"ccp_alpha": ccp_alphas}
     grid = GridSearchCV(
-        DecisionTreeClassifier(),
-        param_grid,
-        cv=cv,
-        n_jobs=-1,
+        DecisionTreeClassifier(random_state=5), param_grid, cv=cv, n_jobs=-1
     )
-    grid.fit(
-        X_train,
-        y_train,
-        sample_weight=weights,
-    )
+    grid.fit(X_train, y_train)
     return grid.best_estimator_

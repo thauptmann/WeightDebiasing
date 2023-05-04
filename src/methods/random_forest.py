@@ -11,7 +11,7 @@ def random_forest_weighting(N, R, columns, number_of_splits, *args, **kwargs):
     clf = train_forest(train[columns], train.label, number_of_splits)
     predictions = clf.predict_proba(N[columns])[:, 1]
     weights = (1 - predictions) / predictions
-    weights = weights.numpy().astype(np.float64)
+    weights = weights.astype(np.float64)
     return weights / weights.sum()
 
 

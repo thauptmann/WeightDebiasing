@@ -199,3 +199,4 @@ data_propensity
 results/*
 *.pt
 *.out
+catboost*

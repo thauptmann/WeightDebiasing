@@ -8,7 +8,7 @@ from methods.neural_network_mmd_loss import neural_network_mmd_loss_weighting
 from methods.neural_network_classifier import neural_network_weighting
 from methods.random_forest import random_forest_weighting
 from methods.gradient_boosting import gradient_boosting_weighting
-from methods.ada_debiasing import ada_debiasing_weighting
+from methods.ada_deboost import ada_deboost_weighting
 from methods.domain_adaptation import domain_adaptation_weighting
 from methods.random import random_weighting
 from utils.input_arguments import method_list
@@ -71,7 +71,7 @@ def get_weighting_function(method_name):
     elif method_name == "neural_network_mmd_loss":
         compute_weights_function = neural_network_mmd_loss_weighting
     elif method_name == "adaDebias":
-        compute_weights_function = ada_debiasing_weighting
+        compute_weights_function = ada_deboost_weighting
     elif method_name == "domain_adaptation":
         compute_weights_function = domain_adaptation_weighting
     elif method_name == "neural_network_mmd_loss_with_batches":

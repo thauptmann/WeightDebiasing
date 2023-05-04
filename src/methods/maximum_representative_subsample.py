@@ -3,10 +3,10 @@ import pandas as pd
 from sklearn.metrics import roc_auc_score
 from sklearn.model_selection import GridSearchCV, KFold
 from sklearn.tree import DecisionTreeClassifier
-from utils.metrics import auc_prediction
+from utils.metrics import compute_test_metrics_mrs
 
 
-def grid_search(X_train, y_train, cv=5):
+def train_classifier(X_train, y_train, cv=5):
     clf = DecisionTreeClassifier()
     path = clf.cost_complexity_pruning_path(X_train, y_train)
     ccp_alphas, _ = path.ccp_alphas, path.impurities
@@ -57,7 +57,9 @@ def cv_bootstrap_prediction(N, R, number_of_splits, columns, cv):
             bootstrap = pd.concat(
                 [N_train.sample(n=n, replace=True), R_train.sample(n=n, replace=True)]
             )
-            clf = grid_search(bootstrap[columns], bootstrap.label, number_of_splits)
+            clf = train_classifier(
+                bootstrap[columns], bootstrap.label, number_of_splits
+            )
             bootstrap_predictions.append(clf.predict_proba(N_test[columns])[:, 1])
             bootstrap_predictions_r.append(clf.predict_proba(R_test[columns])[:, 1])
         preds[test_index] = np.mean(bootstrap_predictions, axis=0)
@@ -99,7 +101,7 @@ def MRS(
 
 def repeated_MRS(N, R, columns, number_of_splits, *args, **attributes):
     drop = 5
-    eps = 0.01
+    delta = 0.01
     temperature_sampling = (True,)
     cv = 5
     weights = np.ones(len(N))
@@ -109,7 +111,7 @@ def repeated_MRS(N, R, columns, number_of_splits, *args, **attributes):
 
     best_auc = np.inf
 
-    for _ in range(number_of_iterations):
+    for i in range(number_of_iterations):
         N, drop_ids = MRS(
             N,
             R,
@@ -121,19 +123,20 @@ def repeated_MRS(N, R, columns, number_of_splits, *args, **attributes):
         )
         weights[drop_ids] = 0
 
-        auc = auc_prediction(
-            N,
-            R,
+        auc, _, _ = compute_test_metrics_mrs(
+            pd.concat([N, R]),
             columns,
+            drop,
+            i,
             cv,
         )
 
-        if auc < 0.5 + eps and auc > 0.5 - eps:
+        if auc < 0.5 + delta and auc > 0.5 - delta:
             break
 
         elif abs(auc - 0.5) < abs(best_auc - 0.5):
             best_auc = auc
             best_weights = weights[:]
 
-    best_weights = best_weights.numpy().astype(np.float64)
+    best_weights = best_weights.astype(np.float64)
     return best_weights / best_weights.sum()

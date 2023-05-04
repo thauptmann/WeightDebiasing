@@ -40,16 +40,13 @@ def compute_model(
     Path("models").mkdir(exist_ok=True, parents=True)
     model_path = Path(f"models/best_model_mlp_weighting.pt")
 
-
     dataset = torch.concat([tensor_n, tensor_r]).to(device)
     targets = torch.concat([torch.ones(len(tensor_n)), torch.zeros(len(tensor_r))])
 
     domain_adaptation_model = Mlp(tensor_n.shape[1], latent_features).to(device)
 
     learning_rate = 0.1
-    optimizer = torch.optim.Adam(
-        domain_adaptation_model.parameters(), lr=learning_rate, weight_decay=1e-5
-    )
+    optimizer = torch.optim.Adam(domain_adaptation_model.parameters(), lr=learning_rate)
     scheduler = OneCycleLR(optimizer, max_lr=learning_rate / 10, total_steps=iterations)
 
     for _ in range(iterations):

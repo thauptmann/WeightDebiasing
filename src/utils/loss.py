@@ -1,6 +1,7 @@
 import torch
 import torch.nn as nn
 import ot
+from sklearn.metrics.pairwise import rbf_kernel
 
 euclidean_distance_fn = torch.nn.PairwiseDistance(2)
 
@@ -9,21 +10,16 @@ euclidean_distance_fn = torch.nn.PairwiseDistance(2)
 class WeightedMMDLoss(nn.Module):
     def __init__(self, gamma, N, R, device):
         super(WeightedMMDLoss, self).__init__()
-        self.weights_R = (torch.ones(len(R), dtype=torch.double) / len(R)).to(device)
-        self.n_n_rbf_matrix = self.rbf_kernel(N, N, gamma)
-        self.n_r_rbf_matrix = self.rbf_kernel(N, R, gamma)
+        self.weights_R = (torch.ones(len(R), dtype=torch.float64) / len(R)).to(device)
+        self.weights_R = self.weights_R / torch.sum(self.weights_R)
+        self.n_n_rbf_matrix = torch.FloatTensor(rbf_kernel(N, N, gamma)).to(device)
+        self.n_r_rbf_matrix = torch.FloatTensor(rbf_kernel(N, R, gamma)).to(device)
         self.gamma = gamma
-        self.R = R
 
         r_r_rbf_matrix = torch.matmul(
             torch.unsqueeze(self.weights_R, 1), torch.unsqueeze(self.weights_R, 0)
-        ) * self.rbf_kernel(R, R, gamma)
-        self.r_r_mean = r_r_rbf_matrix.sum().to(device)
-
-    def rbf_kernel(self, source, target, gamma):
-        distance_matrix = torch.cdist(source, target, p=2)
-        squared_distance_matrix = distance_matrix.pow(2)
-        return torch.exp(-gamma * squared_distance_matrix)
+        ) * torch.FloatTensor(rbf_kernel(R, R, gamma)).to(device)
+        self.r_r_mean = r_r_rbf_matrix.sum()
 
     def forward(self, weights):
         n_n_mean = (
@@ -79,7 +75,7 @@ class WassersteinLoss(nn.Module):
 
 class WeightedMMDWassersteinLoss(nn.Module):
     def __init__(self, gamma, R, device):
-        self.mmd_loss = WeightedMMDLoss(gamma, R, device)
+        self.mmd_loss = WeightedMMDLoss(gamma, R)
         self.wasserstein = WassersteinLoss(R, device)
 
     def forward(self, N, R, weights):

@@ -1,6 +1,5 @@
 from sklearn.linear_model import LogisticRegression
 import pandas as pd
-import numpy as np
 
 
 def logistic_regression_weighting(N, R, columns, *args, **attributes):

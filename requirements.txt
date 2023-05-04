@@ -10,3 +10,4 @@ shap~=0.41.0
 statsmodels
 pyreadstat
 adapt
+catboost

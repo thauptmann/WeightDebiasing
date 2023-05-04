@@ -59,7 +59,7 @@ def plot_asams(weighted_asams, asams, columns, plot_directory):
     plt.clf()
 
 
-def plot_weights(weights, path, iteration, title="", bins=50):
+def plot_weights(weights, path, iteration, title="", bins=25):
     path.mkdir(exist_ok=True)
     weights = weights / sum(weights)
     sns.histplot(x=weights, bins=bins).set_title(title)
@@ -86,11 +86,8 @@ def plot_gbs_results(
     visualisation_path,
     weights,
 ):
-    # plot_asams(weighted_asams, asams_values, columns, visualisation_path)
     plot_cumulative_distribution(N, R, visualisation_path, weights)
     plot_feature_histograms(N, R, visualisation_path, bins, weights)
-    # plot_line(asams, visualisation_path, title="ASAM")
-    # plot_line([mmd, weighted_mmd], visualisation_path, title="MMD")
     plot_weights(weights / sum(weights), visualisation_path, 0, bins)
 
 
