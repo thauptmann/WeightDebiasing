@@ -8,8 +8,8 @@ class WeightingMlp(nn.Module):
         super(WeightingMlp, self).__init__()
         self.weighting = nn.Sequential(
             nn.Linear(number_of_features, latent_features, dtype=torch.float64),
-            nn.BatchNorm1d(latent_features, dtype=torch.float64),
             nn.ReLU(),
+            nn.BatchNorm1d(latent_features, dtype=torch.float64),
             nn.Linear(latent_features, 1, dtype=torch.float64),
         )
         self.softmax = torch.nn.Softmax(dim=0)

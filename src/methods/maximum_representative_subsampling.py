@@ -3,20 +3,8 @@ import pandas as pd
 from sklearn.metrics import roc_auc_score
 from sklearn.model_selection import GridSearchCV, KFold
 from sklearn.tree import DecisionTreeClassifier
-from utils.metrics import compute_test_metrics_mrs
-
-
-def train_classifier(X_train, y_train, cv=5):
-    clf = DecisionTreeClassifier()
-    path = clf.cost_complexity_pruning_path(X_train, y_train)
-    ccp_alphas, _ = path.ccp_alphas, path.impurities
-    ccp_alphas[ccp_alphas < 0] = 0
-    param_grid = {"ccp_alpha": ccp_alphas}
-    grid = GridSearchCV(
-        DecisionTreeClassifier(random_state=5), param_grid, cv=cv, n_jobs=-1, refit=True
-    )
-    grid.fit(X_train, y_train)
-    return grid.best_estimator_
+from utils.metrics import compute_test_metrics_mrs, train_classifier_mrs
+from tqdm import tqdm
 
 
 def temperature_sample(softmax: list, temperature: float, drop: int):
@@ -36,14 +24,11 @@ def temperature_sample(softmax: list, temperature: float, drop: int):
 
     if len(preds[preds != 0]) < drop:
         drop = preds[preds != 0]
+
     return np.random.choice(len(preds), drop, replace=False, p=preds)
 
 
 def cv_bootstrap_prediction(N, R, number_of_splits, columns, cv):
-    preds = np.zeros(len(N))
-    preds_r = np.zeros(len(R))
-    bootstrap_iterations = 10
-
     kf = KFold(n_splits=cv, shuffle=True)
     for split_n, split_r in zip(kf.split(N), kf.split(R)):
         train_index, test_index = split_n
@@ -51,19 +36,14 @@ def cv_bootstrap_prediction(N, R, number_of_splits, columns, cv):
         N_train, N_test = N.iloc[train_index], N.iloc[test_index]
         R_train, R_test = R.iloc[train_index_r], R.iloc[test_index_r]
         n = min(len(R_train), len(N_train))
-        bootstrap_predictions = []
-        bootstrap_predictions_r = []
-        for _ in range(bootstrap_iterations):
-            bootstrap = pd.concat(
-                [N_train.sample(n=n, replace=True), R_train.sample(n=n, replace=True)]
-            )
-            clf = train_classifier(
-                bootstrap[columns], bootstrap.label, number_of_splits
-            )
-            bootstrap_predictions.append(clf.predict_proba(N_test[columns])[:, 1])
-            bootstrap_predictions_r.append(clf.predict_proba(R_test[columns])[:, 1])
-        preds[test_index] = np.mean(bootstrap_predictions, axis=0)
-        preds_r[test_index_r] = np.mean(bootstrap_predictions_r, axis=0)
+        bootstrap = pd.concat(
+            [N_train.sample(n=n, replace=True), R_train.sample(n=n, replace=True)]
+        )
+        clf = train_classifier_mrs(
+            bootstrap[columns], bootstrap.label, number_of_splits
+        )
+        preds = clf.predict_proba(N_test[columns])[:, 1]
+        preds_r = clf.predict_proba(R_test[columns])[:, 1]
     return preds, preds_r
 
 
@@ -100,7 +80,7 @@ def MRS(
 
 
 def repeated_MRS(N, R, columns, number_of_splits, *args, **attributes):
-    drop = 5
+    drop = attributes["drop"]
     delta = 0.01
     temperature_sampling = (True,)
     cv = 5
@@ -109,9 +89,9 @@ def repeated_MRS(N, R, columns, number_of_splits, *args, **attributes):
     number_of_iterations = len(N) // drop
     number_of_splits = 5
 
-    best_auc = np.inf
+    best_auc_difference = np.inf
 
-    for i in range(number_of_iterations):
+    for i in tqdm(range(number_of_iterations)):
         N, drop_ids = MRS(
             N,
             R,
@@ -131,12 +111,12 @@ def repeated_MRS(N, R, columns, number_of_splits, *args, **attributes):
             cv,
         )
 
-        if auc < 0.5 + delta and auc > 0.5 - delta:
+        if np.abs(auc - 0.5) <= delta:
             break
 
-        elif abs(auc - 0.5) < abs(best_auc - 0.5):
-            best_auc = auc
-            best_weights = weights[:]
+        elif abs(auc - 0.5) < best_auc_difference:
+            best_auc_difference = abs(auc - 0.5)
+            best_weights = weights
 
     best_weights = best_weights.astype(np.float64)
     return best_weights / best_weights.sum()

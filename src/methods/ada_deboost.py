@@ -1,11 +1,17 @@
 import pandas as pd
 import numpy as np
 
-from sklearn.tree import DecisionTreeClassifier
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.metrics.pairwise import rbf_kernel
-from utils.metrics import calculate_rbf_gamma, weighted_maximum_mean_discrepancy
 from scipy.special import xlogy
+
+from utils.metrics import calculate_rbf_gamma, weighted_maximum_mean_discrepancy
+
+
+max_depths = [3, 5, 7]
+n_estimators = [10, 25]
+y_codes = np.array([-1.0, 1.0])
+number_of_iterations = 250
 
 
 def ada_deboost_weighting(N, R, columns, *args, **kwargs):
@@ -15,9 +21,6 @@ def ada_deboost_weighting(N, R, columns, *args, **kwargs):
     x_x_rbf_matrix = rbf_kernel(N[columns], N[columns], gamma=gamma)
     x_y_rbf_matrix = rbf_kernel(N[columns], R[columns], gamma=gamma)
     y_y_rbf_matrix = rbf_kernel(R[columns], R[columns], gamma=gamma)
-
-    max_depths = [3, 5, 7]
-    n_estimators = [10, 25]
 
     for max_depth in max_depths:
         for n_estimator in n_estimators:
@@ -42,14 +45,8 @@ def ada_deboost_weighting(N, R, columns, *args, **kwargs):
             if mmd < best_mmd:
                 best_mmd = mmd
                 best_weights = weights
-                best_depth = max_depth
 
-    print(best_depth)
     return best_weights
-
-
-y_codes = np.array([-1.0, 1.0])
-number_of_iterations = 200
 
 
 def ada_debiasing(
@@ -85,10 +82,6 @@ def ada_debiasing(
 
         new_weights_N = weights_N * weight_modificator
         new_weights_N = new_weights_N / sum(new_weights_N)
-
-        if (weights_N == new_weights_N).all():
-            print("iteration" + i + "break")
-            break
 
         weights_N = new_weights_N
         learning_rate *= 0.95

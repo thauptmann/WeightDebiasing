@@ -24,13 +24,6 @@ def load_gbs_allensbach():
     return allensbach, allensbach_columns
 
 
-def load_artificial_data():
-    artificial_data_path = f"{file_path}/../../data/debiasing/artificial_population.csv"
-    artificial = pd.read_csv(artificial_data_path, index_col="Unnamed: 0")
-    columns = artificial.filter(like="x").columns.tolist()
-    return artificial, columns
-
-
 def load_census_data(census_bias="Above_Below 50K"):
     columns = [
         "Age",
@@ -153,8 +146,6 @@ def preprocess_census(df, census_bias):
 def load_dataset(dataset_name, bias_variable):
     if dataset_name == "gbs_allensbach":
         return load_gbs_allensbach()
-    elif dataset_name == "artificial":
-        return load_artificial_data()
     elif dataset_name == "census":
         return load_census_data(bias_variable)
     elif dataset_name == "folktables":
@@ -176,12 +167,6 @@ def sample(df, bias_sample_size, reference_sample_size=1000):
     return non_representative, representative
 
 
-def sample_folk(country, state, bias_sample_size, reference_sample_size=2000):
-    representative = country.sample(reference_sample_size)
-    non_representative = state.sample(bias_sample_size)
-    return non_representative, representative
-
-
 def load_folktables_data():
     data_source = ACSDataSource(survey_year="2018", horizon="1-Year", survey="person")
     usa_data = data_source.get_data(states=["CA"], download=True)
@@ -196,6 +181,9 @@ def load_folktables_data():
 
     columns = usa_features.columns
     usa_features["Income"] = us_labels
+    usa_features["Binary Income"] = [
+        1 if us_label >= 50000 else 0 for us_label in us_labels.values
+    ]
     usa_features = usa_features.dropna()
 
     return usa_features, columns
@@ -332,16 +320,11 @@ def sample_mrs_census(bias_type, df, columns, bias_variable, folktables=False):
     bias_fraction = 0.05
     R_fraction = 0.2
 
-    if not folktables:
-        negative_normal = len(df[(df[bias_variable] == 0)])
-        positive_normal = len(df[(df[bias_variable] == 1)])
-        df_positive_class = df[(df[bias_variable] == 1)]
-        df_negative_class = df[(df[bias_variable] == 0)]
-    else:
-        negative_normal = len(df[(df[bias_variable] <= 50000)])
-        positive_normal = len(df[(df[bias_variable] > 50000)])
-        df_positive_class = df[(df[bias_variable] <= 50000)]
-        df_negative_class = df[(df[bias_variable] > 50000)]
+    negative_normal = len(df[(df[bias_variable] == 0)])
+    positive_normal = len(df[(df[bias_variable] == 1)])
+    df_positive_class = df[(df[bias_variable] == 1)]
+    df_negative_class = df[(df[bias_variable] == 0)]
+    if folktables:
         rep_fraction *= 0.1
         R_fraction *= 0.1
         bias_fraction *= 0.1
@@ -430,32 +413,37 @@ def load_brast_cancer_data():
     df["class"] = df["class"].replace(replace_dict)
     df = df.drop(columns=["sample_code_number"])
     columns = df.drop(columns=["class"]).columns
-    df = df.reset_index()
+    df[columns] = df[columns] - 1
 
     return df, columns
 
 
 def sample_breast_cancer(bias_variable, df, bias_type, columns):
+    train = df.sample(frac=1 / 4, replace=False).copy()
+    R = df.drop(train.index).copy().reset_index()
     if bias_type == "mean_difference":
-        mean_sample = df[columns].mean().values
+        mean_sample = train[columns].mean().values
         sample_weights = [
             np.exp(-(1 / 20) * (np.linalg.norm(sample - mean_sample) ** 2))
-            for sample in df[columns].values
+            for sample in train[columns].values
         ]
-        N = df.sample(weights=sample_weights, frac=0.25)
-        R = df[~df.index.isin(N.index)]
-
+    elif bias_variable == "class":
+        values = train[bias_variable]
+        sample_weights = np.where(values == 1, 0.1, 0.9)
+    elif bias_variable == "none":
+        sample_weights = np.ones(len(train))
     else:
-        train_size = int(0.25 * len(df))
-        parameter = df[bias_variable]
-        weights = np.where(parameter <= 5, 0.2, 0.8)
-        weights = weights / sum(weights)
-        train_indices = np.random.choice(len(df), train_size, replace=False, p=weights)
-        N = df.iloc[train_indices]
-        R = df.drop(train_indices)
+        values = train[bias_variable]
+        sample_weights = np.where(values <= 5, 0.2, 0.8)
 
-    N = N.copy().reset_index()
-    R= R.copy().reset_index()
+    mask = np.array(
+        [
+            np.random.choice(2, p=[1 - sample_weight, sample_weight])
+            for sample_weight in sample_weights
+        ]
+    )
+
+    N = train[mask == 1].reset_index()
     R["label"] = 0
     N["label"] = 1
 

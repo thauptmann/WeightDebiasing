@@ -2,7 +2,7 @@ from pathlib import Path
 import torch
 from utils.metrics import calculate_rbf_gamma
 from utils.models import WeightingMlp
-from utils.loss import WeightedMMDLoss
+from utils.losses import WeightedMMDLoss
 import numpy as np
 from torch.optim.lr_scheduler import OneCycleLR
 
@@ -68,12 +68,11 @@ def compute_model(tensor_N, tensor_R):
         optimizer.zero_grad()
 
         mmd = validate_model(
-            tensor_N,
-            tensor_R,
-            loss_function,
-            mmd_model,
+           tensor_N,
+           tensor_R,
+           loss_function,
+           mmd_model,
         )
-
         mmd_list.append(mmd)
 
         if mmd < best_validation_metric:

@@ -35,6 +35,7 @@ def breast_cancer_experiment(
     number_of_repetitions=100,
     bias_type="",
     bias_variable="",
+    **kwargs
 ):
     file_directory = Path(__file__).parent
     result_path = Path(file_directory, "../../results")
@@ -49,8 +50,8 @@ def breast_cancer_experiment(
 
     for i in trange(number_of_repetitions):
         N, R = sample_breast_cancer(bias_variable, df, bias_type, columns)
-        N[columns] = scaler.transform(N[columns])
-        R[columns] = scaler.transform(R[columns])
+        # N[columns] = scaler.transform(N[columns])
+        # R[columns] = scaler.transform(R[columns])
 
         gamma = calculate_rbf_gamma(np.append(N[columns], R[columns], axis=0))
 
@@ -75,7 +76,6 @@ def breast_cancer_experiment(
             weighted_ssmd,
             sample_biases,
             wasserstein_distances,
-            weighted_ssmd_dataset,
         ) = compute_metrics(
             N,
             R,
@@ -86,7 +86,6 @@ def breast_cancer_experiment(
             gamma,
         )
 
-        dataset_ssmd_list.append(weighted_ssmd_dataset)
         weighted_mmds_list.append(weighted_mmd)
         parameter_ssmd_list.append(weighted_ssmd)
         biases_list.append(sample_biases)
@@ -123,7 +122,6 @@ def breast_cancer_experiment(
 
     result_dict = write_result_dict(
         weighted_mmds_list,
-        dataset_ssmd_list,
         biases_list,
         parameter_ssmd_list,
         wasserstein_parameter_list,
@@ -132,6 +130,8 @@ def breast_cancer_experiment(
         accuracy_rate_list,
         precision_list,
         recall_list,
+        [],
+        [],
         N,
     )
 

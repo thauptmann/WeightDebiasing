@@ -24,7 +24,6 @@ def logistic_regression(allensbach_gbs, weights):
 
 def write_result_dict(
     weighted_mmds_list,
-    dataset_ssmd_list,
     biases_list,
     parameter_ssmd_list,
     wasserstein_parameter_list,
@@ -34,7 +33,7 @@ def write_result_dict(
     precision_list,
     recall_list,
     runtime_list,
-    mse_list=None,
+    mse_list=[],
     scaled_N=None,
 ):
     mean_biases = np.nanmean(biases_list, axis=0)
@@ -47,10 +46,6 @@ def write_result_dict(
     sd_wasserstein = np.nanstd(wasserstein_parameter_list, axis=0)
 
     result_dict = {
-        "SSMD": {
-            "mean": np.nanmean(dataset_ssmd_list),
-            "sd": np.nanstd(dataset_ssmd_list),
-        },
         "MMDs": {
             "mean": np.nanmean(weighted_mmds_list),
             "sd": np.nanstd(weighted_mmds_list),

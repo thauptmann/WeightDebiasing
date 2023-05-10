@@ -1,8 +1,8 @@
+import json
 import numpy as np
 from pathlib import Path
 from methods.domain_adaptation import calculate_rbf_gamma
 from utils.metrics import compute_metrics, scale_df
-import json
 from utils.statistics import logistic_regression
 from utils.visualisation import (
     plot_gbs_results,
@@ -10,7 +10,8 @@ from utils.visualisation import (
     plot_weights,
 )
 
-eps = 1e-20
+
+bins = 50
 
 
 def gbs_allensbach_experiments(
@@ -78,7 +79,7 @@ def gbs_allensbach_experiments(
         "SSMD": weighted_ssmd_dataset,
         "MMDs": weighted_mmd,
         "Remaining Samples": remaining_samples,
-        "Number of Samples": len(scaled_N)
+        "Number of Samples": len(scaled_N),
     }
     for index, column in enumerate(columns):
         result_dict[f"{column}_relative_bias"] = {
@@ -98,7 +99,6 @@ def gbs_allensbach_experiments(
     with open(visualisation_path / "results.json", "w") as result_file:
         result_file.write(json.dumps(result_dict))
 
-    bins = 50
     plot_gbs_results(
         bins,
         scaled_N[columns],

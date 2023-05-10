@@ -7,6 +7,7 @@ from sklearn.metrics import (
     recall_score,
     mean_squared_error,
 )
+from sklearn.svm import SVC
 from sklearn.metrics.pairwise import rbf_kernel
 from sklearn.model_selection import GridSearchCV, StratifiedKFold
 from sklearn.preprocessing import StandardScaler
@@ -135,14 +136,6 @@ def compute_metrics(scaled_N, scaled_R, weights, scaler, scale_columns, columns,
         weights,
     )
 
-    weighted_ssmd_dataset = np.mean(
-        strictly_standardized_mean_difference(
-            scaled_N_dropped.numpy(),
-            scaled_R_dropped.numpy(),
-            weights,
-        )
-    )
-
     for i in range(scaled_N.values.shape[1]):
         u_values = scaled_N.values[:, i]
         v_values = scaled_R.values[:, i]
@@ -162,13 +155,13 @@ def compute_metrics(scaled_N, scaled_R, weights, scaler, scale_columns, columns,
         weighted_ssmd,
         sample_biases,
         wasserstein_distances,
-        weighted_ssmd_dataset,
     )
 
 
 def compute_classification_metrics(N, R, columns, weights, label):
     clf = train_classifier(N[columns], N[label], weights)
     y_probabilities = clf.predict_proba(R[columns])[:, 1]
+
     auroc_score = roc_auc_score(R[label], y_probabilities)
     accuracy = accuracy_score(R[label], y_probabilities.round())
     precision = precision_score(R[label], y_probabilities.round())
@@ -177,18 +170,18 @@ def compute_classification_metrics(N, R, columns, weights, label):
     return auroc_score, accuracy, precision, recall
 
 
+def train_classifier(X, y, weights):
+    pool = Pool(X, y, weight=weights)
+    clf = CatBoostClassifier(verbose=0)
+    clf = clf.fit(pool)
+    return clf
+
+
 def compute_regression_metrics(N, R, columns, weights, label):
-    clf = train_classifier(N[columns], N[label], weights)
+    clf = train_regressor(N[columns], N[label], weights)
     y_prediction = clf.predict(R[columns])
     mse = mean_squared_error(R[label], y_prediction)
     return mse
-
-
-def train_classifier(X, y, weights):
-    train_pool = Pool(X, y, weight=weights)
-    clf = CatBoostClassifier(verbose=0)
-    clf.fit(train_pool)
-    return clf
 
 
 def train_regressor(X, y, weights):
@@ -207,7 +200,7 @@ def compute_test_metrics_mrs(data, columns, drop, iteration, cv=5, calculate_roc
     for train, test in kf.split(data[columns], data["label"]):
         train, test = data.iloc[train], data.iloc[test]
         y_train = train["label"]
-        clf = grid_search(train[columns], y_train, cv)
+        clf = train_classifier_mrs(train[columns], y_train, cv)
         y_predict = clf.predict_proba(test[columns])[:, 1]
         y_test = test["label"]
         auroc_scores.append(roc_auc_score(y_test, y_predict))
@@ -215,14 +208,17 @@ def compute_test_metrics_mrs(data, columns, drop, iteration, cv=5, calculate_roc
     return np.mean(auroc_scores), median_roc, mean_roc
 
 
-def grid_search(X_train, y_train, cv=5):
+
+def train_classifier_mrs(X_train, y_train, cv=5):
     clf = DecisionTreeClassifier()
     path = clf.cost_complexity_pruning_path(X_train, y_train)
-    ccp_alphas, impurities = path.ccp_alphas, path.impurities
-    ccp_alphas[ccp_alphas < 0] = 0
-    param_grid = {"ccp_alpha": ccp_alphas}
+    ccp_alphas = path.ccp_alphas
+    ccp_alphas_unique = np.unique(ccp_alphas)
+    ccp_alphas_unique[ccp_alphas_unique < 0] = 0
+
+    param_grid = {"ccp_alpha": ccp_alphas_unique[:-1]}
     grid = GridSearchCV(
-        DecisionTreeClassifier(random_state=5), param_grid, cv=cv, n_jobs=-1
+        DecisionTreeClassifier(random_state=5), param_grid, cv=cv, n_jobs=-1, refit=True
     )
     grid.fit(X_train, y_train)
     return grid.best_estimator_

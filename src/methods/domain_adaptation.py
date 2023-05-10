@@ -2,7 +2,7 @@ import torch
 from pathlib import Path
 from utils.metrics import calculate_rbf_gamma
 from utils.models import Mlp
-from utils.loss import WeightedMMDLoss
+from utils.losses import WeightedMMDLoss
 from torch import nn
 from sklearn.metrics import accuracy_score
 from torch.optim.lr_scheduler import OneCycleLR

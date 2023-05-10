@@ -28,7 +28,6 @@ def folktables_experiments(
     bias_type=None,
 ):
     weighted_mmds_list = []
-    dataset_ssmd_list = []
     biases_list = []
     parameter_ssmd_list = []
     wasserstein_parameter_list = []
@@ -48,29 +47,25 @@ def folktables_experiments(
     visualisation_path = result_path / method / "folktables" / bias_variable / bias_type
     visualisation_path.mkdir(exist_ok=True, parents=True)
     scaling_columns = ["AGEP", "WKHP"]
-
     scaler = StandardScaler()
     df[scaling_columns] = scaler.fit_transform(df[scaling_columns])
 
     for i in trange(number_of_repetitions):
-        scaled_N, scaled_R = sample_mrs_census(
-            bias_type, df, columns, bias_variable, True
-        )
-        gamma = calculate_rbf_gamma(
-            np.append(scaled_N[columns], scaled_R[columns], axis=0)
-        )
+        N, R = sample_mrs_census(bias_type, df, columns, "Binary Income", True)
+        gamma = calculate_rbf_gamma(np.append(N[columns], R[columns], axis=0))
 
         start_time = time.process_time()
 
         weights = propensity_method(
-            scaled_N,
-            scaled_R,
+            N,
+            R,
             columns,
             save_path=visualisation_path,
             number_of_splits=number_of_splits,
             bias_variable=bias_variable,
             mean_list=mean_list,
             mmd_list=mmd_list,
+            drop=25
         )
         end_time = time.process_time()
         runtime = end_time - start_time
@@ -91,10 +86,9 @@ def folktables_experiments(
             weighted_ssmd,
             sample_biases,
             wasserstein_distances,
-            _,
         ) = compute_metrics(
-            scaled_N,
-            scaled_R,
+            N,
+            R,
             weights,
             scaler,
             scaling_columns,
@@ -106,11 +100,10 @@ def folktables_experiments(
         remaining_samples = np.count_nonzero(weights != 0)
 
         auroc, accuracy, precision, recall = compute_classification_metrics(
-            scaled_N, scaled_R, columns, weights, bias_variable
+            N, R, columns, weights, "Binary Income"
         )
-        mse = compute_regression_metrics(
-            scaled_N, scaled_R, columns, weights, bias_variable
-        )
+        mse = compute_regression_metrics(N, R, columns, weights, "Income")
+
         weighted_mmds_list.append(weighted_mmd)
         parameter_ssmd_list.append(weighted_ssmd)
         biases_list.append(sample_biases)
@@ -136,7 +129,6 @@ def folktables_experiments(
 
     result_dict = write_result_dict(
         weighted_mmds_list,
-        dataset_ssmd_list,
         biases_list,
         parameter_ssmd_list,
         wasserstein_parameter_list,
@@ -147,7 +139,7 @@ def folktables_experiments(
         recall_list,
         runtime_list,
         mse_list,
-        scaled_N,
+        N,
     )
 
     with open(visualisation_path / "results.json", "w") as result_file:

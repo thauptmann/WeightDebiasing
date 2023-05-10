@@ -142,6 +142,7 @@ def mrs_census_experiment(
         precision_list,
         recall_list,
         runtime_list,
+        [],
         N,
     )
 
