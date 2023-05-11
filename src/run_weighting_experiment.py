@@ -48,7 +48,6 @@ def weighting_experiment(
         bias_type=bias_type,
         bias_sample_size=bias_sample_size,
         number_of_repetitions=number_of_repetitions,
-        
     )
 
 

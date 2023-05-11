@@ -171,9 +171,9 @@ def compute_classification_metrics(N, R, columns, weights, label):
 
 
 def train_classifier(X, y, weights):
-    pool = Pool(X, y, weight=weights)
-    clf = CatBoostClassifier(verbose=0)
-    clf = clf.fit(pool)
+    # pool = Pool(X, y, weight=weights)
+    clf = DecisionTreeClassifier()
+    clf = clf.fit(X, y, sample_weight=weights)
     return clf
 
 

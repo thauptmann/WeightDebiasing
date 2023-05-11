@@ -316,20 +316,26 @@ def load_mrs_census_data(census_bias):
 
 
 def sample_mrs_census(bias_type, df, columns, bias_variable, folktables=False):
-    rep_fraction = 0.12
+    representative_fraction = 0.12
     bias_fraction = 0.05
     R_fraction = 0.2
+    mean_difference_fraction = 0.1
+    high_bias_positive_fraction = 0.03
+    high_bias_negative_fraction = 0.07
 
     negative_normal = len(df[(df[bias_variable] == 0)])
     positive_normal = len(df[(df[bias_variable] == 1)])
     df_positive_class = df[(df[bias_variable] == 1)]
     df_negative_class = df[(df[bias_variable] == 0)]
     if folktables:
-        rep_fraction *= 0.1
+        representative_fraction *= 0.1
         R_fraction *= 0.1
         bias_fraction *= 0.1
+        mean_difference_fraction *= 0.1
+        high_bias_positive_fraction *= 0.1
+        high_bias_negative_fraction *= 0.1
 
-    scaled_R = pd.concat(
+    R = pd.concat(
         [
             df_negative_class.sample(int(negative_normal * R_fraction)),
             df_positive_class.sample(int(positive_normal * R_fraction)),
@@ -337,22 +343,26 @@ def sample_mrs_census(bias_type, df, columns, bias_variable, folktables=False):
         ignore_index=True,
     )
     if bias_type == "less_positive_class":
-        scaled_N = pd.concat(
+        N = pd.concat(
             [
-                df_negative_class.sample(int(negative_normal * rep_fraction)),
+                df_negative_class.sample(
+                    int(negative_normal * representative_fraction)
+                ),
                 df_positive_class.sample(
-                    int(positive_normal * (rep_fraction - bias_fraction))
+                    int(positive_normal * (representative_fraction - bias_fraction))
                 ),
             ],
             ignore_index=True,
         )
     elif bias_type == "less_negative_class":
-        scaled_N = pd.concat(
+        N = pd.concat(
             [
                 df_negative_class.sample(
-                    int(negative_normal * (rep_fraction - bias_fraction))
+                    int(negative_normal * (representative_fraction - bias_fraction))
                 ),
-                df_positive_class.sample(int(positive_normal * rep_fraction)),
+                df_positive_class.sample(
+                    int(positive_normal * representative_fraction)
+                ),
             ],
             ignore_index=True,
         )
@@ -362,29 +372,37 @@ def sample_mrs_census(bias_type, df, columns, bias_variable, folktables=False):
             np.exp(-(1 / 20) * (np.linalg.norm(sample - mean_sample) ** 2))
             for sample in df[columns].values
         ]
-        scaled_N = df.sample(weights=sample_weights, frac=0.1)
-        scaled_N = scaled_N.reset_index(drop=True)
+        N = df.sample(weights=sample_weights, frac=mean_difference_fraction)
+        N = N.reset_index(drop=True)
     elif bias_type == "high_bias":
-        scaled_N = pd.concat(
+        N = pd.concat(
             [
-                df_negative_class.sample(int(negative_normal * 0.03)),
-                df_positive_class.sample(int(positive_normal * 0.07)),
+                df_negative_class.sample(
+                    int(negative_normal * high_bias_positive_fraction)
+                ),
+                df_positive_class.sample(
+                    int(positive_normal * high_bias_negative_fraction)
+                ),
             ],
             ignore_index=True,
         )
     else:
-        scaled_N = pd.concat(
+        N = pd.concat(
             [
-                df_negative_class.sample(int(negative_normal * rep_fraction)),
-                df_positive_class.sample(int(positive_normal * rep_fraction)),
+                df_negative_class.sample(
+                    int(negative_normal * representative_fraction)
+                ),
+                df_positive_class.sample(
+                    int(positive_normal * representative_fraction)
+                ),
             ],
             ignore_index=True,
         )
 
-    scaled_R["label"] = 0
-    scaled_N["label"] = 1
+    R["label"] = 0
+    N["label"] = 1
 
-    return scaled_N, scaled_R
+    return N, R
 
 
 breast_cancer_names = [
