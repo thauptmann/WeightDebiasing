@@ -1,15 +1,15 @@
 import argparse
 from experiments import (
     breast_cancer_experiment,
-    census_experiments,
-    folktables_experiments,
-    gbs_allensbach_experiments,
+    census_experiment,
+    folktables_experiment,
+    gbs_allensbach_experiment,
+    gbs_gesis_experiment,
     mrs_census_experiment,
 )
 
 from methods import (
     ada_deboost_weighting,
-    domain_adaptation_weighting,
     gradient_boosting_weighting,
     kernel_mean_matching,
     logistic_regression_weighting,
@@ -39,6 +39,7 @@ bias_choice = [
 ]
 dataset_list = [
     "gbs_allensbach",
+    "gbs_gesis",
     "census",
     "folktables",
     "mrs_census",
@@ -59,7 +60,7 @@ bias_variables = [
     "normal_nucleoli",
     "mitoses",
     "class",
-    "none"
+    "none",
 ]
 
 
@@ -84,38 +85,35 @@ def parse_command_line_arguments():
 
 def get_weighting_function(method_name):
     if method_name == "uniform":
-        compute_weights_function = uniform_weighting
+        return uniform_weighting
     elif method_name == "logistic_regression":
-        compute_weights_function = logistic_regression_weighting
+        return logistic_regression_weighting
     elif method_name == "random_forest":
-        compute_weights_function = random_forest_weighting
+        return random_forest_weighting
     elif method_name == "gradient_boosting":
-        compute_weights_function = gradient_boosting_weighting
+        return gradient_boosting_weighting
     elif method_name == "neural_network_classifier":
-        compute_weights_function = neural_network_weighting
+        return neural_network_weighting
     elif method_name == "neural_network_mmd_loss":
-        compute_weights_function = neural_network_mmd_loss_weighting
+        return neural_network_mmd_loss_weighting
     elif method_name == "adaDeBoost":
-        compute_weights_function = ada_deboost_weighting
-    elif method_name == "domain_adaptation":
-        compute_weights_function = domain_adaptation_weighting
+        return ada_deboost_weighting
     elif method_name == "mrs":
-        compute_weights_function = repeated_MRS
+        return repeated_MRS
     elif method_name == "kmm":
-        compute_weights_function = kernel_mean_matching
-
-    return compute_weights_function
+        return kernel_mean_matching
 
 
 def get_experiment_function(dataset_name):
     if dataset_name == "census":
-        experiment_function = census_experiments
+        return census_experiment
     elif dataset_name == "folktables":
-        experiment_function = folktables_experiments
+        return folktables_experiment
     elif dataset_name == "mrs_census":
-        experiment_function = mrs_census_experiment
+        return mrs_census_experiment
     elif dataset_name == "breast_cancer":
-        experiment_function = breast_cancer_experiment
+        return breast_cancer_experiment
+    elif dataset_name == "gbs_gesis":
+        return gbs_gesis_experiment
     else:
-        experiment_function = gbs_allensbach_experiments
-    return experiment_function
+        return gbs_allensbach_experiment

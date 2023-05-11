@@ -1,10 +1,16 @@
 import numpy as np
 import pandas as pd
-from sklearn.metrics import roc_auc_score
-from sklearn.model_selection import GridSearchCV, KFold
-from sklearn.tree import DecisionTreeClassifier
-from utils.metrics import compute_test_metrics_mrs, train_classifier_mrs
 from tqdm import tqdm
+from sklearn.metrics import roc_auc_score
+from sklearn.metrics.pairwise import rbf_kernel
+from sklearn.model_selection import KFold
+from utils.metrics import (
+    calculate_rbf_gamma,
+    compute_test_metrics_mrs,
+    train_classifier_mrs,
+    weighted_maximum_mean_discrepancy,
+)
+from utils.visualization import mrs_progress_visualization
 
 
 def temperature_sample(softmax: list, temperature: float, drop: int):
@@ -29,6 +35,10 @@ def temperature_sample(softmax: list, temperature: float, drop: int):
 
 
 def cv_bootstrap_prediction(N, R, number_of_splits, columns, cv):
+    preds = np.zeros(len(N))
+    preds_r = np.zeros(len(R))
+    bootstrap_iterations = 10
+
     kf = KFold(n_splits=cv, shuffle=True)
     for split_n, split_r in zip(kf.split(N), kf.split(R)):
         train_index, test_index = split_n
@@ -36,19 +46,30 @@ def cv_bootstrap_prediction(N, R, number_of_splits, columns, cv):
         N_train, N_test = N.iloc[train_index], N.iloc[test_index]
         R_train, R_test = R.iloc[train_index_r], R.iloc[test_index_r]
         n = min(len(R_train), len(N_train))
-        bootstrap = pd.concat(
-            [N_train.sample(n=n, replace=True), R_train.sample(n=n, replace=True)]
-        )
-        clf = train_classifier_mrs(
-            bootstrap[columns], bootstrap.label, number_of_splits
-        )
-        preds = clf.predict_proba(N_test[columns])[:, 1]
-        preds_r = clf.predict_proba(R_test[columns])[:, 1]
+        bootstrap_predictions = []
+        bootstrap_predictions_r = []
+        for _ in range(bootstrap_iterations):
+            bootstrap = pd.concat(
+                [N_train.sample(n=n, replace=True), R_train.sample(n=n, replace=True)]
+            )
+            clf = train_classifier_mrs(
+                bootstrap[columns], bootstrap.label, number_of_splits
+            )
+            bootstrap_predictions.append(clf.predict_proba(N_test[columns])[:, 1])
+            bootstrap_predictions_r.append(clf.predict_proba(R_test[columns])[:, 1])
+        preds[test_index] = np.mean(bootstrap_predictions, axis=0)
+        preds_r[test_index_r] = np.mean(bootstrap_predictions_r, axis=0)
     return preds, preds_r
 
 
 def MRS(
-    N, R, columns, number_of_splits=5, n_drop: int = 5, cv=5, temperature_sampling=True
+    N,
+    R,
+    columns,
+    number_of_splits=5,
+    n_drop: int = 5,
+    cv=5,
+    temperature_sampling=True,
 ):
     """
     MRS Algorithm
@@ -79,21 +100,33 @@ def MRS(
     return N.drop(N.index[drop_ids]), drop_ids
 
 
-def repeated_MRS(N, R, columns, number_of_splits, *args, **attributes):
+def repeated_MRS(
+    N, R, columns, number_of_splits, delta=0.01, cv=5, *args, **attributes
+):
     drop = attributes["drop"]
-    delta = 0.01
+    save_path = attributes["save_path"]
+    auc_list = []
+    mean_rocs = []
+    median_rocs = []
+    ratio = []
+    mmd_list = []
     temperature_sampling = (True,)
-    cv = 5
     weights = np.ones(len(N))
     best_weights = weights[:]
     number_of_iterations = len(N) // drop
     number_of_splits = 5
+    dropping_N = N.copy()
 
     best_auc_difference = np.inf
 
+    gamma = calculate_rbf_gamma(np.append(N[columns], R[columns], axis=0))
+    x_x_rbf_matrix = rbf_kernel(N[columns], N[columns], gamma=gamma)
+    x_y_rbf_matrix = rbf_kernel(N[columns], R[columns], gamma=gamma)
+    y_y_rbf_matrix = rbf_kernel(R[columns], R[columns], gamma=gamma)
+
     for i in tqdm(range(number_of_iterations)):
-        N, drop_ids = MRS(
-            N,
+        dropping_N, drop_ids = MRS(
+            dropping_N,
             R,
             columns,
             number_of_splits=number_of_splits,
@@ -104,12 +137,26 @@ def repeated_MRS(N, R, columns, number_of_splits, *args, **attributes):
         weights[drop_ids] = 0
 
         auc, _, _ = compute_test_metrics_mrs(
-            pd.concat([N, R]),
+            pd.concat([dropping_N, R]),
             columns,
             drop,
             i,
             cv,
         )
+
+        auc_list.append(auc)
+        mmd_list.append(
+            weighted_maximum_mean_discrepancy(
+                N,
+                R,
+                weights,
+                gamma=gamma,
+                x_x_rbf_matrix=x_x_rbf_matrix,
+                x_y_rbf_matrix=x_y_rbf_matrix,
+                y_y_rbf_matrix=y_y_rbf_matrix,
+            )
+        )
+        mrs_progress_visualization([mmd_list], [auc_list], drop, number_of_iterations, save_path)
 
         if np.abs(auc - 0.5) <= delta:
             break

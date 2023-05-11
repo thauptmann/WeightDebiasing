@@ -24,6 +24,26 @@ def load_gbs_allensbach():
     return allensbach, allensbach_columns
 
 
+def load_gbs_gesis():
+    gesis_columns = ['Geschlecht', 'Geburtsjahr', 'Geburtsland',
+        'Nationalitaet', 'Familienstand', 'Hoechster Bildungsabschluss',
+        'Berufliche Ausbildung', 'Erwerbstaetigkeit', 'Nettoeinkommen Selbst',
+        'Zufriedenheit Wahlergebnis', 'Gesellig', 'Andere kritisieren',
+        'Gruendlich', 'Nervoes', 'Phantasievoll', 'Berufsgruppe', 'Wahlteilnahme', 'BRS6']
+    
+    gesis = pd.read_csv(f"{file_path}/../../data/gesis_processed.csv", engine='python')
+    gbs = pd.read_csv(f"{file_path}/../../data/gbs_processed.csv", engine='python')
+
+    N = gbs.copy()
+    R = gesis.copy()
+
+    N['label'] = 1
+    R['label'] = 0
+
+    gesis_gbs = pd.concat([N, R], ignore_index=True)
+    return gesis_gbs, gesis_columns
+
+
 def load_census_data(census_bias="Above_Below 50K"):
     columns = [
         "Age",
@@ -154,6 +174,8 @@ def load_dataset(dataset_name, bias_variable):
         return load_mrs_census_data(bias_variable)
     elif dataset_name == "breast_cancer":
         return load_brast_cancer_data()
+    elif dataset_name == "gbs_gesis":
+        return load_gbs_gesis()
     else:
         print("No valid data set name given!")
         exit()

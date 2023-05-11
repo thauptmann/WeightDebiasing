@@ -39,26 +39,6 @@ def plot_feature_histograms(N, R, file_name, bins, weights):
     plt.clf()
 
 
-def plot_asams(weighted_asams, asams, columns, plot_directory):
-    asams_difference = weighted_asams.values - asams.values
-    interleave_list = [None] * (len(asams) + len(weighted_asams))
-    interleave_list[::2] = asams
-    interleave_list[1::2] = weighted_asams
-
-    mean_weighted_asams = np.mean(weighted_asams)
-    mean_asams = np.mean(asams)
-    mean_differences = mean_weighted_asams - mean_asams
-    interleave_list = np.append(interleave_list, [mean_asams, mean_weighted_asams])
-    asams_difference = np.append(asams_difference, mean_differences)
-    colors = ["g" if c >= 0 else "r" for c in asams_difference]
-    columns = np.repeat(columns, 2)
-    columns = np.append(columns, ["Mean ASAM", "Mean ASAM"])
-    sns.boxplot(x=columns, y=interleave_list, palette=colors)
-    plt.xticks(rotation=90)
-    plt.savefig(f"{plot_directory}/asams.pdf", bbox_inches="tight")
-    plt.clf()
-
-
 def plot_weights(weights, path, iteration, title="", bins=25):
     path.mkdir(exist_ok=True)
     weights = weights / sum(weights)
@@ -80,11 +60,11 @@ def plot_ratio(values, representative_ratio, title, path):
 
 
 def plot_gbs_results(
-    bins,
-    N,
-    R,
-    visualisation_path,
-    weights,
+    bins: int,
+    N: np.ndarray,
+    R: np.ndarray,
+    visualisation_path: Path,
+    weights: list[float],
 ):
     plot_cumulative_distribution(N, R, visualisation_path, weights)
     plot_feature_histograms(N, R, visualisation_path, bins, weights)
@@ -92,12 +72,12 @@ def plot_gbs_results(
 
 
 def plot_results_with_variance(
-    ratio_list,
-    mmd_list,
-    representative_ratio,
-    visualisation_path,
-    suffix="",
-    plot_mean=False,
+    ratio_list: list[float],
+    mmd_list: list[float],
+    representative_ratio: float,
+    visualisation_path: Path,
+    suffix: str = "",
+    plot_mean: bool = False,
 ):
     plot_metric_with_variance(mmd_list, visualisation_path, suffix, "MMD")
     if plot_mean:
@@ -151,3 +131,90 @@ def plot_mean_with_variance(mean_list, representative_mean, visualisation_path, 
     plt.legend()
     plt.savefig(Path(visualisation_path) / f"weighted_mean_{suffix}.pdf")
     plt.clf()
+
+
+def mrs_progress_visualization(
+    mmd_list, auc_list, drop, number_of_iterations, number_of_samples, save_path
+):
+    plot_auc_average(
+        auc_list,
+        np.std(auc_list, axis=0),
+        drop,
+        save_path + "gesis_auc_mean_with_iterations",
+        number_of_samples,
+        mrs_iterations=number_of_iterations,
+        wide=True,
+    )
+    # plot_rocs(gesis_mean_rocs, file_directory+"gesis_mean_rocs", save=save)
+    plot_mmds_average(
+        mmd_list,
+        np.std(mmd_list, axis=0),
+        drop,
+        1,
+        save_path + "mean_mmds_gesis",
+        number_of_iterations,
+        number_of_samples,
+    )
+
+
+def plot_auc_average(
+    auc_score,
+    std_aucs,
+    drop,
+    file_name,
+    number_of_samples,
+    mrs_iterations,
+    wide=True,
+):
+    if wide:
+        plt.figure(figsize=(6.4 * 2, 4.8))
+    aucs_upper = np.minimum(auc_score + std_aucs, 1)
+    aucs_younger = np.maximum(auc_score - std_aucs, 0)
+    x_labels = range(number_of_samples, drop, -drop)
+    plt.fill_between(x_labels, aucs_younger, aucs_upper, color="blue", alpha=0.2)
+    plt.plot(x_labels, auc_score, color="blue", linestyle="-")
+    plt.plot(
+        (len(x_labels) - 1) * drop * [0.5],
+        color="black",
+        linestyle="--",
+        label="Random",
+    )
+    plt.ylabel("AUROC")
+    mrs_iterations = number_of_samples - np.array(mrs_iterations)
+    minimum = min(0.5, np.min(aucs_younger))
+    maximum = plt.gca().get_ylim()[1]
+    plt.margins(0.05, 0)
+    plt.vlines(mrs_iterations, minimum, maximum, colors="black", linestyles="solid")
+    plt.xticks(list(range(number_of_samples, 0, -100)) + [0])
+    plt.gca().invert_xaxis()
+    plt.xlabel("Number of remaining samples")
+    xlim = plt.gca().get_xlim()
+    ax2 = plt.gca().twiny()
+    ax2.set_xlim(xlim)
+    plt.xticks(list(mrs_iterations))
+    [tick.set_color("blue") for tick in plt.gca().get_xticklabels()]
+    plt.savefig(f"{file_name}.pdf")
+
+
+def plot_mmds_average(mmds, std, drop, mmd_iteration, file_name, mrs_iterations,
+                      number_of_samples):
+    mmds_upper = np.minimum(mmds + std, 1)
+    mmds_more_negative = np.maximum(mmds - std, 0)
+    x_labels = range(number_of_samples, drop*mmd_iteration, -drop*mmd_iteration)
+    plt.fill_between(x_labels, mmds_more_negative, mmds_upper, color='black', alpha=0.2)
+    plt.plot(x_labels, mmds, linestyle='-')
+    minimum = np.min(mmds_more_negative)
+    maximum = plt.gca().get_ylim()[1]
+    plt.margins(0.05, 0)
+    mrs_iterations = number_of_samples - np.array(mrs_iterations)
+    plt.vlines(mrs_iterations, minimum, maximum, colors='black', linestyles='solid')
+    plt.ylabel('Maximum Mean Discrepancy')
+    plt.xlabel('Number of remaining samples')
+    plt.xticks(list(range(number_of_samples, 0, -100)) + [0])
+    plt.gca().invert_xaxis()
+    xlim = plt.gca().get_xlim()
+    ax2 = plt.gca().twiny()
+    ax2.set_xlim(xlim)
+    plt.xticks(mrs_iterations)
+    [tick.set_color("blue") for tick in plt.gca().get_xticklabels()]
+    plt.savefig(f'{file_name}.pdf')

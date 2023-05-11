@@ -1,10 +1,9 @@
 import json
 import numpy as np
 from pathlib import Path
-from methods.domain_adaptation import calculate_rbf_gamma
-from utils.metrics import compute_metrics, scale_df
+from utils.metrics import calculate_rbf_gamma, compute_metrics, scale_df
 from utils.statistics import logistic_regression
-from utils.visualisation import (
+from utils.visualization import (
     plot_gbs_results,
     plot_results_with_variance,
     plot_weights,
@@ -14,12 +13,13 @@ from utils.visualisation import (
 bins = 50
 
 
-def gbs_allensbach_experiments(
+def gbs_allensbach_experiment(
     df,
     columns,
     propensity_method,
     number_of_splits=10,
     method="",
+    **args,
 ):
     result_path = Path("../results")
     visualisation_path = result_path / method / "gbs_allensbach"
@@ -43,6 +43,7 @@ def gbs_allensbach_experiments(
         save_path=visualisation_path,
         mean_list=mean_list,
         mmd_list=mmd_list,
+        drop=5,
     )
 
     (

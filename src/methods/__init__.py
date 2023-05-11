@@ -5,6 +5,5 @@ from .neural_network_classifier import neural_network_weighting
 from .random_forest import random_forest_weighting
 from .gradient_boosting import gradient_boosting_weighting
 from .ada_deboost import ada_deboost_weighting
-from .domain_adaptation import domain_adaptation_weighting
 from .maximum_representative_subsampling import repeated_MRS
 from .kmm import kernel_mean_matching

@@ -3,13 +3,12 @@ from pathlib import Path
 import json
 
 from sklearn.preprocessing import StandardScaler
-from methods.domain_adaptation import calculate_rbf_gamma
-from utils.metrics import compute_classification_metrics, compute_metrics
+from utils.metrics import calculate_rbf_gamma, compute_classification_metrics, compute_metrics
 from tqdm import trange
 from utils.data_loader import sample_breast_cancer
 from utils.statistics import write_result_dict
 
-from utils.visualisation import plot_results_with_variance, plot_weights
+from utils.visualization import plot_results_with_variance, plot_weights
 
 
 weighted_mmds_list = []

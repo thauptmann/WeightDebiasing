@@ -1,10 +1,9 @@
-
 import json
 import numpy as np
 from pathlib import Path
 
 from utils.data_loader import sample
-from utils.visualisation import plot_weights
+from utils.visualization import plot_weights
 
 from utils.metrics import (
     compute_metrics,
@@ -12,11 +11,10 @@ from utils.metrics import (
 )
 from utils.metrics import calculate_rbf_gamma
 from tqdm import trange
-from utils.visualisation import plot_results_with_variance
+from utils.visualization import plot_results_with_variance
 
 
-
-def census_experiments(
+def census_experiment(
     df,
     columns,
     propensity_method,

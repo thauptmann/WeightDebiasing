@@ -208,7 +208,6 @@ def compute_test_metrics_mrs(data, columns, drop, iteration, cv=5, calculate_roc
     return np.mean(auroc_scores), median_roc, mean_roc
 
 
-
 def train_classifier_mrs(X_train, y_train, cv=5):
     clf = DecisionTreeClassifier()
     path = clf.cost_complexity_pruning_path(X_train, y_train)
