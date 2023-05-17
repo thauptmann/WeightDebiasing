@@ -41,7 +41,7 @@ def folktables_experiment(
     mse_list = []
     runtime_list = []
 
-    bias_variable = "Income"
+    bias_variable = "Binary Income"
     file_directory = Path(__file__).parent
     result_path = Path(file_directory, "../../results")
     visualisation_path = result_path / method / "folktables" / bias_variable / bias_type
@@ -65,7 +65,7 @@ def folktables_experiment(
             bias_variable=bias_variable,
             mean_list=mean_list,
             mmd_list=mmd_list,
-            drop=25,
+            drop=1,
         )
         end_time = time.process_time()
         runtime = end_time - start_time

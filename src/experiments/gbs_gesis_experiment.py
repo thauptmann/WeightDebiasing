@@ -22,7 +22,7 @@ def gbs_gesis_experiment(
     **args,
 ):
     result_path = Path("../results")
-    visualisation_path = result_path / method / "gbs_allensbach"
+    visualisation_path = result_path / method / "gbs_gesis"
     visualisation_path.mkdir(exist_ok=True, parents=True)
     df = df.sample(frac=1)
     mmd_list = []
@@ -51,10 +51,9 @@ def gbs_gesis_experiment(
         weighted_ssmd,
         sample_biases,
         wasserstein_distances,
-        weighted_ssmd_dataset,
     ) = compute_metrics(
-        scaled_N,
-        scaled_R,
+        scaled_N[columns],
+        scaled_R[columns],
         weights,
         scaler,
         scale_columns,
@@ -77,7 +76,6 @@ def gbs_gesis_experiment(
         )
 
     result_dict = {
-        "SSMD": weighted_ssmd_dataset,
         "MMDs": weighted_mmd,
         "Remaining Samples": remaining_samples,
         "Number of Samples": len(scaled_N),
@@ -89,14 +87,6 @@ def gbs_gesis_experiment(
             "wasserstein": wasserstein_distances[index],
         }
 
-    lr_pvalue_gbs, lr_pvalue_weighted = logistic_regression(
-        scaled_N[columns + ["Wahlteilnahme"]], weights
-    )
-
-    result_dict["logistig regression p values"] = {
-        "GBS": lr_pvalue_gbs,
-        "Weighted": lr_pvalue_weighted,
-    }
     with open(visualisation_path / "results.json", "w") as result_file:
         result_file.write(json.dumps(result_dict))
 

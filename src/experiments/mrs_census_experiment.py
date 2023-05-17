@@ -6,7 +6,11 @@ from tqdm import trange
 from pathlib import Path
 
 from sklearn.preprocessing import StandardScaler
-from utils.metrics import calculate_rbf_gamma, compute_classification_metrics, compute_metrics
+from utils.metrics import (
+    calculate_rbf_gamma,
+    compute_classification_metrics,
+    compute_metrics,
+)
 from utils.data_loader import sample_mrs_census
 from utils.statistics import write_result_dict
 
@@ -30,6 +34,7 @@ def mrs_census_experiment(
     number_of_repetitions=100,
     bias_type="",
     bias_variable="",
+    **args,
 ):
     file_directory = Path(__file__).parent
     result_path = Path(file_directory, "../../results")
@@ -69,6 +74,7 @@ def mrs_census_experiment(
             bias_variable=bias_variable,
             mean_list=mean_list,
             mmd_list=mmd_list,
+            drop=1,
         )
         end_time = time.process_time()
         runtime = end_time - start_time

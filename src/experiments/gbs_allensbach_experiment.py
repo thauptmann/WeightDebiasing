@@ -43,7 +43,7 @@ def gbs_allensbach_experiment(
         save_path=visualisation_path,
         mean_list=mean_list,
         mmd_list=mmd_list,
-        drop=5,
+        drop=1,
     )
 
     (
@@ -51,7 +51,6 @@ def gbs_allensbach_experiment(
         weighted_ssmd,
         sample_biases,
         wasserstein_distances,
-        weighted_ssmd_dataset,
     ) = compute_metrics(
         scaled_N,
         scaled_R,
@@ -77,7 +76,6 @@ def gbs_allensbach_experiment(
         )
 
     result_dict = {
-        "SSMD": weighted_ssmd_dataset,
         "MMDs": weighted_mmd,
         "Remaining Samples": remaining_samples,
         "Number of Samples": len(scaled_N),

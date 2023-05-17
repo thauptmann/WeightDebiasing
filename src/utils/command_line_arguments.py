@@ -63,6 +63,8 @@ bias_variables = [
     "none",
 ]
 
+mrs_ablation_experiments = ["random", "cross-validation", "temperature"]
+
 
 def parse_command_line_arguments():
     """Parses the command line arguments.
@@ -79,7 +81,15 @@ def parse_command_line_arguments():
         "--bias_variable", type=str, choices=bias_variables, default="Above_Below 50K"
     )
     parser.add_argument("--number_of_repetitions", default=100, type=int)
+    return parser.parse_args()
 
+
+def parse_mrs_ablation_command_line_arguments():
+    parser = argparse.ArgumentParser()
+    parser.add_argument(
+        "--ablation_experiment", choices=mrs_ablation_experiments, required=True
+    )
+    parser.add_argument("--number_of_repetitions", default=10, type=int)
     return parser.parse_args()
 
 
