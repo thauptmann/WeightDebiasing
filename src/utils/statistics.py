@@ -23,52 +23,108 @@ def logistic_regression(allensbach_gbs, weights):
 
 
 def write_result_dict(
+    columns,
     weighted_mmds_list,
     biases_list,
-    parameter_ssmd_list,
     wasserstein_parameter_list,
     remaining_samples_list,
-    auroc_list,
-    error_rate_list,
-    precision_list,
-    recall_list,
-    runtime_list,
-    mse_list=[],
-    scaled_N=None,
+    mse_list,
+    tree_auroc_list,
+    tree_accuracy_list,
+    tree_precision_list,
+    tree_f_score_list,
+    tree_recall_list,
+    tree_tn_list,
+    tree_fn_list,
+    tree_tp_list,
+    tree_fp_list,
+    svc_auroc_list,
+    svc_accuracy_list,
+    svc_precision_list,
+    svc_f_score_list,
+    svc_recall_list,
+    svc_tn_list,
+    svc_fn_list,
+    svc_tp_list,
+    svc_fp_list,
+    number_of_samples,
 ):
-    mean_biases = np.nanmean(biases_list, axis=0)
-    sd_biases = np.nanstd(biases_list, axis=0)
-
-    mean_ssmds = np.nanmean(parameter_ssmd_list, axis=0)
-    sd_ssmds = np.nanstd(parameter_ssmd_list, axis=0)
-
-    mean_wasserstein = np.nanmean(wasserstein_parameter_list, axis=0)
-    sd_wasserstein = np.nanstd(wasserstein_parameter_list, axis=0)
-
     result_dict = {
         "MMDs": {
             "mean": np.nanmean(weighted_mmds_list),
             "sd": np.nanstd(weighted_mmds_list),
         },
-        "auroc": {
-            "mean": np.nanmean(auroc_list),
-            "sd": np.nanstd(auroc_list),
+        "tree auroc": {
+            "mean": np.nanmean(tree_auroc_list),
+            "sd": np.nanstd(tree_auroc_list),
         },
-        "accuracy": {
-            "mean": np.nanmean(error_rate_list),
-            "sd": np.nanstd(error_rate_list),
+        "tree accuracy": {
+            "mean": np.nanmean(tree_accuracy_list),
+            "sd": np.nanstd(tree_accuracy_list),
         },
-        "precision": {
-            "mean": np.nanmean(precision_list),
-            "sd": np.nanstd(precision_list),
+        "tree precision": {
+            "mean": np.nanmean(tree_precision_list),
+            "sd": np.nanstd(tree_precision_list),
         },
-        "recall": {
-            "mean": np.nanmean(recall_list),
-            "sd": np.nanstd(recall_list),
+        "tree f score": {
+            "mean": np.nanmean(tree_f_score_list),
+            "sd": np.nanstd(tree_f_score_list),
         },
-        "runtime": {
-            "mean": np.nanmean(runtime_list),
-            "sd": np.nanstd(runtime_list),
+        "tree recall": {
+            "mean": np.nanmean(tree_recall_list),
+            "sd": np.nanstd(tree_recall_list),
+        },
+        "tree true negative": {
+            "mean": np.nanmean(tree_tn_list),
+            "sd": np.nanstd(tree_tn_list),
+        },
+        "tree false negative": {
+            "mean": np.nanmean(tree_fn_list),
+            "sd": np.nanstd(tree_fn_list),
+        },
+        "tree true positive": {
+            "mean": np.nanmean(tree_tp_list),
+            "sd": np.nanstd(tree_tp_list),
+        },
+        "tree false positive": {
+            "mean": np.nanmean(tree_fp_list),
+            "sd": np.nanstd(tree_fp_list),
+        },
+        "svc auroc": {
+            "mean": np.nanmean(svc_auroc_list),
+            "sd": np.nanstd(svc_auroc_list),
+        },
+        "svc accuracy": {
+            "mean": np.nanmean(svc_accuracy_list),
+            "sd": np.nanstd(svc_accuracy_list),
+        },
+        "svc precision": {
+            "mean": np.nanmean(svc_precision_list),
+            "sd": np.nanstd(svc_precision_list),
+        },
+        "svc f score": {
+            "mean": np.nanmean(svc_f_score_list),
+            "sd": np.nanstd(svc_f_score_list),
+        },
+        "svc recall": {
+            "mean": np.nanmean(svc_recall_list),
+            "sd": np.nanstd(svc_recall_list),
+        },
+        "svc true negative": {
+            "mean": np.nanmean(svc_tn_list),
+            "sd": np.nanstd(svc_tn_list),
+        },
+        "svc false negative": {
+            "mean": np.nanmean(svc_fn_list),
+            "sd": np.nanstd(svc_fn_list),
+        },
+        "svc true positive": {
+            "mean": np.nanmean(svc_tp_list),
+            "sd": np.nanstd(svc_tp_list),
+        },
+        "svc false positive": {
+            "mean": np.nanmean(svc_fp_list),
+            "sd": np.nanstd(svc_fp_list),
         },
         "mse": {
             "mean": np.nanmean(mse_list),
@@ -78,15 +134,17 @@ def write_result_dict(
             "mean": np.nanmean(remaining_samples_list),
             "sd": np.nanstd(remaining_samples_list),
         },
-        "all_samples": len(scaled_N),
+        "all_samples": number_of_samples,
     }
 
-    for index, column in enumerate(scaled_N.drop(["label"], axis="columns").columns):
+    mean_biases = np.nanmean(biases_list, axis=0)
+    sd_biases = np.nanstd(biases_list, axis=0)
+    mean_wasserstein = np.nanmean(wasserstein_parameter_list, axis=0)
+    sd_wasserstein = np.nanstd(wasserstein_parameter_list, axis=0)
+    for index, column in enumerate(columns):
         result_dict[f"{column}_relative_bias"] = {
             "bias mean": mean_biases[index],
             "bias sd": sd_biases[index],
-            "ssmd mean": mean_ssmds[index],
-            "ssmd sd": sd_ssmds[index],
             "wasserstein mean": mean_wasserstein[index],
             "wasserstein sd": sd_wasserstein[index],
         }

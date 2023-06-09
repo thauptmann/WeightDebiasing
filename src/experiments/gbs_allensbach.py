@@ -17,8 +17,9 @@ def gbs_allensbach_experiment(
     df,
     columns,
     propensity_method,
-    number_of_splits=10,
-    method="",
+    method,
+    number_of_repetitions,
+    number_of_splits=5,
     **args,
 ):
     result_path = Path("../results")
@@ -27,6 +28,11 @@ def gbs_allensbach_experiment(
     df = df.sample(frac=1)
     mmd_list = []
     mean_list = []
+    weighted_mmds_list = []
+    biases_list = []
+    parameter_ssmd_list = []
+    wasserstein_parameter_list = []
+    remaining_samples_list = []
     scale_columns = columns
     scaled_df, scaler = scale_df(df, scale_columns)
 
@@ -35,45 +41,59 @@ def gbs_allensbach_experiment(
     scaled_N = scaled_df[scaled_df["label"] == 1]
     scaled_R = scaled_df[scaled_df["label"] == 0]
 
-    weights = propensity_method(
-        scaled_N,
-        scaled_R,
-        columns,
-        number_of_splits=number_of_splits,
-        save_path=visualisation_path,
-        mean_list=mean_list,
-        mmd_list=mmd_list,
-        drop=1,
-    )
-
-    (
-        weighted_mmd,
-        weighted_ssmd,
-        sample_biases,
-        wasserstein_distances,
-    ) = compute_metrics(
-        scaled_N,
-        scaled_R,
-        weights,
-        scaler,
-        scale_columns,
-        columns,
-        gamma,
-    )
-
-    remaining_samples = np.count_nonzero(weights != 0)
-    plot_weights(weights, visualisation_path, 0, "GBS")
-
-    if "neural_network_mmd_loss" in method:
-        biases_path = visualisation_path / "MMDs"
-        biases_path.mkdir(exist_ok=True)
-        plot_results_with_variance(
-            [],
-            [mmd_list[-1]],
-            [],
-            biases_path,
-            "",
+    for i in range(number_of_repetitions):
+        weights = propensity_method(
+            scaled_N,
+            scaled_R,
+            columns,
+            number_of_splits=number_of_splits,
+            save_path=visualisation_path,
+            mean_list=mean_list,
+            mmd_list=mmd_list,
+            drop=1,
         )
+
+        (
+            weighted_mmd,
+            weighted_ssmd,
+            sample_biases,
+            wasserstein_distances 
+        ) = compute_metrics(
+            scaled_N,
+            scaled_R,
+            weights,
+            scaler,
+            scale_columns,
+            columns,
+            gamma
+        )
+
+        plot_weights(weights, visualisation_path / "weights", i)
+        remaining_samples = np.count_nonzero(weights != 0)
+
+
+        weighted_mmds_list.append(weighted_mmd)
+        parameter_ssmd_list.append(weighted_ssmd)
+        biases_list.append(sample_biases)
+        wasserstein_parameter_list.append(wasserstein_distances)
+        remaining_samples_list.append(remaining_samples)
+
+        remaining_samples = np.count_nonzero(weights != 0)
+        plot_weights(weights, visualisation_path, i, "GBS")
+
+        if method == "neural_network_mmd_loss":
+            biases_path = visualisation_path / "MMDs"
+            biases_path.mkdir(exist_ok=True)
+            plot_results_with_variance(
+                [],
+                [mmd_list[-1]],
+                [],
+                biases_path,
+                "",
+            )
+        if method == "mrs":
+            pass
+
 
     result_dict = {
         "MMDs": weighted_mmd,

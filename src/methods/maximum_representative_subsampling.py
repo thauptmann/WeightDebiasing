@@ -1,19 +1,19 @@
 import random
 import numpy as np
 import pandas as pd
-from tqdm import tqdm
+
+from tqdm import trange
+
 from sklearn.metrics import roc_auc_score
 from sklearn.metrics.pairwise import rbf_kernel
 from sklearn.model_selection import KFold
 from utils.metrics import (
     calculate_rbf_gamma,
-    compute_bias,
+    compute_relative_bias,
     compute_test_metrics_mrs,
-    train_classifier_mrs,
-    train_classifier_test,
+    train_pu_classifier,
     weighted_maximum_mean_discrepancy,
 )
-from utils.visualization import mrs_progress_visualization, plot_class_ratio, plot_rocs
 
 
 def temperature_sample(softmax: list, temperature: float, drop: int):
@@ -27,32 +27,53 @@ def temperature_sample(softmax: list, temperature: float, drop: int):
     return np.random.choice(len(predictions), drop, replace=False, p=predictions)
 
 
-def cv_bootstrap_prediction(N, R, number_of_splits, columns, cv):
-    preds = np.zeros(len(N))
-    preds_r = np.zeros(len(R))
-
-    # kf = KFold(n_splits=cv, shuffle=True)
-    # for split_n, split_r in zip(kf.split(N), kf.split(R)):
-    #    train_index, test_index = split_n
-    #    train_index_r, test_index_r = split_r
-    # N_train, N_test = N.iloc[train_index], N.iloc[test_index]
-    # R_train, R_test = R.iloc[train_index_r], R.iloc[test_index_r]
-
+def pu_prediction(N, R, columns, class_weights):
     data = pd.concat([N, R])
-    clf = train_classifier_test(data[columns], data.label)
+    clf = train_pu_classifier(data[columns], data.label, class_weights)
     predictions = clf.predict_proba(N[columns])[:, 1]
     predictions_r = clf.predict_proba(R[columns])[:, 1]
     return predictions, predictions_r
 
 
 def mrs(
+    N, R, columns, n_drop: int = 5, cv=5, class_weights="balanced", *args, **attributes
+):
+    all_predictions = np.zeros(len(N))
+    all_predictions_r = np.zeros(len(R))
+
+    kf = KFold(n_splits=cv, shuffle=True)
+    for split_n, split_r in zip(kf.split(N), kf.split(R)):
+        train_index, test_index = split_n
+        train_index_r, test_index_r = split_r
+        N_train, N_test = N.iloc[train_index], N.iloc[test_index]
+        R_train, R_test = R.iloc[train_index_r], R.iloc[test_index_r]
+
+        data = pd.concat([N_train, R_train])
+        clf = train_pu_classifier(data[columns], data.label, class_weight=class_weights)
+        predictions = clf.predict_proba(N_test[columns])[:, 1]
+        predictions_r = clf.predict_proba(R_test[columns])[:, 1]
+
+        all_predictions[test_index] = predictions
+        all_predictions_r[test_index_r] = predictions_r
+
+    all_preds = np.concatenate([predictions, predictions_r])
+    all_true = np.concatenate([np.ones(len(predictions)), np.zeros(len(predictions_r))])
+    auc = roc_auc_score(all_true, all_preds)
+
+    temperature = calculate_temperature(auc)
+    drop_ids = temperature_sample(all_predictions, temperature, n_drop)
+    return N.drop(N.index[drop_ids]), N.index[drop_ids]
+
+
+def mrs_without_cv(
     N,
     R,
     columns,
-    number_of_splits=5,
     n_drop: int = 5,
-    cv=5,
-    temperature_sampling=True,
+    sampling="temperature",
+    class_weights="balanced",
+    *args,
+    **attributes
 ):
     """
     MRS Algorithm
@@ -68,17 +89,16 @@ def mrs(
         * N/Drop: N without the dropped elements
     """
 
-    predictions, preds_r = cv_bootstrap_prediction(N, R, number_of_splits, columns, cv)
+    predictions, preds_r = pu_prediction(N, R, columns, class_weights)
     all_preds = np.concatenate([predictions, preds_r])
     all_true = np.concatenate([np.ones(len(predictions)), np.zeros(len(preds_r))])
     auroc = roc_auc_score(all_true, all_preds)
-    if temperature_sampling:
-        mapped_auc = abs(auroc - 0.5)
-        temperature = -0.55 * mapped_auc + 0.3
-    else:
-        temperature = 1
-    drop_ids = temperature_sample(predictions, temperature, n_drop)
-    # drop_ids = np.argpartition(predictions, -n_drop)[-n_drop:]
+    if sampling == "temperature" or sampling == "sampling":
+        temperature = calculate_temperature(auroc) if sampling == "temperature" else 1
+        drop_ids = temperature_sample(predictions, temperature, n_drop)
+    elif sampling == "max":
+        drop_ids = np.argpartition(predictions, -n_drop)[-n_drop:]
+
     return N.drop(N.index[drop_ids]), N.index[drop_ids]
 
 
@@ -86,36 +106,33 @@ def repeated_MRS(
     N,
     R,
     columns,
-    number_of_splits,
-    delta=0.01,
-    cv=5,
+    delta=0.005,
     early_stopping=False,
     mrs_function=mrs,
-    ablation_study=False,
+    return_metrics=False,
     use_bias_mean=True,
-    temperature_sampling=True,
+    sampling="max",
     bias_variable=None,
+    cv=5,
+    class_weights="balanced",
+    drop=1,
     *args,
     **attributes
 ):
-    drop = attributes["drop"]
-    save_path = attributes["save_path"]
     auc_list = []
-    mean_rocs_list = []
-    median_rocs_list = []
     relative_bias_list = []
-    deleted_element_list = []
     mmd_list = []
+    roc_list = []
 
     number_of_iterations = len(N) // drop
-    number_of_splits = 5
     mrs_iteration = 0
-    auroc_iteration = int(int(len(N) / drop) / 3.5) + 1
+    roc_iteration = (len(N) // drop // 3.5) + 1
     dropping_N = N.copy()
     weights = np.ones(len(N))
     dropping_N = dropping_N.reset_index(drop=True)
     best_difference = np.inf
 
+    # Compute and save mmd inputs to save time
     gamma = calculate_rbf_gamma(np.append(N[columns], R[columns], axis=0))
     x_x_rbf_matrix = rbf_kernel(N[columns], N[columns], gamma=gamma)
     x_y_rbf_matrix = rbf_kernel(N[columns], R[columns], gamma=gamma)
@@ -133,38 +150,40 @@ def repeated_MRS(
             y_y_rbf_matrix=y_y_rbf_matrix,
         )
     )
-    auc, _, _ = compute_test_metrics_mrs(
-        pd.concat([dropping_N, R]),
-        columns,
-        cv,
+    auc, mean_ifpr_list, mean_itpr_list, std_tpr = compute_test_metrics_mrs(
+        pd.concat([dropping_N, R]), columns, calculate_roc=True
     )
+    roc_list.append([mean_ifpr_list, mean_itpr_list, std_tpr, 0])
+
+    if use_bias_mean and bias_variable is not None:
+        relative_bias = compute_relative_bias(
+            N[bias_variable], R[bias_variable], weights
+        )
+        relative_bias_list.append(relative_bias)
 
     auc_list.append(auc)
 
-    for i in tqdm(range(number_of_iterations)):
+    for i in trange(number_of_iterations):
         dropping_N, drop_ids = mrs_function(
-            dropping_N,
-            R,
-            columns,
-            number_of_splits=number_of_splits,
+            N=dropping_N,
+            R=R,
+            columns=columns,
             n_drop=drop,
+            sampling=sampling,
+            class_weights=class_weights,
             cv=cv,
-            temperature_sampling=temperature_sampling,
         )
         weights[drop_ids] = 0
 
-        if (i + 1) % auroc_iteration == 0:
+        if (i + 1) % roc_iteration == 0:
             auc, mean_ifpr_list, mean_itpr_list, std_tpr = compute_test_metrics_mrs(
-                pd.concat([dropping_N, R]),
-                columns,
-                cv,
+                pd.concat([dropping_N, R]), columns, calculate_roc=True
             )
-            deleted_element_list.append(i * drop)
+            roc_list.append([mean_ifpr_list, mean_itpr_list, std_tpr, i * drop])
         else:
-            auc, _, _ = compute_test_metrics_mrs(
+            auc = compute_test_metrics_mrs(
                 pd.concat([dropping_N, R]),
                 columns,
-                cv,
             )
 
         auc_list.append(auc)
@@ -182,121 +201,36 @@ def repeated_MRS(
         )
 
         if use_bias_mean and bias_variable is not None:
-            relative_bias = compute_bias(N[bias_variable], R[bias_variable], weights)
+            relative_bias = compute_relative_bias(
+                N[bias_variable], R[bias_variable], weights
+            )
             relative_bias_list.append(relative_bias)
-            if (i % 10) == 0:
-                plot_class_ratio(
-                    relative_bias_list,
-                    0,
-                    save_path / "Relative_Bias",
-                    [mrs_iteration],
-                    len(N),
-                    drop,
-                )
 
         auc_difference = abs(auc - 0.5)
-        if (len(dropping_N) - drop) < cv:
+        if (len(dropping_N) - drop) < cv or (
+            (best_difference < delta) and early_stopping
+        ):
             break
-        if auc_difference < best_difference:
-            best_weights = weights
+
+        if (auc_difference + delta) < best_difference:
+            best_weights = weights.copy()
             mrs_iteration = (i + 1) * drop
             best_difference = auc_difference
 
-            if early_stopping:
-                break
-
-        if (i % 10) == 0:
-            mrs_progress_visualization(
-                [mmd_list],
-                [auc_list],
-                np.array(relative_bias_list),
-                [mrs_iteration],
-                drop,
-                len(N),
-                save_path,
-            )
-
     best_weights = best_weights.astype(np.float64)
 
-    plot_rocs(
-        mean_ifpr_list,
-        mean_itpr_list,
-        deleted_element_list,
-        std_tpr,
-        save_path / "mean_rocs",
-    )
-
-    if ablation_study:
-        return None
+    if return_metrics:
+        return auc_list, mmd_list, relative_bias_list, mrs_iteration, roc_list
     else:
         return best_weights / best_weights.sum()
 
 
-def mrs_without_cv(
-    N,
-    R,
-    columns,
-    number_of_splits=5,
-    n_drop: int = 5,
-    cv=5,
-    temperature_sampling=True,
-):
-    EPSILON = 10e-16  # to avoid dividing by zero
-    bootstrap_iterations = 25
-    bootstrap_predictions_n = np.zeros(len(N))
-    bootstrap_predictions_r = np.zeros(len(R))
-    counter_n = np.zeros(len(N))
-    counter_r = np.zeros(len(R))
-
-    n = min(len(R), len(N))
-    for _ in range(bootstrap_iterations):
-        n_sample = N.sample(n=n, replace=True)
-        N_test = N.drop(n_sample.index)
-        r_sample = R.sample(n=n, replace=True)
-        R_test = R.drop(r_sample.index)
-        locations_not_in_bootstrap_n = list(
-            set([N.index.get_loc(index) for index in N_test.index])
-        )
-        locations_not_in_bootstrap_r = list(
-            set([R.index.get_loc(index) for index in R_test.index])
-        )
-
-        bootstrap = pd.concat([n_sample, r_sample])
-        clf = train_classifier_mrs(bootstrap[columns], bootstrap.label, 5)
-        proba_n = clf.predict_proba(N_test[columns])[:, 1]
-        proba_r = clf.predict_proba(R_test[columns])[:, 1]
-        bootstrap_single_n = np.zeros(len(N))
-        bootstrap_single_n[list(locations_not_in_bootstrap_n)] = proba_n
-        counter_n[list(locations_not_in_bootstrap_n)] += 1
-        bootstrap_predictions_n += bootstrap_single_n
-
-        bootstrap_single_r = np.zeros(len(R))
-        bootstrap_single_r[list(locations_not_in_bootstrap_r)] = proba_r
-        counter_r[list(locations_not_in_bootstrap_r)] += 1
-        bootstrap_predictions_r += bootstrap_single_r
-
-    counter_n = [EPSILON if x == 0 else x for x in counter_n]
-    counter_r = [EPSILON if x == 0 else x for x in counter_r]
-    preds_n = bootstrap_predictions_n / counter_n
-    preds_r = bootstrap_predictions_r / counter_r
-
-    all_preds = np.concatenate([preds_n, preds_r])
-    all_true = np.concatenate([np.ones(len(preds_n)), np.zeros(len(preds_r))])
-    auc = roc_auc_score(all_true, all_preds)
+def calculate_temperature(auc):
     mapped_auc = abs(auc - 0.5)
     temperature = -0.55 * mapped_auc + 0.3
-    drop_ids = temperature_sample(preds_n, temperature, n_drop)
-    return N.drop(N.index[drop_ids]), N.index[drop_ids]
+    return temperature
 
 
-def random_drops(
-    N,
-    R,
-    columns,
-    number_of_splits=5,
-    n_drop: int = 5,
-    cv=5,
-    temperature_sampling=True,
-):
+def random_drops(N, n_drop: int = 5, *args, **attributes):
     drop_ids = random.sample(range(0, len(N)), n_drop)
     return N.drop(N.index[drop_ids]), N.index[drop_ids]

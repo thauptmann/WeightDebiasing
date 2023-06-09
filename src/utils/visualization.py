@@ -1,8 +1,11 @@
 import matplotlib.pyplot as plt
 import numpy as np
 import seaborn as sns
+
 from pathlib import Path
 from cycler import cycler
+
+sns.set_theme(style="ticks")
 
 
 def plot_cumulative_distribution(N, R, file_name, weights):
@@ -71,21 +74,8 @@ def plot_gbs_results(
 
 
 def plot_results_with_variance(
-    ratio_list: list[float],
-    mmd_list: list[float],
-    representative_ratio: float,
-    visualisation_path: Path,
-    suffix: str = "",
-    plot_mean: bool = False,
+    metric_list: list[float], visualisation_path: Path, suffix: str = "", metric="MMD"
 ):
-    plot_metric_with_variance(mmd_list, visualisation_path, suffix, "MMD")
-    if plot_mean:
-        plot_mean_with_variance(
-            ratio_list, representative_ratio, visualisation_path, suffix
-        )
-
-
-def plot_metric_with_variance(metric_list, visualisation_path, suffix, metric):
     mean_metric = np.nanmean(metric_list, axis=0)
     sd_metric = np.nanstd(metric_list, axis=0)
     plt.plot(range(len(mean_metric)), mean_metric, color="blue")
@@ -99,36 +89,6 @@ def plot_metric_with_variance(metric_list, visualisation_path, suffix, metric):
     plt.ylabel(f"Weighted {metric}")
     plt.xlabel("Pass")
     plt.savefig(Path(visualisation_path) / f"weighted_{metric}_{suffix}.pdf")
-    plt.clf()
-
-
-def plot_mean_with_variance(mean_list, representative_mean, visualisation_path, suffix):
-    mean_mean = np.nanmean(mean_list, axis=0)
-    sd_mean = np.nanstd(mean_list, axis=0)
-    plt.plot(
-        range(len(mean_mean)),
-        mean_mean,
-        color="blue",
-        label="Weighted Mean",
-        linestyle="--",
-    )
-    plt.plot(
-        (len(mean_mean)) * [representative_mean],
-        color="black",
-        linestyle="-",
-        label="Population Mean",
-    )
-    plt.fill_between(
-        x=range(len(mean_mean)),
-        y1=mean_mean - sd_mean,
-        y2=mean_mean + sd_mean,
-        color="blue",
-        alpha=0.5,
-    )
-    plt.ylabel("Mean")
-    plt.xlabel("Pass")
-    plt.legend()
-    plt.savefig(Path(visualisation_path) / f"weighted_mean_{suffix}.pdf")
     plt.clf()
 
 
@@ -160,6 +120,16 @@ def mrs_progress_visualization(
         mrs_iteration_list,
         number_of_samples,
     )
+
+    if relative_bias_list.size != 0:
+        plot_relative_bias(
+            np.mean(np.array(relative_bias_list), axis=0),
+            np.std(np.array(relative_bias_list), axis=0),
+            save_path / "Relative_Bias",
+            mrs_iteration_list,
+            number_of_samples,
+            drop,
+        )
 
 
 def plot_auc_average(
@@ -200,12 +170,10 @@ def plot_auc_average(
         colors="black",
         linestyles="solid",
     )
-    x_ticks = list(range(number_of_samples, stop, -(number_of_samples // 5))) + [
-        stop + drop
-    ]
+    x_ticks = list(range(number_of_samples, stop, -(number_of_samples // 5))) + [4]
     plt.xticks(x_ticks)
     plt.gca().invert_xaxis()
-    plt.xlabel("Number of remaining samples")
+    plt.xlabel("Number of Remaining Samples")
     xlim = plt.gca().get_xlim()
     ax2 = plt.gca().twiny()
     ax2.set_xlim(xlim)
@@ -230,10 +198,8 @@ def plot_mmds_average(
     mrs_iterations = number_of_samples - np.array(mrs_iterations)
     plt.vlines(mrs_iterations, minimum, maximum, colors="black", linestyles="solid")
     plt.ylabel("Maximum Mean Discrepancy")
-    plt.xlabel("Number of remaining samples")
-    x_ticks = list(range(number_of_samples, stop, -(number_of_samples // 5))) + [
-        stop + drop
-    ]
+    plt.xlabel("Number of Remaining Samples")
+    x_ticks = list(range(number_of_samples, stop, -(number_of_samples // 5))) + [4]
     plt.xticks(x_ticks)
     plt.gca().invert_xaxis()
     xlim = plt.gca().get_xlim()
@@ -254,7 +220,6 @@ def plot_experiment_comparison_auc(
     drop,
     file_name,
     number_of_samples,
-    save=False,
 ):
     aucs_upper = np.minimum(auc_score_mrs + std_aucs_mrs, 1)
     aucs_lower = np.maximum(auc_score_mrs - std_aucs_mrs, 0)
@@ -262,7 +227,8 @@ def plot_experiment_comparison_auc(
     aucs_upper_experiment = np.minimum(auc_score_experiment + std_aucs_experiment, 1)
     aucs_lower_experiment = np.maximum(auc_score_experiment - std_aucs_experiment, 0)
 
-    x_labels = range(number_of_samples, drop, -drop)
+    stop = number_of_samples - ((auc_score_mrs.size) * drop)
+    x_labels = list(range(number_of_samples, stop, -drop))
 
     plt.fill_between(x_labels, aucs_lower, aucs_upper, color="blue", alpha=0.2)
     plt.plot(x_labels, auc_score_mrs, color="blue", linestyle="-", label="MRS")
@@ -285,19 +251,17 @@ def plot_experiment_comparison_auc(
     plt.plot(len(auc_score_mrs) * drop * [0.5], color="black", linestyle="--")
 
     plt.ylabel("AUROC")
-    plt.xlabel("Number of remaining samples")
-    plt.xticks(list(range(number_of_samples, 0, -100)) + [0])
+    plt.xlabel("Number of Remaining Samples")
+    plt.xticks(list(range(number_of_samples, 0, -100)) + [4])
     plt.legend()
     plt.gca().invert_xaxis()
-    if save:
-        plt.savefig(f"{file_name}.pdf")
-    plt.show()
+    plt.savefig(f"{file_name}.pdf")
 
 
 def plot_experiment_comparison_mmd(
-    median_mmd,
+    mean_mmd,
     std_mmd,
-    median_mmd_experiment,
+    mean_mmd_experiment,
     std_mmd_experiment,
     experiment_label,
     drop,
@@ -305,31 +269,32 @@ def plot_experiment_comparison_mmd(
     file_name,
     number_of_samples,
 ):
-    mmd_upper = np.minimum(median_mmd + std_mmd, 1)
-    mmd_lower = np.maximum(median_mmd - std_mmd, 0)
+    mmd_upper = np.minimum(mean_mmd + std_mmd, 1)
+    mmd_lower = np.maximum(mean_mmd - std_mmd, 0)
 
-    mmd_upper_experiment = np.minimum(median_mmd_experiment + std_mmd_experiment, 1)
-    mmd_lower_experiment = np.maximum(median_mmd_experiment - std_mmd_experiment, 0)
+    mmd_upper_experiment = np.minimum(mean_mmd_experiment + std_mmd_experiment, 1)
+    mmd_lower_experiment = np.maximum(mean_mmd_experiment - std_mmd_experiment, 0)
 
-    x_labels = range(number_of_samples, drop * mmd_iteration, -drop * mmd_iteration)
+    stop = number_of_samples - ((mean_mmd.size) * drop)
+    x_labels = range(number_of_samples, stop, -(drop * mmd_iteration))
 
     plt.fill_between(x_labels, mmd_lower, mmd_upper, color="blue", alpha=0.2)
-    plt.plot(x_labels, median_mmd, color="blue", linestyle="-", label="MRS")
+    plt.plot(x_labels, mean_mmd, color="blue", linestyle="-", label="MRS")
 
     plt.fill_between(
         x_labels, mmd_lower_experiment, mmd_upper_experiment, color="orange", alpha=0.2
     )
     plt.plot(
         x_labels,
-        median_mmd_experiment,
+        mean_mmd_experiment,
         linestyle=":",
         color="orange",
         label=experiment_label,
     )
 
-    plt.ylabel("Maximum mean discrepancy")
-    plt.xlabel("Number of remaining samples")
-    plt.xticks(list(range(number_of_samples, 0, -100)) + [0])
+    plt.ylabel("Maximum Mean Discrepancy")
+    plt.xlabel("Number of Remaining Samples")
+    plt.xticks(list(range(number_of_samples, 0, -100)) + [4])
     plt.legend()
     plt.gca().invert_xaxis()
     plt.savefig(f"{file_name}.pdf")
@@ -347,13 +312,13 @@ default_cycle = cycler(
 ) + cycler(color=["blue", "orange", "orangered", "cyan"])
 
 
-def plot_rocs(fper, tper, std, deleted_elements, file_name):
+def plot_rocs(roc_list, file_name):
     plt.rc("")
     plt.rc("axes", prop_cycle=default_cycle)
-    for fper, tper, std, deleted_elements in zip(fper, tper, std, deleted_elements):
+    for fper, tper, std, deleted_elements in roc_list:
         tpfrs_higher = np.minimum(tper + std, 1)
         tpfrs_lower = np.maximum(tper - std, 0)
-        plt.plot(fper, tper, label=f"{int(deleted_elements[0])} samples removed")
+        plt.plot(fper, tper, label=f"{deleted_elements} samples removed")
         plt.fill_between(fper, tpfrs_lower, tpfrs_higher, alpha=0.2)
     plt.plot(
         [0, 1], [0, 1], color="black", linestyle="--", label="Random", linewidth=0.8
@@ -365,29 +330,29 @@ def plot_rocs(fper, tper, std, deleted_elements, file_name):
     plt.close()
 
 
-def plot_class_ratio(
-    ratio_list,
-    representative_ratio,
+def plot_relative_bias(
+    mean_relative_bias_list,
+    std_relative_bias_list,
     file_name,
     mrs_iterations,
     number_of_samples,
     drop,
 ):
-    plt.xlabel("Number of remaining samples")
-    plt.ylabel("Ratio of married persons")
-    stop = number_of_samples - ((ratio_list.size) * drop)
+    plt.xlabel("Number of Remaining Samples")
+    plt.ylabel("Relative Bias")
+    ratio_upper = mean_relative_bias_list + std_relative_bias_list
+    ratio_lower = (mean_relative_bias_list - std_relative_bias_list).clip(min=0)
+    stop = number_of_samples - (mean_relative_bias_list.size * drop)
     x_labels = list(range(number_of_samples, stop, -drop))
 
     plt.plot(
-        x_labels, ratio_list, label="non-representative", linestyle="-", color="blue"
+        x_labels,
+        mean_relative_bias_list,
+        linestyle="-",
+        color="blue",
     )
-    # plt.plot(
-    #    number_of_samples * [representative_ratio],
-    #    color="black",
-    #    linestyle="--",
-    #    label="representative",
-    # )
-    minimum = np.min(ratio_list)
+    plt.fill_between(x_labels, ratio_lower, ratio_upper, color="blue", alpha=0.2)
+    minimum = plt.gca().get_ylim()[0]
     maximum = plt.gca().get_ylim()[1]
     plt.margins(0.05, 0)
     mrs_iterations = number_of_samples - np.array(mrs_iterations)
@@ -396,7 +361,6 @@ def plot_class_ratio(
         stop + drop
     ]
     plt.xticks(x_ticks)
-    plt.legend()
     plt.gca().invert_xaxis()
     xlim = plt.gca().get_xlim()
     ax2 = plt.gca().twiny()

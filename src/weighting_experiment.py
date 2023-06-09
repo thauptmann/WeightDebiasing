@@ -17,11 +17,9 @@ torch.manual_seed(seed)
 
 
 def weighting_experiment(
-    dataset_name: str,
+    data_set_name: str,
     method_name: str,
-    bias_variable: str,
     bias_type: str,
-    bias_sample_size: int,
     number_of_repetitions: int,
 ) -> None:
     """_summary_
@@ -35,19 +33,19 @@ def weighting_experiment(
         number_of_repetitions (int): How many times the experiment is repeated
     """
 
-    data, columns = load_dataset(dataset_name, bias_variable)
+    data, columns, target = load_dataset(data_set_name)
     compute_weights_function = get_weighting_function(method_name)
-    experiment_function = get_experiment_function(dataset_name)
+    experiment_function = get_experiment_function(data_set_name)
 
     experiment_function(
         data,
         columns,
         compute_weights_function,
         method=method_name,
-        bias_variable=bias_variable,
         bias_type=bias_type,
-        bias_sample_size=bias_sample_size,
         number_of_repetitions=number_of_repetitions,
+        data_set_name=data_set_name,
+        target=target,
     )
 
 
@@ -56,8 +54,6 @@ if __name__ == "__main__":
     weighting_experiment(
         args.dataset,
         args.method,
-        args.bias_variable,
         args.bias_type,
-        args.bias_sample_size,
         args.number_of_repetitions,
     )

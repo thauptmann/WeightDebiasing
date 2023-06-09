@@ -9,7 +9,7 @@ from utils.metrics import calculate_rbf_gamma, weighted_maximum_mean_discrepancy
 
 
 max_depths = [3, 5, 7]
-n_estimators = [10, 25]
+n_estimators = [5, 10, 25]
 y_codes = np.array([-1.0, 1.0])
 number_of_iterations = 250
 
@@ -64,8 +64,8 @@ def ada_debiasing(
     learning_rate = 1
     epsilon = np.finfo(weights_N.dtype).eps
 
-    for i in range(number_of_iterations):
-        predictions = train_weighted_tree(
+    for _ in range(number_of_iterations):
+        predictions = train_weighted_random_forest(
             x_train,
             x_label,
             np.concatenate([weights_N, weights_R]),
@@ -89,9 +89,9 @@ def ada_debiasing(
     return weights_N
 
 
-def train_weighted_tree(x_train, x_label, weights, max_depth, n_estimator):
-    decision_tree = RandomForestClassifier(
+def train_weighted_random_forest(x_train, x_label, weights, max_depth, n_estimator):
+    random_forest = RandomForestClassifier(
         max_depth=max_depth, n_jobs=-1, n_estimators=n_estimator
     )
-    decision_tree = decision_tree.fit(x_train, x_label, sample_weight=weights)
-    return decision_tree.predict_proba(x_train)
+    random_forest = random_forest.fit(x_train, x_label, sample_weight=weights)
+    return random_forest.predict_proba(x_train)

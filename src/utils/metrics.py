@@ -1,5 +1,7 @@
 import numpy as np
 from scipy.spatial.distance import pdist
+from scipy.stats import wasserstein_distance
+
 from sklearn.metrics import (
     roc_auc_score,
     accuracy_score,
@@ -7,17 +9,16 @@ from sklearn.metrics import (
     recall_score,
     mean_squared_error,
     roc_curve,
+    confusion_matrix,
+    f1_score,
 )
 
 from sklearn.svm import SVC
-from sklearn.linear_model import LogisticRegression, LogisticRegressionCV, ElasticNet
 from sklearn.metrics.pairwise import rbf_kernel
 from sklearn.model_selection import GridSearchCV, StratifiedKFold
 from sklearn.preprocessing import StandardScaler
-from scipy.stats import wasserstein_distance
 from sklearn.tree import DecisionTreeClassifier
-from catboost import CatBoostClassifier, Pool, CatBoostRegressor
-from sklearn.ensemble import RandomForestClassifier
+from sklearn.ensemble import RandomForestClassifier, RandomForestRegressor
 
 
 def strictly_standardized_mean_difference(N, R, weights=None):
@@ -47,10 +48,10 @@ def compute_relative_bias(N, R, weights):
     return (abs(weighted_means - population_means) / population_means) * 100
 
 
-def compute_bias(N, R, weights):
+def compute_relative_bias(N, R, weights):
     weighted_means = compute_weighted_means(N, weights)
     population_means = np.mean(R, axis=0)
-    return abs(weighted_means - population_means)
+    return abs((weighted_means - population_means) / population_means) * 100
 
 
 def calculate_rbf_gamma(aggregate_set):
@@ -84,6 +85,22 @@ def scale_df(df, columns):
     return df, scaler
 
 
+def weighted_maximum_mean_discrepancy(
+    x,
+    y,
+    weights,
+    gamma=None,
+    x_x_rbf_matrix=None,
+    y_y_rbf_matrix=None,
+    x_y_rbf_matrix=None,
+):
+    if gamma is None:
+        gamma = calculate_rbf_gamma(np.append(x, y, axis=0))
+    return compute_weighted_maximum_mean_discrepancy(
+        gamma, x, y, weights, x_x_rbf_matrix, y_y_rbf_matrix, x_y_rbf_matrix
+    )
+
+
 def compute_weighted_maximum_mean_discrepancy(
     gamma, n, r, weights, n_n_rbf_matrix=None, r_r_rbf_matrix=None, n_r_rbf_matrix=None
 ):
@@ -113,22 +130,6 @@ def compute_weighted_maximum_mean_discrepancy(
     return np.sqrt(mmd)
 
 
-def weighted_maximum_mean_discrepancy(
-    x,
-    y,
-    weights,
-    gamma=None,
-    x_x_rbf_matrix=None,
-    y_y_rbf_matrix=None,
-    x_y_rbf_matrix=None,
-):
-    if gamma is None:
-        gamma = calculate_rbf_gamma(np.append(x, y, axis=0))
-    return compute_weighted_maximum_mean_discrepancy(
-        gamma, x, y, weights, x_x_rbf_matrix, y_y_rbf_matrix, x_y_rbf_matrix
-    )
-
-
 def compute_metrics(scaled_N, scaled_R, weights, scaler, scale_columns, columns, gamma):
     wasserstein_distances = []
     scaled_N_dropped = scaled_N[columns].values
@@ -139,11 +140,6 @@ def compute_metrics(scaled_N, scaled_R, weights, scaler, scale_columns, columns,
         scaled_R_dropped,
         weights,
         gamma,
-    )
-    weighted_ssmd = strictly_standardized_mean_difference(
-        scaled_N,
-        scaled_R,
-        weights,
     )
 
     for i in range(scaled_N.values.shape[1]):
@@ -160,59 +156,71 @@ def compute_metrics(scaled_N, scaled_R, weights, scaler, scale_columns, columns,
 
     return (
         weighted_mmd,
-        weighted_ssmd,
         sample_biases,
         wasserstein_distances,
     )
 
 
-def compute_classification_metrics(N, R, columns, weights, label):
-    clf = train_classifier(N[columns], N[label], weights)
-    y_probabilities = clf.predict_proba(R[columns])[:, 1]
+def compute_classification_metrics(N, R, columns, weights, label, gamma=None):
+    y_true = R[label]
+    if gamma is None:
+        clf = train_classifier(N[columns], N[label], weights, gamma)
+        y_predictions = clf.predict_proba(R[columns])[:, 1]
+        auroc_score = roc_auc_score(y_true, y_predictions)
+    else:
+        clf = train_classifier(N[columns], N[label], weights, gamma)
+        y_predictions = clf.predict(R[columns])
+        auroc_score = 0
+    accuracy = accuracy_score(y_true, y_predictions.round())
+    precision = precision_score(y_true, y_predictions.round(), zero_division=0)
+    recall = recall_score(y_true, y_predictions.round())
+    f_score = f1_score(y_true, y_predictions.round())
+    tn, fp, fn, tp = confusion_matrix(y_true, y_predictions.round()).ravel()
 
-    auroc_score = roc_auc_score(R[label], y_probabilities)
-    accuracy = accuracy_score(R[label], y_probabilities.round())
-    precision = precision_score(R[label], y_probabilities.round())
-    recall = recall_score(R[label], y_probabilities.round())
-
-    return auroc_score, accuracy, precision, recall
+    return auroc_score, accuracy, precision, recall, f_score, tn, fp, fn, tp
 
 
-def train_classifier(X, y, weights):
-    # pool = Pool(X, y, weight=weights)
-    clf = DecisionTreeClassifier()
-    clf = clf.fit(X, y, sample_weight=weights)
+def train_classifier(X, y, weights, gamma):
+    if gamma is None:
+        clf = RandomForestClassifier(n_jobs=-1)
+    else:
+        clf = SVC()
+    new_weights = weights * len(X)
+    clf = clf.fit(X, y, sample_weight=new_weights)
     return clf
 
 
 def compute_regression_metrics(N, R, columns, weights, label):
     clf = train_regressor(N[columns], N[label], weights)
     y_prediction = clf.predict(R[columns])
-    mse = mean_squared_error(R[label], y_prediction)
-    return mse
+    mean_y = np.mean(R[label])
+
+    mse = np.sqrt(mean_squared_error(R[label], y_prediction))
+    nmse = mse / mean_y
+    return nmse
 
 
 def train_regressor(X, y, weights):
-    train_pool = Pool(X, y, weight=weights)
-    clf = CatBoostRegressor(verbose=0)
-    clf.fit(train_pool)
+    new_weights = weights * len(X)
+    clf = RandomForestRegressor()
+    clf = clf.fit(X, y, sample_weight=new_weights)
     return clf
 
 
-def compute_test_metrics_mrs(data, columns, cv=5, calculate_roc=False):
+def compute_test_metrics_mrs(data, columns, calculate_roc=False):
+    cv = 3
     auroc_scores = []
     ifpr_list = []
     itpr_list = []
-    kf = StratifiedKFold(n_splits=5, shuffle=True)
+    kf = StratifiedKFold(n_splits=cv, shuffle=True)
     for train_indices, test_indices in kf.split(data[columns], data["label"]):
         train, test = data.iloc[train_indices], data.iloc[test_indices]
-        y_train = train["label"]
-        clf = train_classifier_mrs(train[columns], y_train)
+        clf = train_classifier_auroc(train[columns], train.label)
         y_predict = clf.predict_proba(test[columns])[:, 1]
-        y_test = test["label"]
-        auroc_scores.append(roc_auc_score(y_test, y_predict))
+        auroc = roc_auc_score(test.label, y_predict)
+        auroc_scores.append(auroc)
         if calculate_roc:
-            interpolated_fpr, interpolated_tpr = interpolate_roc(y_test, y_predict)
+            interpolated_fpr, interpolated_tpr = interpolate_roc(test.label, y_predict)
             ifpr_list.append(interpolated_fpr)
             itpr_list.append(interpolated_tpr)
     if calculate_roc:
@@ -224,41 +232,11 @@ def compute_test_metrics_mrs(data, columns, cv=5, calculate_roc=False):
         return np.mean(auroc_scores)
 
 
-def train_classifier_mrs(X_train, y_train):
-    # clf = LogisticRegression(max_iter=1000, class_weight="balanced")
-    clf = DecisionTreeClassifier(class_weight="balanced")
-    return clf.fit(X_train, y_train)
-
-
-def train_classifier_test(X_train, y_train):
-    clf = RandomForestClassifier(n_jobs=-1, class_weight="balanced")
-    return clf.fit(X_train, y_train)
-
-
-def train_classifier_mrs_auroc(X_train, y_train, cv=5):
-    clf = DecisionTreeClassifier()
-    path = clf.cost_complexity_pruning_path(X_train, y_train)
-    ccp_alphas = path.ccp_alphas
-    ccp_alphas_unique = np.unique(ccp_alphas)
-    ccp_alphas_unique[ccp_alphas_unique < 0] = 0
-
-    param_grid = {"ccp_alpha": ccp_alphas_unique[:-1]}
-    grid = GridSearchCV(
-        DecisionTreeClassifier(),
-        param_grid=param_grid,
-        cv=cv,
-        n_jobs=-1,
-        refit=True,
+def train_pu_classifier(X_train, y_train, class_weight="balanced"):
+    clf = RandomForestClassifier(
+        class_weight=class_weight, n_estimators=25, n_jobs=-1, max_depth=25
     )
-    grid.fit(X_train, y_train)
-    return grid.best_estimator_
-
-
-def calculate_mean_roc(interpolated_fpr, interpolated_tpr):
-    mean_fpr = np.mean(interpolated_fpr, axis=0)
-    mean_tpr = np.mean(interpolated_tpr, axis=0)
-    std_tpr = np.std(interpolated_tpr, axis=0)
-    return mean_fpr, mean_tpr, std_tpr
+    return clf.fit(X_train, y_train)
 
 
 def interpolate_roc(y_test, y_predict):
@@ -268,3 +246,55 @@ def interpolate_roc(y_test, y_predict):
     interpolated_tpr = np.interp(interpolated_fpr, fpr, tpr)
     interpolated_tpr[0] = 0.0
     return interpolated_fpr, interpolated_tpr
+
+
+def train_classifier_auroc(X_train, y_train, weights=None, speedup=True):
+    if weights is None:
+        weights = np.ones(len(X_train)) / len(X_train)
+    cv = 3
+    clf = DecisionTreeClassifier()
+    path = clf.cost_complexity_pruning_path(X_train, y_train, sample_weight=weights)
+    ccp_alphas = path.ccp_alphas
+    ccp_alphas[ccp_alphas < 0] = 0
+    ccp_alphas_unique = np.unique(ccp_alphas)
+
+    if speedup:
+        if len(ccp_alphas_unique) > 10:
+            shortened_ccp_alphas_unique = ccp_alphas_unique[0::10]
+            ccp_alphas_unique = np.append(
+                ccp_alphas_unique[-10:], shortened_ccp_alphas_unique
+            )
+    param_grid = {"ccp_alpha": ccp_alphas_unique}
+    grid = GridSearchCV(
+        DecisionTreeClassifier(),
+        param_grid=param_grid,
+        cv=cv,
+        n_jobs=-1,
+        refit=True,
+    )
+
+    return grid.fit(
+        X_train,
+        y_train,
+        sample_weight=weights,
+    )
+
+
+def calculate_mean_rocs(rocs):
+    rocs = np.array(rocs, dtype=object)
+    mean_rocs = []
+    for i in range(rocs.shape[1]):
+        rocs_at_iteration = rocs[:, i]
+        mean_fpr, mean_tpr, std_tpr = calculate_mean_roc(
+            rocs_at_iteration[:, 0], rocs_at_iteration[:, 1]
+        )
+        removed_samples = rocs_at_iteration[0, 3]
+        mean_rocs.append((mean_fpr, mean_tpr, std_tpr, removed_samples))
+    return mean_rocs
+
+
+def calculate_mean_roc(interpolated_fpr, interpolated_tpr):
+    mean_fpr = np.mean(interpolated_fpr, axis=0)
+    mean_tpr = np.mean(interpolated_tpr, axis=0)
+    std_tpr = np.std(interpolated_tpr, axis=0)
+    return mean_fpr, mean_tpr, std_tpr

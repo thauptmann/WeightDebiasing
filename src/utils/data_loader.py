@@ -1,9 +1,35 @@
 import pandas as pd
 import pathlib
-from folktables import ACSDataSource, generate_categories, BasicProblem, adult_filter
+from folktables import (
+    ACSDataSource,
+    generate_categories,
+    BasicProblem,
+    adult_filter,
+    ACSEmployment,
+)
 import numpy as np
 
 file_path = pathlib.Path(__file__).parent
+
+
+def load_dataset(dataset_name):
+    if dataset_name == "gbs_allensbach":
+        return load_gbs_allensbach()
+    elif dataset_name in ("folktables", "folktables_income"):
+        return load_folktables_income_data()
+    elif dataset_name == "folktables_employment":
+        return load_folktables_employment_data()
+    elif dataset_name == "breast_cancer":
+        return load_brast_cancer_data()
+    elif dataset_name == "gbs_gesis":
+        return load_gbs_gesis()
+    elif dataset_name == "hr_analytics":
+        return load_hr_analytics()
+    elif dataset_name == "loan_prediction":
+        return load_loan_prediction()
+    else:
+        print("No valid data set name given!")
+        exit()
 
 
 def load_gbs_allensbach():
@@ -25,171 +51,41 @@ def load_gbs_allensbach():
 
 
 def load_gbs_gesis():
-    gesis_columns = ['Geschlecht', 'Geburtsjahr', 'Geburtsland',
-        'Nationalitaet', 'Familienstand', 'Hoechster Bildungsabschluss',
-        'Berufliche Ausbildung', 'Erwerbstaetigkeit', 'Nettoeinkommen Selbst',
-        'Zufriedenheit Wahlergebnis', 'Gesellig', 'Andere kritisieren',
-        'Gruendlich', 'Nervoes', 'Phantasievoll', 'Berufsgruppe', 'Wahlteilnahme', 'BRS6']
-    
-    gesis = pd.read_csv(f"{file_path}/../../data/gesis_processed.csv", engine='python')
-    gbs = pd.read_csv(f"{file_path}/../../data/gbs_processed.csv", engine='python')
+    gesis_columns = [
+        "Geschlecht",
+        "Geburtsjahr",
+        "Geburtsland",
+        "Nationalitaet",
+        "Familienstand",
+        "Hoechster Bildungsabschluss",
+        "Berufliche Ausbildung",
+        "Erwerbstaetigkeit",
+        "Nettoeinkommen Selbst",
+        "Zufriedenheit Wahlergebnis",
+        "Gesellig",
+        "Andere kritisieren",
+        "Gruendlich",
+        "Nervoes",
+        "Phantasievoll",
+        "Berufsgruppe",
+        "Wahlteilnahme",
+        "BRS6",
+    ]
+
+    gesis = pd.read_csv(f"{file_path}/../../data/gesis_processed.csv", engine="python")
+    gbs = pd.read_csv(f"{file_path}/../../data/gbs_processed.csv", engine="python")
 
     N = gbs.copy()
     R = gesis.copy()
 
-    N['label'] = 1
-    R['label'] = 0
+    N["label"] = 1
+    R["label"] = 0
 
     gesis_gbs = pd.concat([N, R], ignore_index=True)
     return gesis_gbs, gesis_columns
 
 
-def load_census_data(census_bias="Above_Below 50K"):
-    columns = [
-        "Age",
-        "Workclass",
-        "fnlgwt",
-        "Education",
-        "Education Num",
-        "Marital Status",
-        "Occupation",
-        "Relationship",
-        "Race",
-        "Sex",
-        "Capital Gain",
-        "Capital Loss",
-        "Hours_per_Week",
-        "Country",
-        "Above_Below 50K",
-    ]
-    df = pd.read_csv(
-        f"{file_path}/../../data/Census_Income/adult.data",
-        names=columns,
-        na_values=["-1", "-1", " ?"],
-    )
-    df, preprocessed_columns = preprocess_census(df, census_bias)
-    return df, preprocessed_columns
-
-
-def preprocess_census(df, census_bias):
-    df = df.replace(
-        [
-            " Cambodia",
-            " China",
-            " Hong",
-            " Laos",
-            " Thailand",
-            " Japan",
-            " Taiwan",
-            " Vietnam",
-            " Philippines",
-            " India",
-            " Iran",
-            " Cuba",
-            " Guatemala",
-            " Jamaica",
-            " Nicaragua",
-            " Puerto-Rico",
-            " Dominican-Republic",
-            " El-Salvador",
-            " Haiti",
-            " Honduras",
-            " Mexico",
-            " Trinadad&Tobago",
-            " Ecuador",
-            " Peru",
-            " Columbia",
-            " South",
-            " Poland",
-            " Yugoslavia",
-            " Hungary",
-            " Outlying-US(Guam-USVI-etc)",
-        ],
-        "other",
-    )
-    df = df.replace(
-        [
-            " England",
-            " Germany",
-            " Holand-Netherlands",
-            " Ireland",
-            " France",
-            " Greece",
-            " Italy",
-            " Portugal",
-            " Scotland",
-        ],
-        "other",
-    )
-    df = df.replace(
-        [" Married-civ-spouse", " Married-spouse-absent", " Married-AF-spouse"],
-        "Married",
-    )
-    df.replace(" >50K.", 1, inplace=True)
-    df.replace(" >50K", 1, inplace=True)
-    df.replace(" <=50K.", 0, inplace=True)
-    df.replace(" <=50K", 0, inplace=True)
-    df["Sex"].replace(" Male", 1, inplace=True)
-    df["Sex"].replace(" Female", 0, inplace=True)
-    df.dropna(inplace=True)
-    df = df[df["Workclass"] != " Without-pay"]
-    df = df.replace(" Self-emp-inc", "Self-emp")
-    df = df.replace(" Self-emp-not-inc", "Self-emp")
-    df = df.replace(" Asian-Pac-Islander", " Other")
-    df = df.replace(" Local-gov", "Gov")
-    df = df.replace(" State-gov", "Gov")
-
-    ctg = ["Workclass", "Marital Status", "Race", "Country"]
-    for c in ctg:
-        df = pd.concat(
-            [df, pd.get_dummies(df[c], prefix=c, dummy_na=False, drop_first=True)],
-            axis=1,
-        ).drop([c], axis=1)
-    census_columns = list(df.columns)
-    meta = [
-        "label",
-        "index",
-        "fnlgwt",
-        "Education",
-        "Relationship",
-        "Occupation",
-        census_bias,
-    ]
-    for m in meta:
-        if m in census_columns:
-            census_columns.remove(m)
-    df = df.drop(["fnlgwt", "Education", "Relationship", "Occupation"], axis="columns")
-
-    return df, census_columns
-
-
-def load_dataset(dataset_name, bias_variable):
-    if dataset_name == "gbs_allensbach":
-        return load_gbs_allensbach()
-    elif dataset_name == "census":
-        return load_census_data(bias_variable)
-    elif dataset_name == "folktables":
-        return load_folktables_data()
-    elif dataset_name == "mrs_census":
-        return load_mrs_census_data(bias_variable)
-    elif dataset_name == "breast_cancer":
-        return load_brast_cancer_data()
-    elif dataset_name == "gbs_gesis":
-        return load_gbs_gesis()
-    else:
-        print("No valid data set name given!")
-        exit()
-
-
-def sample(df, bias_sample_size, reference_sample_size=1000):
-    representative = df.sample(reference_sample_size)
-    representative["label"] = 0
-    non_representative = df.sample(bias_sample_size, weights=df["pi"])
-    non_representative["label"] = 1
-    return non_representative, representative
-
-
-def load_folktables_data():
+def load_folktables_income_data():
     data_source = ACSDataSource(survey_year="2018", horizon="1-Year", survey="person")
     usa_data = data_source.get_data(states=["CA"], download=True)
     definition_df = data_source.get_definitions(download=True)
@@ -208,7 +104,84 @@ def load_folktables_data():
     ]
     usa_features = usa_features.dropna()
 
-    return usa_features, columns
+    return usa_features, columns, "Binary Income"
+
+
+def load_hr_analytics():
+    categorical_variables = [
+        "gender",
+        "relevent_experience",
+        "enrolled_university",
+        "education_level",
+        "major_discipline",
+        "company_size",
+        "company_type",
+        "last_new_job",
+    ]
+    experience_replacing = {"<1": 0, ">20": 21}
+    hr_analystics = pd.read_csv(
+        f"{file_path}/../../data/hr_analytics.csv", engine="python"
+    )
+    hr_analystics = hr_analystics.drop(columns=["enrollee_id", "city"])
+    hr_analystics = hr_analystics.dropna()
+    hr_analystics["experience"] = hr_analystics["experience"].replace(
+        experience_replacing
+    )
+    hr_analystics = pd.get_dummies(
+        hr_analystics, columns=categorical_variables, drop_first=True
+    )
+
+    columns = hr_analystics.drop(columns=["target"]).columns
+    return hr_analystics, columns, "target"
+
+
+def load_loan_prediction():
+    categorical_columns = [
+        "Gender",
+        "Married",
+        "Education",
+        "Self_Employed",
+        "Property_Area",
+    ]
+    target = "Loan_Status"
+    dependent_replacing = {"3+": 3}
+    target_replacing = {"Y": 1, "N": 0}
+    loan_predictions = pd.read_csv(
+        f"{file_path}/../../data/loan_prediction.csv", engine="python"
+    )
+    loan_predictions = loan_predictions.drop(columns=["Loan_ID"])
+    loan_predictions = loan_predictions.dropna()
+    loan_predictions = pd.get_dummies(
+        loan_predictions, columns=categorical_columns, drop_first=True
+    )
+    loan_predictions["Dependents"] = loan_predictions["Dependents"].replace(
+        dependent_replacing
+    )
+    loan_predictions[target] = loan_predictions[target].replace(target_replacing)
+    loan_predictions = loan_predictions.drop(columns=[])
+    columns = loan_predictions.drop(columns=[target]).columns
+    return loan_predictions, columns, target
+
+
+def load_folktables_employment_data():
+    data_source = ACSDataSource(survey_year="2018", horizon="1-Year", survey="person")
+    data = data_source.get_data(states=["CA"], download=True)
+    definition_df = data_source.get_definitions(download=True)
+    categories = generate_categories(
+        features=ACSEmployment.features, definition_df=definition_df
+    )
+
+    features, us_labels, _ = ACSEmployment.df_to_pandas(
+        data, categories=categories, dummies=True
+    )
+
+    columns = features.columns
+    features["Employment"] = [
+        1 if us_label == True else 0 for us_label in us_labels.values
+    ]
+    features = features.dropna()
+
+    return features, columns, "Employment"
 
 
 ACSIncomeNew = BasicProblem(
@@ -226,205 +199,6 @@ ACSIncomeNew = BasicProblem(
     preprocess=adult_filter,
     postprocess=lambda x: np.nan_to_num(x, -1),
 )
-
-
-def load_mrs_census_data(census_bias):
-    columns = [
-        "Age",
-        "Workclass",
-        "fnlgwt",
-        "Education",
-        "Education Num",
-        "Marital Status",
-        "Occupation",
-        "Relationship",
-        "Race",
-        "Sex",
-        "Capital Gain",
-        "Capital Loss",
-        "Hours/Week",
-        "Country",
-        "Above_Below 50K",
-    ]
-
-    df = pd.read_csv(
-        f"{file_path}/../../data/Census_Income/adult.data",
-        names=columns,
-        na_values=["-1", "-1", " ?"],
-    )
-
-    df = df.replace(
-        [
-            " Cambodia",
-            " China",
-            " Hong",
-            " Laos",
-            " Thailand",
-            " Japan",
-            " Taiwan",
-            " Vietnam",
-            " Philippines",
-            " India",
-            " Iran",
-            " Cuba",
-            " Guatemala",
-            " Jamaica",
-            " Nicaragua",
-            " Puerto-Rico",
-            " Dominican-Republic",
-            " El-Salvador",
-            " Haiti",
-            " Honduras",
-            " Mexico",
-            " Trinadad&Tobago",
-            " Ecuador",
-            " Peru",
-            " Columbia",
-            " South",
-            " Poland",
-            " Yugoslavia",
-            " Hungary",
-            " Outlying-US(Guam-USVI-etc)",
-        ],
-        "other",
-    )
-    df = df.replace(
-        [
-            " England",
-            " Germany",
-            " Holand-Netherlands",
-            " Ireland",
-            " France",
-            " Greece",
-            " Italy",
-            " Portugal",
-            " Scotland",
-        ],
-        "west_europe",
-    )
-    df = df.replace(
-        [" Married-civ-spouse", " Married-spouse-absent", " Married-AF-spouse"],
-        "Married",
-    )
-
-    df.replace(" >50K.", 1, inplace=True)
-    df.replace(" >50K", 1, inplace=True)
-    df.replace(" <=50K.", 0, inplace=True)
-    df.replace(" <=50K", 0, inplace=True)
-
-    df["Sex"].replace(" Male", 1, inplace=True)
-    df["Sex"].replace(" Female", 0, inplace=True)
-
-    df.dropna(inplace=True)
-
-    ctg = ["Workclass", "Marital Status", "Occupation", "Race", "Country"]
-
-    for c in ctg:
-        df = pd.concat(
-            [df, pd.get_dummies(df[c], prefix=c, dummy_na=False)], axis=1
-        ).drop([c], axis=1)
-
-    census_columns = list(df.columns)
-    meta = ["label", "index", "fnlgwt", "Education", "Relationship", census_bias]
-    for m in meta:
-        if m in census_columns:
-            census_columns.remove(m)
-
-    df = df.drop(["Education", "Relationship"], axis="columns")
-    df = df.sample(frac=1)
-    df.reset_index(drop=True, inplace=True)
-
-    return df, census_columns
-
-
-def sample_mrs_census(bias_type, df, columns, bias_variable, folktables=False):
-    representative_fraction = 0.12
-    bias_fraction = 0.05
-    R_fraction = 0.2
-    mean_difference_fraction = 0.1
-    high_bias_positive_fraction = 0.03
-    high_bias_negative_fraction = 0.07
-
-    negative_normal = len(df[(df[bias_variable] == 0)])
-    positive_normal = len(df[(df[bias_variable] == 1)])
-    df_positive_class = df[(df[bias_variable] == 1)]
-    df_negative_class = df[(df[bias_variable] == 0)]
-    if folktables:
-        representative_fraction *= 0.1
-        R_fraction *= 0.1
-        bias_fraction *= 0.1
-        mean_difference_fraction *= 0.1
-        high_bias_positive_fraction *= 0.1
-        high_bias_negative_fraction *= 0.1
-
-    R = pd.concat(
-        [
-            df_negative_class.sample(int(negative_normal * R_fraction)),
-            df_positive_class.sample(int(positive_normal * R_fraction)),
-        ],
-        ignore_index=True,
-    )
-    if bias_type == "less_positive_class":
-        N = pd.concat(
-            [
-                df_negative_class.sample(
-                    int(negative_normal * representative_fraction)
-                ),
-                df_positive_class.sample(
-                    int(positive_normal * (representative_fraction - bias_fraction))
-                ),
-            ],
-            ignore_index=True,
-        )
-    elif bias_type == "less_negative_class":
-        N = pd.concat(
-            [
-                df_negative_class.sample(
-                    int(negative_normal * (representative_fraction - bias_fraction))
-                ),
-                df_positive_class.sample(
-                    int(positive_normal * representative_fraction)
-                ),
-            ],
-            ignore_index=True,
-        )
-    elif bias_type == "mean_difference":
-        mean_sample = df[columns].mean().values
-        sample_weights = [
-            np.exp(-(1 / 20) * (np.linalg.norm(sample - mean_sample) ** 2))
-            for sample in df[columns].values
-        ]
-        N = df.sample(weights=sample_weights, frac=mean_difference_fraction)
-        N = N.reset_index(drop=True)
-    elif bias_type == "high_bias":
-        N = pd.concat(
-            [
-                df_negative_class.sample(
-                    int(negative_normal * high_bias_positive_fraction)
-                ),
-                df_positive_class.sample(
-                    int(positive_normal * high_bias_negative_fraction)
-                ),
-            ],
-            ignore_index=True,
-        )
-    else:
-        N = pd.concat(
-            [
-                df_negative_class.sample(
-                    int(negative_normal * representative_fraction)
-                ),
-                df_positive_class.sample(
-                    int(positive_normal * representative_fraction)
-                ),
-            ],
-            ignore_index=True,
-        )
-
-    R["label"] = 0
-    N["label"] = 1
-
-    return N, R
 
 
 breast_cancer_names = [
@@ -453,38 +227,6 @@ def load_brast_cancer_data():
     df["class"] = df["class"].replace(replace_dict)
     df = df.drop(columns=["sample_code_number"])
     columns = df.drop(columns=["class"]).columns
-    df[columns] = df[columns] - 1
+    df[columns] = df[columns]
 
-    return df, columns
-
-
-def sample_breast_cancer(bias_variable, df, bias_type, columns):
-    train = df.sample(frac=1 / 4, replace=False).copy()
-    R = df.drop(train.index).copy().reset_index()
-    if bias_type == "mean_difference":
-        mean_sample = train[columns].mean().values
-        sample_weights = [
-            np.exp(-(1 / 20) * (np.linalg.norm(sample - mean_sample) ** 2))
-            for sample in train[columns].values
-        ]
-    elif bias_variable == "class":
-        values = train[bias_variable]
-        sample_weights = np.where(values == 1, 0.1, 0.9)
-    elif bias_variable == "none":
-        sample_weights = np.ones(len(train))
-    else:
-        values = train[bias_variable]
-        sample_weights = np.where(values <= 5, 0.2, 0.8)
-
-    mask = np.array(
-        [
-            np.random.choice(2, p=[1 - sample_weight, sample_weight])
-            for sample_weight in sample_weights
-        ]
-    )
-
-    N = train[mask == 1].reset_index()
-    R["label"] = 0
-    N["label"] = 1
-
-    return N, R
+    return df, columns, "class"
