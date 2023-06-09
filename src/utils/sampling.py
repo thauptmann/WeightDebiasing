@@ -3,7 +3,7 @@ import pandas as pd
 
 
 def sample(bias_type, df, columns, bias_variable, bias_fraction=0.9):
-    train = df.sample(frac=0.25, replace=False).copy()
+    train = df.sample(frac=0.5, replace=False).copy()
     positive_samples = train[train[bias_variable] == 1]
     negative_samples = train[train[bias_variable] == 0]
     positive_fraction = 1
@@ -14,12 +14,12 @@ def sample(bias_type, df, columns, bias_variable, bias_fraction=0.9):
         positive_fraction = positive_fraction - bias_fraction
         N = sample_N(
             positive_samples, negative_samples, positive_fraction, negative_fraction
-        ).reset_index(drop=True)
+        )
     elif bias_type == "less_negative_class":
         negative_fraction = negative_fraction - bias_fraction
         N = sample_N(
             positive_samples, negative_samples, positive_fraction, negative_fraction
-        ).reset_index(drop=True)
+        )
     elif bias_type == "mean_difference":
         mean_sample = train[columns].mean().values
         differences = np.linalg.norm(train[columns].values - mean_sample, axis=1) ** 4

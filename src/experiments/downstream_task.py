@@ -35,25 +35,15 @@ def downstream_experiment(
     mean_list = []
     mse_list = []
 
-    tree_auroc_list = []
-    tree_accuracy_rate_list = []
-    tree_precision_list = []
-    tree_recall_list = []
-    tree_f_score_list = []
-    tree_tn_list = []
-    tree_fn_list = []
-    tree_tp_list = []
-    tree_fp_list = []
-
-    svc_auroc_list = []
-    svc_accuracy_rate_list = []
-    svc_precision_list = []
-    svc_recall_list = []
-    svc_f_score_list = []
-    svc_tn_list = []
-    svc_fn_list = []
-    svc_tp_list = []
-    svc_fp_list = []
+    auroc_list = []
+    accuracy_rate_list = []
+    precision_list = []
+    recall_list = []
+    auprc_list = []
+    tn_list = []
+    fn_list = []
+    tp_list = []
+    fp_list = []
 
     file_directory = Path(__file__).parent
     result_path = Path(file_directory, "../../results")
@@ -84,28 +74,16 @@ def downstream_experiment(
         )
 
         (
-            tree_auroc,
-            tree_accuracy,
-            tree_precision,
-            tree_recall,
-            tree_f_score,
-            tree_tn,
-            tree_fp,
+            auroc,
+            accuracy,
+            precision,
+            recall,
+            auprc,
+            tn,
+            fp,
             tree_fn,
             tree_tp,
         ) = compute_classification_metrics(N, R, columns, weights, target)
-
-        (
-            svc_auroc,
-            svc_accuracy,
-            svc_precision,
-            svc_recall,
-            svc_f_score,
-            svc_tn,
-            svc_fp,
-            svc_fn,
-            svc_tp,
-        ) = compute_classification_metrics(N, R, columns, weights, target, gamma)
 
         if data_set_name == "folktables_income":
             mse = compute_regression_metrics(N, R, columns, weights, "Income")
@@ -135,25 +113,15 @@ def downstream_experiment(
         remaining_samples_list.append(remaining_samples)
         mse_list.append(mse)
 
-        tree_auroc_list.append(tree_auroc)
-        tree_accuracy_rate_list.append(tree_accuracy)
-        tree_precision_list.append(tree_precision)
-        tree_recall_list.append(tree_recall)
-        tree_f_score_list.append(tree_f_score)
-        tree_tn_list.append(tree_tn)
-        tree_fn_list.append(tree_fn)
-        tree_tp_list.append(tree_tp)
-        tree_fp_list.append(tree_fp)
-
-        svc_auroc_list.append(svc_auroc)
-        svc_accuracy_rate_list.append(svc_accuracy)
-        svc_precision_list.append(svc_precision)
-        svc_recall_list.append(svc_recall)
-        svc_f_score_list.append(svc_f_score)
-        svc_tn_list.append(svc_tn)
-        svc_fn_list.append(svc_fn)
-        svc_tp_list.append(svc_tp)
-        svc_fp_list.append(svc_fp)
+        auroc_list.append(auroc)
+        accuracy_rate_list.append(accuracy)
+        precision_list.append(precision)
+        recall_list.append(recall)
+        auprc_list.append(auprc)
+        tn_list.append(tn)
+        fn_list.append(tree_fn)
+        tp_list.append(tree_tp)
+        fp_list.append(fp)
 
     result_dict = write_result_dict(
         N.drop(["label"], axis="columns").columns,
@@ -162,24 +130,15 @@ def downstream_experiment(
         wasserstein_parameter_list,
         remaining_samples_list,
         mse_list,
-        tree_auroc_list,
-        tree_accuracy_rate_list,
-        tree_precision_list,
-        tree_f_score_list,
-        tree_recall_list,
-        tree_tn_list,
-        tree_fn_list,
-        tree_tp_list,
-        tree_fp_list,
-        svc_auroc_list,
-        svc_accuracy_rate_list,
-        svc_precision_list,
-        svc_recall_list,
-        svc_f_score_list,
-        svc_tn_list,
-        svc_fn_list,
-        svc_tp_list,
-        svc_fp_list,
+        auroc_list,
+        accuracy_rate_list,
+        precision_list,
+        auprc_list,
+        recall_list,
+        tn_list,
+        fn_list,
+        tp_list,
+        fp_list,
         len(N),
     )
 

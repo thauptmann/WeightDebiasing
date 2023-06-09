@@ -10,7 +10,7 @@ from sklearn.metrics import (
     mean_squared_error,
     roc_curve,
     confusion_matrix,
-    f1_score,
+    average_precision_score,
 )
 
 from sklearn.svm import SVC
@@ -174,10 +174,10 @@ def compute_classification_metrics(N, R, columns, weights, label, gamma=None):
     accuracy = accuracy_score(y_true, y_predictions.round())
     precision = precision_score(y_true, y_predictions.round(), zero_division=0)
     recall = recall_score(y_true, y_predictions.round())
-    f_score = f1_score(y_true, y_predictions.round())
+    auprc = average_precision_score(y_true, y_predictions.round())
     tn, fp, fn, tp = confusion_matrix(y_true, y_predictions.round()).ravel()
 
-    return auroc_score, accuracy, precision, recall, f_score, tn, fp, fn, tp
+    return auroc_score, accuracy, precision, recall, auprc, tn, fp, fn, tp
 
 
 def train_classifier(X, y, weights, gamma):

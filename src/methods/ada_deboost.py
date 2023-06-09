@@ -8,7 +8,7 @@ from scipy.special import xlogy
 from utils.metrics import calculate_rbf_gamma, weighted_maximum_mean_discrepancy
 
 
-max_depths = [3, 5, 7]
+max_depths = [3, 5, 7, 10]
 n_estimators = [5, 10, 25]
 y_codes = np.array([-1.0, 1.0])
 number_of_iterations = 250
