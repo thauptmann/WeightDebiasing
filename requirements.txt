@@ -1,5 +1,5 @@
 tqdm~=4.64.1
-pandas~=1.5.0
+pandas~=2.0.2
 scikit-learn~=1.1.2
 numpy~=1.23.3
 matplotlib~=3.5.1
@@ -7,7 +7,5 @@ scipy~=1.9.1
 torch~=1.12.1
 seaborn~=0.12.0
 shap~=0.41.0
-statsmodels
-pyreadstat
-adapt
-catboost
+statsmodels~=0.14.0
+adapt~=0.1.0
