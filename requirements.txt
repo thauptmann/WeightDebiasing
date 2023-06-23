@@ -8,4 +8,4 @@ torch~=1.12.1
 seaborn~=0.12.0
 shap~=0.41.0
 statsmodels~=0.14.0
-adapt~=0.1.0
+adapt~=0.4.3
