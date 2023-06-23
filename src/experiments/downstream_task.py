@@ -55,8 +55,8 @@ def downstream_experiment(
     sample_df = df.copy()
 
     for i in trange(number_of_repetitions):
-        if len(df) > 5000:
-            sample_df = df.sample(5000).copy()
+        if len(df) > 10000:
+            sample_df = df.sample(10000).copy()
         N, R = sample(bias_type, sample_df, columns, target)
         gamma = calculate_rbf_gamma(np.append(N[columns], R[columns], axis=0))
 

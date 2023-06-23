@@ -23,10 +23,7 @@ def compare_mrs_variants(number_of_repetitions, data_set_name, bias_type, drop):
     relative_bias_list_list = []
     data, columns, _ = load_dataset(data_set_name)
     data = data.sample(frac=1)
-    file_directory = Path(__file__).parent
-    result_path = Path(file_directory, "../results")
-    result_path = result_path / "mrs_analysis" / data_set_name / bias_type
-    result_path.mkdir(exist_ok=True, parents=True)
+    result_path = create_save_path(data_set_name, bias_type)
     mmd_list = []
     bias_variable = ""
     use_bias_mean = False
@@ -104,6 +101,13 @@ def compare_mrs_variants(number_of_repetitions, data_set_name, bias_type, drop):
         number_of_samples,
         drop,
     )
+
+def create_save_path(data_set_name, bias_type):
+    file_directory = Path(__file__).parent
+    result_path = Path(file_directory, "../results")
+    result_path = result_path / "mrs_analysis" / data_set_name / bias_type
+    result_path.mkdir(exist_ok=True, parents=True)
+    return result_path
 
 
 if __name__ == "__main__":

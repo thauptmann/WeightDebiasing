@@ -4,7 +4,6 @@ import pandas as pd
 
 from tqdm import trange
 
-from sklearn.metrics import roc_auc_score
 from sklearn.metrics.pairwise import rbf_kernel
 from sklearn.model_selection import KFold
 from utils.metrics import (
@@ -16,60 +15,36 @@ from utils.metrics import (
 )
 
 
-def temperature_sample(softmax: list, temperature: float, drop: int):
-    EPSILON = 10e-16  # to avoid taking the log of zero
-    softmax = (np.array(softmax)).astype("float64")
-    softmax[softmax == 0] = EPSILON
-    predictions = np.log(softmax) / temperature
-    exp_preds = np.exp(predictions)
-    predictions = exp_preds / np.sum(exp_preds)
-
-    return np.random.choice(len(predictions), drop, replace=False, p=predictions)
-
-
-def pu_prediction(N, R, columns, class_weights):
-    data = pd.concat([N, R])
-    clf = train_pu_classifier(data[columns], data.label, class_weights)
-    predictions = clf.predict_proba(N[columns])[:, 1]
-    predictions_r = clf.predict_proba(R[columns])[:, 1]
-    return predictions, predictions_r
-
-
 def mrs(
-    N, R, columns, n_drop: int = 5, cv=5, class_weights="balanced", *args, **attributes
+    N,
+    R,
+    columns,
+    n_drop: int = 1,
+    cv=5,
+    class_weights="balanced",
+    sampling="temperature",
+    *args,
+    **attributes
 ):
     all_predictions = np.zeros(len(N))
-    all_predictions_r = np.zeros(len(R))
-
     kf = KFold(n_splits=cv, shuffle=True)
-    for split_n, split_r in zip(kf.split(N), kf.split(R)):
-        train_index, test_index = split_n
-        train_index_r, test_index_r = split_r
+    for train_index, test_index in kf.split(N):
         N_train, N_test = N.iloc[train_index], N.iloc[test_index]
-        R_train, R_test = R.iloc[train_index_r], R.iloc[test_index_r]
-
-        data = pd.concat([N_train, R_train])
+        data = pd.concat([N_train, R])
         clf = train_pu_classifier(data[columns], data.label, class_weight=class_weights)
         predictions = clf.predict_proba(N_test[columns])[:, 1]
-        predictions_r = clf.predict_proba(R_test[columns])[:, 1]
-
         all_predictions[test_index] = predictions
-        all_predictions_r[test_index_r] = predictions_r
 
-    all_preds = np.concatenate([predictions, predictions_r])
-    all_true = np.concatenate([np.ones(len(predictions)), np.zeros(len(predictions_r))])
-    auc = roc_auc_score(all_true, all_preds)
-
-    temperature = calculate_temperature(auc)
-    drop_ids = temperature_sample(all_predictions, temperature, n_drop)
-    return N.drop(N.index[drop_ids]), N.index[drop_ids]
+    drop_ids = np.argpartition(all_predictions, -n_drop)[-n_drop:]
+    drop_index = N.index[drop_ids]
+    return N.drop(N.index[drop_ids]), drop_index
 
 
 def mrs_without_cv(
     N,
     R,
     columns,
-    n_drop: int = 5,
+    n_drop: int = 1,
     sampling="temperature",
     class_weights="balanced",
     *args,
@@ -88,25 +63,20 @@ def mrs_without_cv(
     Output:
         * N/Drop: N without the dropped elements
     """
+    data = pd.concat([N, R])
+    clf = train_pu_classifier(data[columns], data.label, class_weight=class_weights)
+    predictions = clf.predict_proba(N[columns])[:, 1]
+    drop_ids = np.argpartition(predictions, -n_drop)[-n_drop:]
 
-    predictions, preds_r = pu_prediction(N, R, columns, class_weights)
-    all_preds = np.concatenate([predictions, preds_r])
-    all_true = np.concatenate([np.ones(len(predictions)), np.zeros(len(preds_r))])
-    auroc = roc_auc_score(all_true, all_preds)
-    if sampling == "temperature" or sampling == "sampling":
-        temperature = calculate_temperature(auroc) if sampling == "temperature" else 1
-        drop_ids = temperature_sample(predictions, temperature, n_drop)
-    elif sampling == "max":
-        drop_ids = np.argpartition(predictions, -n_drop)[-n_drop:]
-
-    return N.drop(N.index[drop_ids]), N.index[drop_ids]
+    drop_index = N.index[drop_ids]
+    return N.drop(N.index[drop_ids]), drop_index
 
 
 def repeated_MRS(
     N,
     R,
     columns,
-    delta=0.005,
+    delta=0.001,
     early_stopping=False,
     mrs_function=mrs,
     return_metrics=False,
@@ -207,15 +177,17 @@ def repeated_MRS(
             relative_bias_list.append(relative_bias)
 
         auc_difference = abs(auc - 0.5)
-        if (len(dropping_N) - drop) < cv or (
-            (best_difference < delta) and early_stopping
-        ):
-            break
-
-        if (auc_difference + delta) < best_difference:
+        if (auc_difference + delta) <= best_difference:
             best_weights = weights.copy()
             mrs_iteration = (i + 1) * drop
             best_difference = auc_difference
+
+        if (
+            len(dropping_N) <= cv
+            or ((best_difference <= delta) and early_stopping)
+            or len(dropping_N) <= drop
+        ):
+            break
 
     best_weights = best_weights.astype(np.float64)
 

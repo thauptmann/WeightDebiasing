@@ -47,7 +47,7 @@ def load_gbs_allensbach():
         "woechentlicheArbeitszeit",
         "Resilienz",
     ]
-    return allensbach, allensbach_columns
+    return allensbach, allensbach_columns, ""
 
 
 def load_gbs_gesis():
@@ -82,7 +82,7 @@ def load_gbs_gesis():
     R["label"] = 0
 
     gesis_gbs = pd.concat([N, R], ignore_index=True)
-    return gesis_gbs, gesis_columns
+    return gesis_gbs, gesis_columns, ""
 
 
 def load_folktables_income_data():

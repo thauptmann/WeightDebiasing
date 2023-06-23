@@ -51,7 +51,7 @@ mrs_ablation_experiments = [
     "random",
     "cross-validation",
     "temperature",
-    "max",
+    "sampling",
     "class_weights",
 ]
 down_stream_data_sets = [

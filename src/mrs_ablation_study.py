@@ -19,16 +19,10 @@ def compare_mrs_variants(number_of_repetitions, ablation_experiment, drop):
     mmds_comparison = []
     mmd_list = []
 
-    data, columns = load_dataset("gbs_gesis", "")
     file_directory = Path(__file__).parent
-    result_path = Path(file_directory, "../results")
-    result_path = result_path / "ablation_study" / ablation_experiment
-    result_path.mkdir(exist_ok=True, parents=True)
-    data = data.sample(frac=1)
-    scale_columns = columns
-    scaled_df, _ = scale_df(data, scale_columns)
-    scaled_N = scaled_df[scaled_df["label"] == 1]
-    scaled_R = scaled_df[scaled_df["label"] == 0]
+    result_path = create_result_path(ablation_experiment, file_directory)
+    data, columns = load_dataset("gbs_gesis")
+    scaled_N, scaled_R = preprocess_data(data, columns)
     number_of_samples = len(scaled_N)
 
     class_weights, mrs_function, sampling, experiment_label = choose_hyperparameter(
@@ -101,6 +95,21 @@ def compare_mrs_variants(number_of_repetitions, ablation_experiment, drop):
     )
 
 
+def preprocess_data(data, columns):
+    data = data.sample(frac=1)
+    scaled_df, _ = scale_df(data, columns)
+    scaled_N = scaled_df[scaled_df["label"] == 1]
+    scaled_R = scaled_df[scaled_df["label"] == 0]
+    return scaled_N, scaled_R
+
+
+def create_result_path(ablation_experiment, file_directory):
+    result_path = Path(file_directory, "../results")
+    result_path = result_path / "ablation_study" / ablation_experiment
+    result_path.mkdir(exist_ok=True, parents=True)
+    return result_path
+
+
 def plot_result_graphs(
     drop,
     result_path,
@@ -142,25 +151,12 @@ def choose_hyperparameter(ablation_experiment):
     class_weights = "balanced"
     if ablation_experiment == "random":
         mrs_function = maximum_representative_subsampling.random_drops
-        sampling = ""
-        experiment_label = "Random Drop"
-    elif ablation_experiment == "temperature":
-        sampling = "sampling"
-        mrs_function = maximum_representative_subsampling.mrs
-        experiment_label = "MRS without Temperature Sampling"
-    elif ablation_experiment == "max":
         sampling = "max"
-        experiment_label = "MRS without Sampling"
-        mrs_function = maximum_representative_subsampling.mrs
+        experiment_label = "Random Drop"
     elif ablation_experiment == "cross-validation":
-        sampling = "temperature"
-        experiment_label = "MRS without Cross-Validation"
+        sampling = "max"
+        experiment_label = "MRS without cross-validation"
         mrs_function = maximum_representative_subsampling.mrs_without_cv
-    elif ablation_experiment == "class_weights":
-        sampling = "temperature"
-        experiment_label = "MRS without Class Weights"
-        mrs_function = maximum_representative_subsampling.mrs
-        class_weights = None
     return class_weights, mrs_function, sampling, experiment_label
 
 

@@ -9,7 +9,6 @@ from utils.visualization import (
     plot_weights,
 )
 
-
 bins = 50
 
 
@@ -57,20 +56,13 @@ def gbs_allensbach_experiment(
             weighted_mmd,
             weighted_ssmd,
             sample_biases,
-            wasserstein_distances 
+            wasserstein_distances,
         ) = compute_metrics(
-            scaled_N,
-            scaled_R,
-            weights,
-            scaler,
-            scale_columns,
-            columns,
-            gamma
+            scaled_N, scaled_R, weights, scaler, scale_columns, columns, gamma
         )
 
         plot_weights(weights, visualisation_path / "weights", i)
         remaining_samples = np.count_nonzero(weights != 0)
-
 
         weighted_mmds_list.append(weighted_mmd)
         parameter_ssmd_list.append(weighted_ssmd)
@@ -93,7 +85,6 @@ def gbs_allensbach_experiment(
             )
         if method == "mrs":
             pass
-
 
     result_dict = {
         "MMDs": weighted_mmd,
