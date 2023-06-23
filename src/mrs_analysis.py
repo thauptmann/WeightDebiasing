@@ -29,7 +29,7 @@ def compare_mrs_variants(number_of_repetitions, data_set_name, bias_type, drop):
     use_bias_mean = False
 
     if data_set_name == "folktables_income":
-        sample_data = data.sample(5000).copy()
+        sample_data = data.sample(10000).copy()
         scaled_df, _ = scale_df(sample_data, columns)
         bias_variable = "Binary Income"
         scaled_N, scaled_R = sample(bias_type, scaled_df, columns, "Binary Income")

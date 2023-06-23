@@ -9,3 +9,5 @@ seaborn~=0.12.0
 shap~=0.41.0
 statsmodels~=0.14.0
 adapt~=0.4.3
+pot~=0.9.0
+folktables~=0.0.12

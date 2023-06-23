@@ -2,7 +2,7 @@ import numpy as np
 import pandas as pd
 
 
-def sample(bias_type, df, columns, bias_variable, bias_fraction=0.9):
+def sample(bias_type, df, columns, bias_variable, bias_fraction=0.8):
     train = df.sample(frac=0.5, replace=False).copy()
     positive_samples = train[train[bias_variable] == 1]
     negative_samples = train[train[bias_variable] == 0]
