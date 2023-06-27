@@ -29,7 +29,6 @@ def gbs_allensbach_experiment(
     mean_list = []
     weighted_mmds_list = []
     biases_list = []
-    parameter_ssmd_list = []
     wasserstein_parameter_list = []
     remaining_samples_list = []
     scale_columns = columns
@@ -54,7 +53,6 @@ def gbs_allensbach_experiment(
 
         (
             weighted_mmd,
-            weighted_ssmd,
             sample_biases,
             wasserstein_distances,
         ) = compute_metrics(
@@ -65,7 +63,6 @@ def gbs_allensbach_experiment(
         remaining_samples = np.count_nonzero(weights != 0)
 
         weighted_mmds_list.append(weighted_mmd)
-        parameter_ssmd_list.append(weighted_ssmd)
         biases_list.append(sample_biases)
         wasserstein_parameter_list.append(wasserstein_distances)
         remaining_samples_list.append(remaining_samples)
@@ -94,7 +91,6 @@ def gbs_allensbach_experiment(
     for index, column in enumerate(columns):
         result_dict[f"{column}_relative_bias"] = {
             "bias": sample_biases[index],
-            "ssmd": weighted_ssmd[index],
             "wasserstein": wasserstein_distances[index],
         }
 

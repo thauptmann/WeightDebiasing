@@ -2,7 +2,6 @@ import json
 import numpy as np
 from pathlib import Path
 from utils.metrics import calculate_rbf_gamma, compute_metrics, scale_df
-from utils.statistics import logistic_regression
 from utils.visualization import (
     plot_gbs_results,
     plot_results_with_variance,
