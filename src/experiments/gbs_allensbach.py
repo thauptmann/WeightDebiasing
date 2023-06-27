@@ -49,6 +49,7 @@ def gbs_allensbach_experiment(
             mean_list=mean_list,
             mmd_list=mmd_list,
             drop=1,
+            early_stopping=True,
         )
 
         (
