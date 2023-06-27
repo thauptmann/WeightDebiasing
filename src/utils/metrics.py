@@ -48,12 +48,6 @@ def compute_relative_bias(N, R, weights):
     return (abs(weighted_means - population_means) / population_means) * 100
 
 
-def compute_relative_bias(N, R, weights):
-    weighted_means = compute_weighted_means(N, weights)
-    population_means = np.mean(R, axis=0)
-    return abs((weighted_means - population_means) / population_means) * 100
-
-
 def calculate_rbf_gamma(aggregate_set):
     all_distances = pdist(aggregate_set, "euclid")
     sigma = np.median(all_distances)
