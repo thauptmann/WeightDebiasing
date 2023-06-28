@@ -20,7 +20,8 @@ def gbs_allensbach_experiment(
     number_of_splits=5,
     **args,
 ):
-    result_path = Path("../results")
+    file_directory = Path(__file__).parent
+    result_path = Path(file_directory, "../../results")
     visualisation_path = result_path / method / "gbs_allensbach"
     visualisation_path.mkdir(exist_ok=True, parents=True)
     df = df.sample(frac=1)
@@ -69,19 +70,6 @@ def gbs_allensbach_experiment(
 
         remaining_samples = np.count_nonzero(weights != 0)
         plot_weights(weights, visualisation_path, i, "GBS")
-
-        if method == "neural_network_mmd_loss":
-            biases_path = visualisation_path / "MMDs"
-            biases_path.mkdir(exist_ok=True)
-            plot_results_with_variance(
-                [],
-                [mmd_list[-1]],
-                [],
-                biases_path,
-                "",
-            )
-        if method == "mrs":
-            pass
 
     result_dict = {
         "MMDs": weighted_mmd,
