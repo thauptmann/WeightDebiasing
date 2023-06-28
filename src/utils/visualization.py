@@ -8,34 +8,35 @@ from cycler import cycler
 sns.set_theme(style="ticks")
 
 
-def plot_cumulative_distribution(N, R, file_name, weights):
+def plot_cumulative_distribution_function(
+    N, R, file_name: str, weights, method: str = ""
+):
     plot_directory = file_name / "cumulative_distributions"
     plot_directory.mkdir(exist_ok=True)
     for column_name in N.columns:
-        sns.ecdfplot(N, x=column_name, label="Non-Representative")
-        sns.ecdfplot(R, x=column_name, label="Representative", linestyle="dashed")
+        sns.ecdfplot(N, x=column_name, label="GBS")
+        sns.ecdfplot(R, x=column_name, label="Allensbach", linestyle="dashed")
         sns.ecdfplot(
-            N, x=column_name, weights=weights, label="Weighted", linestyle="dotted"
+            N, x=column_name, weights=weights, label=method, linestyle="dotted"
         )
-        plt.legend(title="Data set")
         plt.savefig(plot_directory / f"{column_name}.pdf")
         plt.clf()
 
 
-def plot_feature_histograms(N, R, file_name, bins, weights):
+def plot_feature_histograms(N, R, file_name, bins, weights, method):
     plot_directory = file_name / "histograms"
     plot_directory.mkdir(exist_ok=True)
     fig, ax = plt.subplots(1, 3, sharey=True, sharex=True)
     for column_name in N.columns:
         sns.histplot(
             N, x=column_name, ax=ax[0], bins=bins, stat="probability"
-        ).set_title("Non-Representative")
+        ).set_title("GBS")
         sns.histplot(
             R, x=column_name, ax=ax[1], bins=bins, stat="probability"
-        ).set_title("Representative")
+        ).set_title("Allensbach")
         sns.histplot(
             N, x=column_name, weights=weights, ax=ax[2], bins=bins, stat="probability"
-        ).set_title("Weighted")
+        ).set_title(method)
         fig.savefig(plot_directory / f"{column_name}.pdf")
         [axis.clear() for axis in ax]
     plt.clf()
@@ -67,9 +68,10 @@ def plot_gbs_results(
     R: np.ndarray,
     visualisation_path: Path,
     weights: list[float],
+    method: str = "",
 ):
-    plot_cumulative_distribution(N, R, visualisation_path, weights)
-    plot_feature_histograms(N, R, visualisation_path, bins, weights)
+    plot_cumulative_distribution_function(N, R, visualisation_path, weights, method)
+    plot_feature_histograms(N, R, visualisation_path, bins, weights, method)
     plot_weights(weights / sum(weights), visualisation_path, 0, bins)
 
 

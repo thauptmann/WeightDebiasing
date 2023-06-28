@@ -3,6 +3,7 @@ import statsmodels.api as sm
 
 
 def logistic_regression(allensbach_gbs, weights):
+    weights = weights * len(weights)
     y = allensbach_gbs["Wahlteilnahme"]
     X = allensbach_gbs["Resilienz"]
     X = sm.add_constant(X)

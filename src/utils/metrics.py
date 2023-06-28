@@ -143,8 +143,8 @@ def compute_metrics(scaled_N, scaled_R, weights, scaler, scale_columns, columns,
         wasserstein_distance_value = wasserstein_distance(u_values, v_values, weights)
         wasserstein_distances.append(wasserstein_distance_value)
 
-    scaled_N[scale_columns] = scaler.inverse_transform(scaled_N[scale_columns])
-    scaled_R[scale_columns] = scaler.inverse_transform(scaled_R[scale_columns])
+    scaled_N.loc[:, scale_columns] = scaler.inverse_transform(scaled_N[scale_columns])
+    scaled_R.loc[:, scale_columns] = scaler.inverse_transform(scaled_R[scale_columns])
 
     sample_biases = compute_relative_bias(scaled_N, scaled_R, weights)
 

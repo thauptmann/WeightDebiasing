@@ -9,8 +9,7 @@ from utils.visualization import (
     plot_weights,
 )
 
-bins = 50
-
+bins = 25
 
 def gbs_allensbach_experiment(
     df,
@@ -112,4 +111,5 @@ def gbs_allensbach_experiment(
         scaled_R[columns],
         visualisation_path,
         weights,
+        method
     )
