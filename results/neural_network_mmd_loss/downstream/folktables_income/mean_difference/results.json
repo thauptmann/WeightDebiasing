@@ -1,0 +1,443 @@
+{
+    "MMDs": {
+        "mean": 0.02496312762662877,
+        "sd": 0.002714161426855599
+    },
+    "auroc": {
+        "mean": 0.7640147584539981,
+        "sd": 0.02661818888104137
+    },
+    "auprc": {
+        "mean": 0.5991460465343865,
+        "sd": 0.02225390920565915
+    },
+    "mse": {
+        "mean": 1.1813838157113765,
+        "sd": 0.03923695353239316
+    },
+    "remaining samples": {
+        "mean": 2198.35,
+        "sd": 7.951572171589717
+    },
+    "all_samples": 2250,
+    "AGEP_relative_bias": {
+        "bias mean": 0.6363175516096755,
+        "bias sd": 0.176127819613648,
+        "wasserstein mean": 0.2771543096414092,
+        "wasserstein sd": 0.07185233355228472
+    },
+    "WKHP_relative_bias": {
+        "bias mean": 0.5225713421374019,
+        "bias sd": 0.16522163173176857,
+        "wasserstein mean": 0.32801488326907574,
+        "wasserstein sd": 0.045605598600707245
+    },
+    "COW_Employee of a private for-profit company or business, or of an individual, for wages, salary, or commissions_relative_bias": {
+        "bias mean": 3.3636758395606896,
+        "bias sd": 0.494961974662566,
+        "wasserstein mean": 0.046362891167752475,
+        "wasserstein sd": 0.006790592255804867
+    },
+    "COW_Employee of a private not-for-profit, tax-exempt, or charitable organization_relative_bias": {
+        "bias mean": 5.59992333389153,
+        "bias sd": 1.4403616898720273,
+        "wasserstein mean": 0.015386750299554025,
+        "wasserstein sd": 0.004040807706710415
+    },
+    "COW_Federal government employee_relative_bias": {
+        "bias mean": 21.016346694071423,
+        "bias sd": 4.062862818801621,
+        "wasserstein mean": 0.0339612126761686,
+        "wasserstein sd": 0.0059349911330854235
+    },
+    "COW_Local government employee (city, county, etc.)_relative_bias": {
+        "bias mean": 4.090790836147834,
+        "bias sd": 1.958826811783168,
+        "wasserstein mean": 0.011934029537541784,
+        "wasserstein sd": 0.0058484663074621825
+    },
+    "COW_Self-employed in own incorporated business, professional practice or farm_relative_bias": {
+        "bias mean": 14.311351227371611,
+        "bias sd": 3.5176587916847706,
+        "wasserstein mean": 0.02861079012770959,
+        "wasserstein sd": 0.005929960091916196
+    },
+    "COW_Self-employed in own not incorporated business, professional practice, or farm_relative_bias": {
+        "bias mean": 2.54531081504077,
+        "bias sd": 1.6004535262819655,
+        "wasserstein mean": 0.0077027816190586695,
+        "wasserstein sd": 0.004843588635897644
+    },
+    "COW_State government employee_relative_bias": {
+        "bias mean": 11.300084081539683,
+        "bias sd": 3.207292162296407,
+        "wasserstein mean": 0.02276669119170575,
+        "wasserstein sd": 0.005786300611631924
+    },
+    "COW_Working without pay in family business or farm_relative_bias": {
+        "bias mean": 100.0,
+        "bias sd": 0.0,
+        "wasserstein mean": 0.05130063794657831,
+        "wasserstein sd": 0.015218809700018926
+    },
+    "SCHL_1 or more years of college credit, no degree_relative_bias": {
+        "bias mean": 2.8551327116255503,
+        "bias sd": 1.3028689160268763,
+        "wasserstein mean": 0.012633136048948538,
+        "wasserstein sd": 0.005722548306001514
+    },
+    "SCHL_12th grade - no diploma_relative_bias": {
+        "bias mean": 18.557334316000137,
+        "bias sd": 6.30860971179597,
+        "wasserstein mean": 0.026948682322252525,
+        "wasserstein sd": 0.007825789740879593
+    },
+    "SCHL_Associate's degree_relative_bias": {
+        "bias mean": 1.9638495346691116,
+        "bias sd": 0.9742990765177302,
+        "wasserstein mean": 0.0058953644081607345,
+        "wasserstein sd": 0.002957075784888454
+    },
+    "SCHL_Bachelor's degree_relative_bias": {
+        "bias mean": 2.18683805261932,
+        "bias sd": 1.0340241582390248,
+        "wasserstein mean": 0.012192972131754708,
+        "wasserstein sd": 0.005801126947509429
+    },
+    "SCHL_Doctorate degree_relative_bias": {
+        "bias mean": 27.88625647697911,
+        "bias sd": 8.2948713407018,
+        "wasserstein mean": 0.03631228589628692,
+        "wasserstein sd": 0.007137595382228809
+    },
+    "SCHL_GED or alternative credential_relative_bias": {
+        "bias mean": 22.366076317321312,
+        "bias sd": 6.663390016939126,
+        "wasserstein mean": 0.030763403851399817,
+        "wasserstein sd": 0.007252149760274464
+    },
+    "SCHL_Grade 1_relative_bias": {
+        "bias mean": 100.0,
+        "bias sd": 0.0,
+        "wasserstein mean": 0.025664612728570395,
+        "wasserstein sd": 0.019129272892430705
+    },
+    "SCHL_Grade 10_relative_bias": {
+        "bias mean": 74.66618116333262,
+        "bias sd": 34.774321767577355,
+        "wasserstein mean": 0.07030150648913985,
+        "wasserstein sd": 0.039430392063889416
+    },
+    "SCHL_Grade 11_relative_bias": {
+        "bias mean": 21.343898239236268,
+        "bias sd": 7.045249998564538,
+        "wasserstein mean": 0.027134179635450634,
+        "wasserstein sd": 0.00805220231288679
+    },
+    "SCHL_Grade 2_relative_bias": {
+        "bias mean": 95.00000000000001,
+        "bias sd": 21.79449471770337,
+        "wasserstein mean": 0.036910511948876935,
+        "wasserstein sd": 0.024371733473492672
+    },
+    "SCHL_Grade 3_relative_bias": {
+        "bias mean": 100.0,
+        "bias sd": 0.0,
+        "wasserstein mean": 0.05371168544637796,
+        "wasserstein sd": 0.018812924372957528
+    },
+    "SCHL_Grade 4_relative_bias": {
+        "bias mean": 100.0,
+        "bias sd": 0.0,
+        "wasserstein mean": 0.0456806973101973,
+        "wasserstein sd": 0.01876699804531887
+    },
+    "SCHL_Grade 5_relative_bias": {
+        "bias mean": 100.0,
+        "bias sd": 0.0,
+        "wasserstein mean": 0.050453352831314524,
+        "wasserstein sd": 0.01726948056630006
+    },
+    "SCHL_Grade 6_relative_bias": {
+        "bias mean": 24.57850534538799,
+        "bias sd": 5.142125504668376,
+        "wasserstein mean": 0.03176399127853406,
+        "wasserstein sd": 0.0068515559690291656
+    },
+    "SCHL_Grade 7_relative_bias": {
+        "bias mean": 100.0,
+        "bias sd": 0.0,
+        "wasserstein mean": 0.05287333824139566,
+        "wasserstein sd": 0.02145077744166189
+    },
+    "SCHL_Grade 8_relative_bias": {
+        "bias mean": 100.0,
+        "bias sd": 0.0,
+        "wasserstein mean": 0.08330538292729983,
+        "wasserstein sd": 0.018854478437744928
+    },
+    "SCHL_Grade 9_relative_bias": {
+        "bias mean": 39.20227635176819,
+        "bias sd": 10.054852044915302,
+        "wasserstein mean": 0.037897490951768475,
+        "wasserstein sd": 0.007380743886597165
+    },
+    "SCHL_Kindergarten_relative_bias": {
+        "bias mean": 100.0,
+        "bias sd": 0.0,
+        "wasserstein mean": 0.024398113350492412,
+        "wasserstein sd": 0.0237817583245214
+    },
+    "SCHL_Master's degree_relative_bias": {
+        "bias mean": 1.3797104376823761,
+        "bias sd": 1.004765664891851,
+        "wasserstein mean": 0.004650018907566651,
+        "wasserstein sd": 0.0033009010283660354
+    },
+    "SCHL_No schooling completed_relative_bias": {
+        "bias mean": 23.054370680205714,
+        "bias sd": 8.159609460007843,
+        "wasserstein mean": 0.03000721922953723,
+        "wasserstein sd": 0.007764143069276675
+    },
+    "SCHL_Nursery school, preschool_relative_bias": {
+        "bias mean": 24.999999999999996,
+        "bias sd": 43.301270189221924,
+        "wasserstein mean": 0.00806350929701619,
+        "wasserstein sd": 0.015063438066855103
+    },
+    "SCHL_Professional degree beyond a bachelor's degree_relative_bias": {
+        "bias mean": 19.084731852662742,
+        "bias sd": 4.122548262974659,
+        "wasserstein mean": 0.03238020645317808,
+        "wasserstein sd": 0.006101080108663049
+    },
+    "SCHL_Regular high school diploma_relative_bias": {
+        "bias mean": 3.3489385559289806,
+        "bias sd": 1.5855773265642503,
+        "wasserstein mean": 0.014776722046318802,
+        "wasserstein sd": 0.00677105168987856
+    },
+    "SCHL_Some college, but less than 1 year_relative_bias": {
+        "bias mean": 3.1601265483643095,
+        "bias sd": 1.48157292397614,
+        "wasserstein mean": 0.008733805736838884,
+        "wasserstein sd": 0.003928533834735176
+    },
+    "MAR_Divorced_relative_bias": {
+        "bias mean": 4.979724723567578,
+        "bias sd": 1.7083965552387956,
+        "wasserstein mean": 0.01569481771574153,
+        "wasserstein sd": 0.005128983519542217
+    },
+    "MAR_Married_relative_bias": {
+        "bias mean": 0.9469702912759093,
+        "bias sd": 0.5534283429935954,
+        "wasserstein mean": 0.009928617238387302,
+        "wasserstein sd": 0.005787821786658812
+    },
+    "MAR_Never married or under 15 years old_relative_bias": {
+        "bias mean": 2.51998875394209,
+        "bias sd": 0.7686605575308915,
+        "wasserstein mean": 0.01844286387231419,
+        "wasserstein sd": 0.005366370046746671
+    },
+    "MAR_Separated_relative_bias": {
+        "bias mean": 28.130708752522935,
+        "bias sd": 8.500056311988244,
+        "wasserstein mean": 0.03489708864045753,
+        "wasserstein sd": 0.007748662636120127
+    },
+    "MAR_Widowed_relative_bias": {
+        "bias mean": 24.645036649499737,
+        "bias sd": 5.814100609210388,
+        "wasserstein mean": 0.03122858892998249,
+        "wasserstein sd": 0.006161528202018804
+    },
+    "RELP_Adopted son or daughter_relative_bias": {
+        "bias mean": 100.0,
+        "bias sd": 0.0,
+        "wasserstein mean": 0.04922190977466711,
+        "wasserstein sd": 0.01991302648233381
+    },
+    "RELP_Biological son or daughter_relative_bias": {
+        "bias mean": 2.0182962248455287,
+        "bias sd": 1.5601457858515622,
+        "wasserstein mean": 0.0078109917102181,
+        "wasserstein sd": 0.005874008960942008
+    },
+    "RELP_Brother or sister_relative_bias": {
+        "bias mean": 27.576443333749147,
+        "bias sd": 5.930749202997732,
+        "wasserstein mean": 0.03681457106409017,
+        "wasserstein sd": 0.006432812249333891
+    },
+    "RELP_Father or mother_relative_bias": {
+        "bias mean": 32.12549938228294,
+        "bias sd": 19.21089641879591,
+        "wasserstein mean": 0.030670143896783436,
+        "wasserstein sd": 0.020609788537243132
+    },
+    "RELP_Foster child_relative_bias": {
+        "bias mean": 100.0,
+        "bias sd": 0.0,
+        "wasserstein mean": 0.0025539316144326304,
+        "wasserstein sd": 0.011132329816025518
+    },
+    "RELP_Grandchild_relative_bias": {
+        "bias mean": 100.0,
+        "bias sd": 0.0,
+        "wasserstein mean": 0.08370415780524039,
+        "wasserstein sd": 0.015177128138375766
+    },
+    "RELP_Housemate or roommate_relative_bias": {
+        "bias mean": 22.095014533788387,
+        "bias sd": 5.5816652443967705,
+        "wasserstein mean": 0.03646841897398815,
+        "wasserstein sd": 0.007323565209543314
+    },
+    "RELP_Husband/wife_relative_bias": {
+        "bias mean": 1.1085702043762224,
+        "bias sd": 0.9380117952370205,
+        "wasserstein mean": 0.005888553707429781,
+        "wasserstein sd": 0.004922693765915336
+    },
+    "RELP_Institutionalized group quarters population_relative_bias": {
+        "bias mean": 100.0,
+        "bias sd": 0.0,
+        "wasserstein mean": 0.0653400586255504,
+        "wasserstein sd": 0.0175804701573863
+    },
+    "RELP_Noninstitutionalized group quarters population_relative_bias": {
+        "bias mean": 27.938562701993618,
+        "bias sd": 4.95250062583821,
+        "wasserstein mean": 0.04140646003067186,
+        "wasserstein sd": 0.005634493285406571
+    },
+    "RELP_Other nonrelative_relative_bias": {
+        "bias mean": 31.12694920741229,
+        "bias sd": 7.693480327387404,
+        "wasserstein mean": 0.037325343092816245,
+        "wasserstein sd": 0.006919345937034761
+    },
+    "RELP_Other relative_relative_bias": {
+        "bias mean": 29.781492756364763,
+        "bias sd": 11.771912484879413,
+        "wasserstein mean": 0.034166556564935925,
+        "wasserstein sd": 0.008623363800479036
+    },
+    "RELP_Parent-in-law_relative_bias": {
+        "bias mean": 100.00000000000001,
+        "bias sd": 1.5239443903799964e-14,
+        "wasserstein mean": 0.03647510507542509,
+        "wasserstein sd": 0.012361679651137976
+    },
+    "RELP_Reference person_relative_bias": {
+        "bias mean": 0.9770073436746897,
+        "bias sd": 0.43633825373481483,
+        "wasserstein mean": 0.009104572600142434,
+        "wasserstein sd": 0.00405893166737905
+    },
+    "RELP_Roomer or boarder_relative_bias": {
+        "bias mean": 98.08772462271851,
+        "bias sd": 8.335415121791156,
+        "wasserstein mean": 0.09153821301193002,
+        "wasserstein sd": 0.022466211388058058
+    },
+    "RELP_Son-in-law or daughter-in-law_relative_bias": {
+        "bias mean": 47.863828984096706,
+        "bias sd": 32.063760793733785,
+        "wasserstein mean": 0.048101787587118174,
+        "wasserstein sd": 0.030604130383006262
+    },
+    "RELP_Stepson or stepdaughter_relative_bias": {
+        "bias mean": 100.0,
+        "bias sd": 0.0,
+        "wasserstein mean": 0.0809362125857588,
+        "wasserstein sd": 0.015881153589061475
+    },
+    "RELP_Unmarried partner_relative_bias": {
+        "bias mean": 17.270089251970454,
+        "bias sd": 3.815739291980087,
+        "wasserstein mean": 0.03239954483238015,
+        "wasserstein sd": 0.0066631771936520885
+    },
+    "SEX_Female_relative_bias": {
+        "bias mean": 0.5914731640419599,
+        "bias sd": 0.4186585732239981,
+        "wasserstein mean": 0.005636723306177597,
+        "wasserstein sd": 0.004019239522175429
+    },
+    "SEX_Male_relative_bias": {
+        "bias mean": 0.536923190549653,
+        "bias sd": 0.3854283166967058,
+        "wasserstein mean": 0.005636723306177387,
+        "wasserstein sd": 0.004019239522175248
+    },
+    "RAC1P_Alaska Native alone_relative_bias": {
+        "bias mean": 100.0,
+        "bias sd": 0.0,
+        "wasserstein mean": 0.01226872198421459,
+        "wasserstein sd": 0.021250049820596924
+    },
+    "RAC1P_American Indian alone_relative_bias": {
+        "bias mean": 100.0,
+        "bias sd": 0.0,
+        "wasserstein mean": 0.07599954403815809,
+        "wasserstein sd": 0.018226255375106512
+    },
+    "RAC1P_American Indian and Alaska Native tribes specified; or American Indian or Alaska Native, not specified and no other races_relative_bias": {
+        "bias mean": 100.0,
+        "bias sd": 0.0,
+        "wasserstein mean": 0.04008219776543765,
+        "wasserstein sd": 0.01553274950685017
+    },
+    "RAC1P_Asian alone_relative_bias": {
+        "bias mean": 2.046966566897109,
+        "bias sd": 1.041605305359608,
+        "wasserstein mean": 0.009226644751060498,
+        "wasserstein sd": 0.0044643752150970994
+    },
+    "RAC1P_Black or African American alone_relative_bias": {
+        "bias mean": 13.99569887513898,
+        "bias sd": 3.1926335516268227,
+        "wasserstein mean": 0.02974872165007737,
+        "wasserstein sd": 0.006365318317503373
+    },
+    "RAC1P_Native Hawaiian and Other Pacific Islander alone_relative_bias": {
+        "bias mean": 100.0,
+        "bias sd": 0.0,
+        "wasserstein mean": 0.0596861910270486,
+        "wasserstein sd": 0.019922914860354576
+    },
+    "RAC1P_Some Other Race alone_relative_bias": {
+        "bias mean": 1.9339075022794616,
+        "bias sd": 1.383420390743373,
+        "wasserstein mean": 0.007055386171409929,
+        "wasserstein sd": 0.005016728278777352
+    },
+    "RAC1P_Two or More Races_relative_bias": {
+        "bias mean": 16.1328269428061,
+        "bias sd": 4.467366947851421,
+        "wasserstein mean": 0.03232338982885478,
+        "wasserstein sd": 0.007666791251118654
+    },
+    "RAC1P_White alone_relative_bias": {
+        "bias mean": 0.5706574595284437,
+        "bias sd": 0.4847911295506527,
+        "wasserstein mean": 0.007243990704371729,
+        "wasserstein sd": 0.006158101898878952
+    },
+    "Income_relative_bias": {
+        "bias mean": 8.057567224195486,
+        "bias sd": 4.381068937400326,
+        "wasserstein mean": 7251.184462418171,
+        "wasserstein sd": 1823.6649622698303
+    },
+    "Binary Income_relative_bias": {
+        "bias mean": 8.005048089074148,
+        "bias sd": 4.887065867036254,
+        "wasserstein mean": 0.034954129199147296,
+        "wasserstein sd": 0.02143313275526059
+    }
+}

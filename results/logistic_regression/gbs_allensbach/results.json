@@ -1,0 +1,45 @@
+{
+    "MMDs": 0.1372812845723627,
+    "Remaining Samples": 579,
+    "Number of Samples": 579,
+    "Alter_relative_bias": {
+        "bias": NaN,
+        "wasserstein": NaN
+    },
+    "Berufsgruppe_relative_bias": {
+        "bias": NaN,
+        "wasserstein": NaN
+    },
+    "Erwerbstaetigkeit_relative_bias": {
+        "bias": 9.331338840498345,
+        "wasserstein": 0.31652110930542593
+    },
+    "Geschlecht_relative_bias": {
+        "bias": NaN,
+        "wasserstein": NaN
+    },
+    "Optimismus_relative_bias": {
+        "bias": 1.3540210481396833,
+        "wasserstein": 0.3257788267592775
+    },
+    "Pessimismus_relative_bias": {
+        "bias": 2.064817675517563,
+        "wasserstein": 0.1858779108951477
+    },
+    "Schulabschluss_relative_bias": {
+        "bias": 4.627580455081335,
+        "wasserstein": 0.3081504067094193
+    },
+    "woechentlicheArbeitszeit_relative_bias": {
+        "bias": 6.783752437802285,
+        "wasserstein": 0.24882687742264586
+    },
+    "Resilienz_relative_bias": {
+        "bias": 1.4052399386523413,
+        "wasserstein": 0.17334879884379856
+    },
+    "logistig regression p values": {
+        "GBS": 0.4525927558155314,
+        "Weighted": 0.5208138380382317
+    }
+}
