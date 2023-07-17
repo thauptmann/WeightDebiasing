@@ -29,10 +29,12 @@ def compare_mrs_variants(number_of_repetitions, data_set_name, bias_type, drop):
     use_bias_mean = False
 
     if data_set_name == "folktables_income":
-        sample_data = data.sample(10000).copy()
+        sample_data = data.sample(5000).copy()
         scaled_df, _ = scale_df(sample_data, columns)
         bias_variable = "Binary Income"
-        scaled_N, scaled_R = sample(bias_type, scaled_df, columns, "Binary Income")
+        scaled_N, scaled_R = sample(
+            bias_type, scaled_df, "Binary Income", train_fraction=0.5, bias_fraction=0.1
+        )
         use_bias_mean = True
     else:
         scaled_df, _ = scale_df(data, columns)
@@ -101,6 +103,7 @@ def compare_mrs_variants(number_of_repetitions, data_set_name, bias_type, drop):
         number_of_samples,
         drop,
     )
+
 
 def create_save_path(data_set_name, bias_type):
     file_directory = Path(__file__).parent

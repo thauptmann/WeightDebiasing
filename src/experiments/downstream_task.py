@@ -36,14 +36,7 @@ def downstream_experiment(
     mse_list = []
 
     auroc_list = []
-    accuracy_rate_list = []
-    precision_list = []
-    recall_list = []
     auprc_list = []
-    tn_list = []
-    fn_list = []
-    tp_list = []
-    fp_list = []
 
     file_directory = Path(__file__).parent
     result_path = Path(file_directory, "../../results")
@@ -55,9 +48,16 @@ def downstream_experiment(
     sample_df = df.copy()
 
     for i in trange(number_of_repetitions):
-        if len(df) > 10000:
-            sample_df = df.sample(10000).copy()
-        N, R = sample(bias_type, sample_df, columns, target)
+        if len(df) > 5000:
+            sample_df = df.sample(5000).copy()
+        N, R = sample(
+            bias_type,
+            sample_df,
+            target,
+            train_fraction=0.5,
+            bias_fraction=0.1,
+            columns=columns,
+        )
         gamma = calculate_rbf_gamma(np.append(N[columns], R[columns], axis=0))
 
         weights = propensity_method(
@@ -73,17 +73,7 @@ def downstream_experiment(
             early_stopping=True,
         )
 
-        (
-            auroc,
-            accuracy,
-            precision,
-            recall,
-            auprc,
-            tn,
-            fp,
-            tree_fn,
-            tree_tp,
-        ) = compute_classification_metrics(N, R, columns, weights, target)
+        auroc, auprc = compute_classification_metrics(N, R, columns, weights, target)
 
         if data_set_name == "folktables_income":
             mse = compute_regression_metrics(N, R, columns, weights, "Income")
@@ -114,14 +104,7 @@ def downstream_experiment(
         mse_list.append(mse)
 
         auroc_list.append(auroc)
-        accuracy_rate_list.append(accuracy)
-        precision_list.append(precision)
-        recall_list.append(recall)
         auprc_list.append(auprc)
-        tn_list.append(tn)
-        fn_list.append(tree_fn)
-        tp_list.append(tree_tp)
-        fp_list.append(fp)
 
     result_dict = write_result_dict(
         N.drop(["label"], axis="columns").columns,
@@ -131,14 +114,7 @@ def downstream_experiment(
         remaining_samples_list,
         mse_list,
         auroc_list,
-        accuracy_rate_list,
-        precision_list,
         auprc_list,
-        recall_list,
-        tn_list,
-        fn_list,
-        tp_list,
-        fp_list,
         len(N),
     )
 

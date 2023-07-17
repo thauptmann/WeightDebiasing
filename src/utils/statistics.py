@@ -31,14 +31,7 @@ def write_result_dict(
     remaining_samples_list,
     mse_list,
     auroc_list,
-    accuracy_list,
-    precision_list,
-    f_score_list,
-    recall_list,
-    tn_list,
-    fn_list,
-    tp_list,
-    fp_list,
+    auprc_list,
     number_of_samples,
 ):
     result_dict = {
@@ -50,37 +43,9 @@ def write_result_dict(
             "mean": np.nanmean(auroc_list),
             "sd": np.nanstd(auroc_list),
         },
-        "accuracy": {
-            "mean": np.nanmean(accuracy_list),
-            "sd": np.nanstd(accuracy_list),
-        },
-        "precision": {
-            "mean": np.nanmean(precision_list),
-            "sd": np.nanstd(precision_list),
-        },
         "auprc": {
-            "mean": np.nanmean(f_score_list),
-            "sd": np.nanstd(f_score_list),
-        },
-        "recall": {
-            "mean": np.nanmean(recall_list),
-            "sd": np.nanstd(recall_list),
-        },
-        "true negative": {
-            "mean": np.nanmean(tn_list),
-            "sd": np.nanstd(tn_list),
-        },
-        "false negative": {
-            "mean": np.nanmean(fn_list),
-            "sd": np.nanstd(fn_list),
-        },
-        "true positive": {
-            "mean": np.nanmean(tp_list),
-            "sd": np.nanstd(tp_list),
-        },
-        "false positive": {
-            "mean": np.nanmean(fp_list),
-            "sd": np.nanstd(fp_list),
+            "mean": np.nanmean(auprc_list),
+            "sd": np.nanstd(auprc_list),
         },
         "mse": {
             "mean": np.nanmean(mse_list),

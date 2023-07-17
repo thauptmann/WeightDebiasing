@@ -19,6 +19,7 @@ def plot_cumulative_distribution_function(
         sns.ecdfplot(
             N, x=column_name, weights=weights, label=method, linestyle="dotted"
         )
+        plt.legend()
         plt.savefig(plot_directory / f"{column_name}.pdf")
         plt.clf()
 

@@ -1,4 +1,4 @@
-NUMBER_OF_REPETETIONS=50
+NUMBER_OF_REPETETIONS=20
 
 for DATASET in folktables_income folktables_employment breast_cancer hr_analytics loan_prediction
 do

@@ -3,17 +3,12 @@ from scipy.spatial.distance import pdist
 from scipy.stats import wasserstein_distance
 
 from sklearn.metrics import (
-    roc_auc_score,
-    accuracy_score,
-    precision_score,
-    recall_score,
     mean_squared_error,
+    roc_auc_score,
     roc_curve,
-    confusion_matrix,
     average_precision_score,
 )
 
-from sklearn.svm import SVC
 from sklearn.metrics.pairwise import rbf_kernel
 from sklearn.model_selection import GridSearchCV, StratifiedKFold
 from sklearn.preprocessing import StandardScaler
@@ -155,38 +150,27 @@ def compute_metrics(scaled_N, scaled_R, weights, scaler, scale_columns, columns,
     )
 
 
-def compute_classification_metrics(N, R, columns, weights, label, gamma=None):
+def compute_classification_metrics(N, R, columns, weights, label):
     y_true = R[label]
-    if gamma is None:
-        clf = train_classifier(N[columns], N[label], weights, gamma)
-        y_predictions = clf.predict_proba(R[columns])[:, 1]
-        auroc_score = roc_auc_score(y_true, y_predictions)
-    else:
-        clf = train_classifier(N[columns], N[label], weights, gamma)
-        y_predictions = clf.predict(R[columns])
-        auroc_score = 0
-    accuracy = accuracy_score(y_true, y_predictions.round())
-    precision = precision_score(y_true, y_predictions.round(), zero_division=0)
-    recall = recall_score(y_true, y_predictions.round())
+    # clf = train_classifier(N[columns], N[label], weights)
+    clf = train_classifier_auroc(N[columns], N[label], weights)
+    y_predictions = clf.predict_proba(R[columns])[:, 1]
+    auroc_score = roc_auc_score(y_true, y_predictions)
     auprc = average_precision_score(y_true, y_predictions.round())
-    tn, fp, fn, tp = confusion_matrix(y_true, y_predictions.round()).ravel()
 
-    return auroc_score, accuracy, precision, recall, auprc, tn, fp, fn, tp
+    return auroc_score, auprc
 
 
-def train_classifier(X, y, weights, gamma):
-    if gamma is None:
-        clf = RandomForestClassifier(n_jobs=-1)
-    else:
-        clf = SVC()
+def train_classifier(X, y, weights):
+    clf = RandomForestClassifier(n_jobs=-1)
     new_weights = weights * len(X)
     clf = clf.fit(X, y, sample_weight=new_weights)
     return clf
 
 
 def compute_regression_metrics(N, R, columns, weights, label):
-    clf = train_regressor(N[columns], N[label], weights)
-    y_prediction = clf.predict(R[columns])
+    regressor = train_regressor(N[columns], N[label], weights)
+    y_prediction = regressor.predict(R[columns])
     mean_y = np.mean(R[label])
 
     mse = np.sqrt(mean_squared_error(R[label], y_prediction))
@@ -201,15 +185,17 @@ def train_regressor(X, y, weights):
     return clf
 
 
-def compute_test_metrics_mrs(data, columns, calculate_roc=False):
-    cv = 3
+def compute_test_metrics_mrs(data, columns, calculate_roc=False, weights=None, cv=3):
+    if weights is None:
+        weights = np.ones(len(data)) / len(data)
     auroc_scores = []
     ifpr_list = []
     itpr_list = []
     kf = StratifiedKFold(n_splits=cv, shuffle=True)
     for train_indices, test_indices in kf.split(data[columns], data["label"]):
         train, test = data.iloc[train_indices], data.iloc[test_indices]
-        clf = train_classifier_auroc(train[columns], train.label)
+        train_weights = weights[train_indices]
+        clf = train_classifier_auroc(train[columns], train.label, weights=train_weights)
         y_predict = clf.predict_proba(test[columns])[:, 1]
         auroc = roc_auc_score(test.label, y_predict)
         auroc_scores.append(auroc)
@@ -224,6 +210,15 @@ def compute_test_metrics_mrs(data, columns, calculate_roc=False):
         return np.mean(auroc_scores), mean_ifpr_list, mean_itpr_list, std_tpr
     else:
         return np.mean(auroc_scores)
+
+
+def compute_test_metrics_ada_deboost(data, columns, weights):
+    clf = train_classifier_auroc(data[columns], data.label, weights=weights)
+    test_N = data[data["label"] == 1]
+    y_predict_N = clf.predict_proba(test_N[columns])[:, 1]
+    y_predict = clf.predict_proba(data[columns])[:, 1]
+    auroc = roc_auc_score(data.label, y_predict)
+    return y_predict_N, auroc
 
 
 def train_pu_classifier(X_train, y_train, class_weight="balanced"):
@@ -242,10 +237,9 @@ def interpolate_roc(y_test, y_predict):
     return interpolated_fpr, interpolated_tpr
 
 
-def train_classifier_auroc(X_train, y_train, weights=None, speedup=True):
+def train_classifier_auroc(X_train, y_train, weights=None, speedup=True, cv=3):
     if weights is None:
         weights = np.ones(len(X_train)) / len(X_train)
-    cv = 3
     clf = DecisionTreeClassifier()
     path = clf.cost_complexity_pruning_path(X_train, y_train, sample_weight=weights)
     ccp_alphas = path.ccp_alphas
