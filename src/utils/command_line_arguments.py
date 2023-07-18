@@ -7,12 +7,9 @@ from experiments import (
 
 from methods import (
     ada_deboost_weighting,
-    gradient_boosting_weighting,
     kernel_mean_matching,
     logistic_regression_weighting,
     neural_network_mmd_loss_weighting,
-    neural_network_weighting,
-    random_forest_weighting,
     repeated_MRS,
     uniform_weighting,
 )
@@ -94,6 +91,17 @@ def parse_mrs_analysis_command_line_arguments():
     parser.add_argument("--bias_type", choices=bias_choice, default="none")
     parser.add_argument("--drop", default=1, type=int)
 
+    return parser.parse_args()
+
+def parse_command_line_arguments_statistical_analysis():
+    """Parses the command line arguments for the statistical analysis experiment.
+
+    Returns:
+        _type_: Parsed command line arguments.
+    """
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--method_one", choices=method_list, required=True)
+    parser.add_argument("--method_two", choices=method_list, required=True)
     return parser.parse_args()
 
 

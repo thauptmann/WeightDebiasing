@@ -3,7 +3,7 @@ import numpy as np
 from pathlib import Path
 from utils.metrics import calculate_rbf_gamma, compute_metrics, scale_df
 from utils.visualization import (
-    plot_gbs_results,
+    plot_statistical_analysis,
     plot_results_with_variance,
     plot_weights,
 )
@@ -16,7 +16,6 @@ def gbs_gesis_experiment(
     df,
     columns,
     propensity_method,
-    number_of_splits=10,
     method="",
     **args,
 ):
@@ -38,7 +37,6 @@ def gbs_gesis_experiment(
         scaled_N,
         scaled_R,
         columns,
-        number_of_splits=number_of_splits,
         save_path=visualisation_path,
         mean_list=mean_list,
         mmd_list=mmd_list,
@@ -89,7 +87,7 @@ def gbs_gesis_experiment(
     with open(visualisation_path / "results.json", "w") as result_file:
         result_file.write(json.dumps(result_dict))
 
-    plot_gbs_results(
+    plot_statistical_analysis(
         bins,
         scaled_N[columns],
         scaled_R[columns],

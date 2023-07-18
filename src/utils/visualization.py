@@ -9,35 +9,56 @@ sns.set_theme(style="ticks")
 
 
 def plot_cumulative_distribution_function(
-    N, R, file_name: str, weights, method: str = ""
+    N, R, file_name: str, weights_one, weights_two, method_one, method_two, wide=True
 ):
+    if wide:
+        plt.figure(figsize=(10, 5))
     plot_directory = file_name / "cumulative_distributions"
     plot_directory.mkdir(exist_ok=True)
     for column_name in N.columns:
         sns.ecdfplot(N, x=column_name, label="GBS")
         sns.ecdfplot(R, x=column_name, label="Allensbach", linestyle="dashed")
         sns.ecdfplot(
-            N, x=column_name, weights=weights, label=method, linestyle="dotted"
+            N, x=column_name, weights=weights_one, label=method_one, linestyle="dotted"
+        )
+        sns.ecdfplot(
+            N, x=column_name, weights=weights_two, label=method_two, linestyle="dashdot"
         )
         plt.legend()
         plt.savefig(plot_directory / f"{column_name}.pdf")
         plt.clf()
 
 
-def plot_feature_histograms(N, R, file_name, bins, weights, method):
+def plot_feature_histograms(
+    N, R, file_name, bins, weights_one, weights_two, method_one, method_two
+):
     plot_directory = file_name / "histograms"
     plot_directory.mkdir(exist_ok=True)
-    fig, ax = plt.subplots(1, 3, sharey=True, sharex=True)
+    fig, ax = plt.subplots(1, 4, sharey=True, sharex=True, figsize=(10, 5))
     for column_name in N.columns:
         sns.histplot(
-            N, x=column_name, ax=ax[0], bins=bins, stat="probability"
+            N, x=column_name, ax=ax[0], bins=bins, stat="probability", kde=True
         ).set_title("GBS")
         sns.histplot(
-            R, x=column_name, ax=ax[1], bins=bins, stat="probability"
+            R, x=column_name, ax=ax[1], bins=bins, stat="probability", kde=True
         ).set_title("Allensbach")
         sns.histplot(
-            N, x=column_name, weights=weights, ax=ax[2], bins=bins, stat="probability"
-        ).set_title(method)
+            N,
+            x=column_name,
+            weights=weights_one,
+            ax=ax[2],
+            bins=bins,
+            stat="probability",
+            kde=True,
+        ).set_title(method_one)
+        sns.histplot(
+            N,
+            x=column_name,
+            weights=weights_two,
+            ax=ax[3],
+            bins=bins,
+            stat="probability", kde=True
+        ).set_title(method_two)
         fig.savefig(plot_directory / f"{column_name}.pdf")
         [axis.clear() for axis in ax]
     plt.clf()
@@ -63,17 +84,22 @@ def plot_ratio(values, representative_ratio, title, path):
     plt.clf()
 
 
-def plot_gbs_results(
+def plot_statistical_analysis(
     bins: int,
     N: np.ndarray,
     R: np.ndarray,
     visualisation_path: Path,
-    weights: list[float],
-    method: str = "",
+    weights_one: list[float],
+    weights_two: list[float],
+    method_one: str = "",
+    method_two: str = "",
 ):
-    plot_cumulative_distribution_function(N, R, visualisation_path, weights, method)
-    plot_feature_histograms(N, R, visualisation_path, bins, weights, method)
-    plot_weights(weights / sum(weights), visualisation_path, 0, bins)
+    plot_cumulative_distribution_function(
+        N, R, visualisation_path, weights_one, weights_two, method_one, method_two
+    )
+    plot_feature_histograms(
+        N, R, visualisation_path, bins, weights_one, weights_two, method_one, method_two
+    )
 
 
 def plot_results_with_variance(
@@ -113,7 +139,6 @@ def mrs_progress_visualization(
         mrs_iterations=mrs_iteration_list,
         wide=True,
     )
-    # plot_rocs(gesis_mean_rocs, file_directory+"gesis_mean_rocs", save=save)
     plot_mmds_average(
         np.squeeze(np.mean(mmd_list, axis=0)),
         np.squeeze(np.std(mmd_list, axis=0)),
@@ -145,7 +170,7 @@ def plot_auc_average(
     wide=True,
 ):
     if wide:
-        plt.figure(figsize=(6.4 * 2, 4.8))
+        plt.figure(figsize=(12.8, 4.8))
 
     aucs_upper = np.minimum(auc_score + std_aucs, 1)
     aucs_lower = np.maximum(auc_score - std_aucs, 0)

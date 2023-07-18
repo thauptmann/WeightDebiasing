@@ -4,12 +4,12 @@ from pathlib import Path
 from utils.metrics import calculate_rbf_gamma, compute_metrics, scale_df
 from utils.statistics import logistic_regression
 from utils.visualization import (
-    plot_gbs_results,
-    plot_results_with_variance,
+    plot_statistical_analysis,
     plot_weights,
 )
 
 bins = 25
+
 
 def gbs_allensbach_experiment(
     df,
@@ -17,7 +17,6 @@ def gbs_allensbach_experiment(
     propensity_method,
     method,
     number_of_repetitions,
-    number_of_splits=5,
     **args,
 ):
     file_directory = Path(__file__).parent
@@ -44,7 +43,6 @@ def gbs_allensbach_experiment(
             scaled_N,
             scaled_R,
             columns,
-            number_of_splits=number_of_splits,
             save_path=visualisation_path,
             mean_list=mean_list,
             mmd_list=mmd_list,
@@ -93,11 +91,6 @@ def gbs_allensbach_experiment(
     with open(visualisation_path / "results.json", "w") as result_file:
         result_file.write(json.dumps(result_dict))
 
-    plot_gbs_results(
-        bins,
-        scaled_N[columns],
-        scaled_R[columns],
-        visualisation_path,
-        weights,
-        method
+    plot_statistical_analysis(
+        bins, scaled_N[columns], scaled_R[columns], visualisation_path, weights, method
     )
