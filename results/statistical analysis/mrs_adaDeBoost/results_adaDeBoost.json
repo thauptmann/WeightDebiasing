@@ -1,0 +1,29 @@
+{
+    "Alter_relative_bias": {
+        "wasserstein": NaN
+    },
+    "Berufsgruppe_relative_bias": {
+        "wasserstein": NaN
+    },
+    "Erwerbstaetigkeit_relative_bias": {
+        "wasserstein": 0.2586631343380449
+    },
+    "Geschlecht_relative_bias": {
+        "wasserstein": NaN
+    },
+    "Optimismus_relative_bias": {
+        "wasserstein": 0.3771742409608356
+    },
+    "Pessimismus_relative_bias": {
+        "wasserstein": 0.1454920912877971
+    },
+    "Schulabschluss_relative_bias": {
+        "wasserstein": 0.2800164288283588
+    },
+    "woechentlicheArbeitszeit_relative_bias": {
+        "wasserstein": 0.2255606814959488
+    },
+    "Resilienz_relative_bias": {
+        "wasserstein": 0.1575243615150637
+    }
+}
