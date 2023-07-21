@@ -2,7 +2,7 @@ import pandas as pd
 from sklearn.linear_model import LogisticRegression
 
 
-def propensity_score_adjustmenr(N, R, columns, *args, **attributes):
+def propensity_score_adjustmen(N, R, columns, *args, **attributes):
     """Propensity score adjustment
 
     :param N: Non-representative data set

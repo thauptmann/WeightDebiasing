@@ -1,4 +1,4 @@
-from .propensity_score_adjustment import propensity_score_adjustmenr
+from .propensity_score_adjustment import propensity_score_adjustmen
 from .uniform_weighting import uniform_weighting
 from .neural_network_mmd_loss import neural_network_mmd_loss_weighting
 from .ada_deboost import ada_deboost_weighting

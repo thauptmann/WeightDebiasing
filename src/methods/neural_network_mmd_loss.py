@@ -11,12 +11,12 @@ device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 
 def neural_network_mmd_loss_weighting(N, R, columns, *args, **attributes):
-    """_summary_
+    """Trains a neural network with weighted MMD Loss
 
-    :param N: _description_
-    :param R: _description_
-    :param columns: _description_
-    :return: _description_
+    :param N: Non-representative data set
+    :param R: Representative data set
+    :param columns: Training columns
+    :return: Samples weights
     """
     N_copy = N.copy().reset_index()
     N_dropped = N_copy.drop_duplicates(subset=columns)
@@ -25,7 +25,7 @@ def neural_network_mmd_loss_weighting(N, R, columns, *args, **attributes):
     tensor_R = torch.DoubleTensor(R[columns].values)
 
     all_weights = np.zeros(len(N))
-    model, mmd_list = compute_model(tensor_N, tensor_R)
+    model, mmd_list = train_weighted_mmd_model(tensor_N, tensor_R)
 
     if attributes["mmd_list"] is not None:
         attributes["mmd_list"].append(mmd_list)
@@ -44,12 +44,12 @@ def neural_network_mmd_loss_weighting(N, R, columns, *args, **attributes):
     return all_weights / sum(all_weights)
 
 
-def compute_model(tensor_N, tensor_R):
-    """_summary_
+def train_weighted_mmd_model(tensor_N, tensor_R):
+    """Trains the model
 
-    :param tensor_N: _description_
-    :param tensor_R: _description_
-    :return: _description_
+    :param tensor_N: Non-representative data set
+    :param tensor_R: Representative data set
+    :return: Trained model
     """
     iterations = 5000
     scaler = torch.cuda.amp.GradScaler()
@@ -99,13 +99,13 @@ def compute_model(tensor_N, tensor_R):
 
 
 def validate_model(tensor_N, tensor_R, mmd_loss_function, mmd_model):
-    """_summary_
+    """Validates the neural network
 
-    :param tensor_N: _description_
-    :param tensor_R: _description_
-    :param mmd_loss_function: _description_
-    :param mmd_model: _description_
-    :return: _description_
+    :param tensor_N: Non-representative data set
+    :param tensor_R: Representative data set
+    :param mmd_loss_function: Validation function
+    :param mmd_model: Neural network
+    :return: Validation value
     """
     mmd_model.eval()
     with torch.no_grad():

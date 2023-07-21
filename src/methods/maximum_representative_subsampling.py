@@ -26,6 +26,17 @@ def mrs(
     *args,
     **attributes
 ):
+    """_summary_
+
+    :param N: _description_
+    :param R: _description_
+    :param columns: _description_
+    :param n_drop: _description_, defaults to 1
+    :param cv: _description_, defaults to 5
+    :param class_weights: _description_, defaults to "balanced"
+    :param sampling: _description_, defaults to "temperature"
+    :return: _description_
+    """
     all_predictions = np.zeros(len(N))
     kf = KFold(n_splits=cv, shuffle=True)
     for train_index, test_index in kf.split(N):

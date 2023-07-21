@@ -8,15 +8,15 @@ from experiments import (
 from methods import (
     ada_deboost_weighting,
     kernel_mean_matching,
-    propensity_score_adjustmenr,
+    propensity_score_adjustmen,
     neural_network_mmd_loss_weighting,
     repeated_MRS,
     uniform_weighting,
 )
 
+# Possible weighting methods
 method_list = [
     "logistic_regression",
-    "random_forest",
     "neural_network_mmd_loss",
     "uniform",
     "adaDeBoost",
@@ -24,17 +24,18 @@ method_list = [
     "kmm",
 ]
 
+# Possible debiasing types
 bias_choice = [
     "none",
     "less_negative_class",
     "less_positive_class",
     "mean_difference",
 ]
+
+# Possible data sets
 dataset_list = [
     "gbs_allensbach",
     "gbs_gesis",
-    "census",
-    "folktables",
     "folktables_income",
     "folktables_employment",
     "mrs_census",
@@ -51,6 +52,7 @@ mrs_ablation_experiments = [
     "sampling",
     "class_weights",
 ]
+
 down_stream_data_sets = [
     "breast_cancer",
     "folktables_employment",
@@ -63,8 +65,7 @@ down_stream_data_sets = [
 def parse_command_line_arguments():
     """Parses the command line arguments.
 
-    Returns:
-        _type_: Parsed command line arguments.
+    :return: Parsed command line arguments.
     """
     parser = argparse.ArgumentParser()
     parser.add_argument("--dataset", choices=dataset_list, required=True)
@@ -75,6 +76,10 @@ def parse_command_line_arguments():
 
 
 def parse_mrs_ablation_command_line_arguments():
+    """Parses the command line arguments for the ablation study.
+
+    :return: Parsed command line arguments for the ablation study.
+    """
     parser = argparse.ArgumentParser()
     parser.add_argument(
         "--ablation_experiment", choices=mrs_ablation_experiments, required=True
@@ -85,6 +90,10 @@ def parse_mrs_ablation_command_line_arguments():
 
 
 def parse_mrs_analysis_command_line_arguments():
+    """Parses the command line arguments for the MRS analysis.
+
+    :return: Parsed command line arguments for the MRS analysis.
+    """
     parser = argparse.ArgumentParser()
     parser.add_argument("--data_set_name", choices=dataset_list, required=True)
     parser.add_argument("--number_of_repetitions", default=10, type=int)
@@ -95,10 +104,9 @@ def parse_mrs_analysis_command_line_arguments():
 
 
 def parse_command_line_arguments_statistical_analysis():
-    """Parses the command line arguments for the statistical analysis experiment.
+    """Parses the command line arguments for the statistical experiment.
 
-    Returns:
-        _type_: Parsed command line arguments.
+    :return: Parsed command line arguments for the statistical experiment.
     """
     parser = argparse.ArgumentParser()
     parser.add_argument("--method_one", choices=method_list, required=True)
@@ -107,16 +115,15 @@ def parse_command_line_arguments_statistical_analysis():
 
 
 def get_weighting_function(method_name):
+    """Returns the function to the function name.
+
+    :param method_name: Method name
+    :return: corresponding weighting function
+    """
     if method_name == "uniform":
         return uniform_weighting
     elif method_name == "logistic_regression":
-        return propensity_score_adjustmenr
-    elif method_name == "random_forest":
-        return random_forest_weighting
-    elif method_name == "gradient_boosting":
-        return gradient_boosting_weighting
-    elif method_name == "neural_network_classifier":
-        return neural_network_weighting
+        return propensity_score_adjustmen
     elif method_name == "neural_network_mmd_loss":
         return neural_network_mmd_loss_weighting
     elif method_name == "adaDeBoost":
@@ -128,6 +135,11 @@ def get_weighting_function(method_name):
 
 
 def get_experiment_function(dataset_name):
+    """Returns the experiment function to a name.
+
+    :param dataset_name: Data set name
+    :return: Experiment function
+    """
     if dataset_name == "gbs_gesis":
         return gbs_gesis_experiment
     elif dataset_name in down_stream_data_sets:

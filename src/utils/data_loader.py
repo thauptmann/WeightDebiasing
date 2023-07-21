@@ -1,5 +1,8 @@
-import pandas as pd
 import pathlib
+
+import pandas as pd
+import numpy as np
+
 from folktables import (
     ACSDataSource,
     generate_categories,
@@ -7,15 +10,19 @@ from folktables import (
     adult_filter,
     ACSEmployment,
 )
-import numpy as np
 
 file_path = pathlib.Path(__file__).parent
 
 
 def load_dataset(dataset_name):
+    """Load the data set to a given name.
+
+    :param dataset_name: Data set name
+    :return: Data set as pandas.DataFrame
+    """
     if dataset_name == "gbs_allensbach":
         return load_gbs_allensbach()
-    elif dataset_name in ("folktables", "folktables_income"):
+    elif dataset_name == "folktables_income":
         return load_folktables_income_data()
     elif dataset_name == "folktables_employment":
         return load_folktables_employment_data()
@@ -33,6 +40,10 @@ def load_dataset(dataset_name):
 
 
 def load_gbs_allensbach():
+    """Load GBS and allensbach
+
+    :return: GBS and Allensbach data
+    """
     allensbach_path = f"{file_path}/../../data/allensbach_mrs.csv"
     allensbach = pd.read_csv(allensbach_path)
     allensbach.drop(["Unnamed: 0", "Gruppe", "GBS-CODE"], axis=1, inplace=True)
@@ -51,6 +62,10 @@ def load_gbs_allensbach():
 
 
 def load_gbs_gesis():
+    """Load GBS and GESIS
+
+    :return: GBS and GESIS data
+    """
     gesis_columns = [
         "Geschlecht",
         "Geburtsjahr",
@@ -86,6 +101,26 @@ def load_gbs_gesis():
 
 
 def load_folktables_income_data():
+    """Load folktable income
+
+    :return: Folktable income data
+    """
+    # Create a new income problem loader.
+    ACSIncomeNew = BasicProblem(
+        features=[
+            "AGEP",
+            "COW",
+            "SCHL",
+            "MAR",
+            "RELP",
+            "WKHP",
+            "SEX",
+            "RAC1P",
+        ],
+        target="PINCP",
+        preprocess=adult_filter,
+        postprocess=lambda x: np.nan_to_num(x, -1),
+    )
     data_source = ACSDataSource(survey_year="2018", horizon="1-Year", survey="person")
     usa_data = data_source.get_data(states=["CA"], download=True)
     definition_df = data_source.get_definitions(download=True)
@@ -108,6 +143,10 @@ def load_folktables_income_data():
 
 
 def load_hr_analytics():
+    """Load HR Analytics
+
+    :return: HR ANalytics data
+    """
     categorical_variables = [
         "gender",
         "relevent_experience",
@@ -136,6 +175,10 @@ def load_hr_analytics():
 
 
 def load_loan_prediction():
+    """Load Loan
+
+    :return: Loan data
+    """
     categorical_columns = [
         "Gender",
         "Married",
@@ -164,6 +207,10 @@ def load_loan_prediction():
 
 
 def load_folktables_employment_data():
+    """Load folktables exployment
+
+    :return: Folktables employment data
+    """
     data_source = ACSDataSource(survey_year="2018", horizon="1-Year", survey="person")
     data = data_source.get_data(states=["CA"], download=True)
     definition_df = data_source.get_definitions(download=True)
@@ -184,23 +231,6 @@ def load_folktables_employment_data():
     return features, columns, "Employment"
 
 
-ACSIncomeNew = BasicProblem(
-    features=[
-        "AGEP",
-        "COW",
-        "SCHL",
-        "MAR",
-        "RELP",
-        "WKHP",
-        "SEX",
-        "RAC1P",
-    ],
-    target="PINCP",
-    preprocess=adult_filter,
-    postprocess=lambda x: np.nan_to_num(x, -1),
-)
-
-
 breast_cancer_names = [
     "sample_code_number",
     "clump_thickness",
@@ -217,6 +247,10 @@ breast_cancer_names = [
 
 
 def load_brast_cancer_data():
+    """Load Wisconsin Breast cancer
+
+    :return: Wisconsin Breast cancer data
+    """
     df = pd.read_csv(
         f"{file_path}/../../data/breast_cancer/breast-cancer-wisconsin.data",
         na_values=["?"],
