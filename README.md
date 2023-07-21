@@ -1,6 +1,6 @@
 # WeightDebiasing
 
-## AdaDeboost, a new adaptive deboosting algorithm for weight debiasing.
+## Soft-MRS, a deboosting algorithm for sample weights debiasing.
 
 ## Install Requirements
 All requirements are listed in the requirements.txt file. The usage of a virtual environment is recommended.

@@ -1,15 +1,23 @@
-from pathlib import Path
 import torch
+import numpy as np
+from pathlib import Path
+from torch.optim.lr_scheduler import OneCycleLR
+
 from utils.metrics import calculate_rbf_gamma
 from utils.models import WeightingMlp
 from utils.losses import WeightedMMDLoss
-import numpy as np
-from torch.optim.lr_scheduler import OneCycleLR
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 
 def neural_network_mmd_loss_weighting(N, R, columns, *args, **attributes):
+    """_summary_
+
+    :param N: _description_
+    :param R: _description_
+    :param columns: _description_
+    :return: _description_
+    """
     N_copy = N.copy().reset_index()
     N_dropped = N_copy.drop_duplicates(subset=columns)
     indices = N_dropped.index
@@ -37,6 +45,12 @@ def neural_network_mmd_loss_weighting(N, R, columns, *args, **attributes):
 
 
 def compute_model(tensor_N, tensor_R):
+    """_summary_
+
+    :param tensor_N: _description_
+    :param tensor_R: _description_
+    :return: _description_
+    """
     iterations = 5000
     scaler = torch.cuda.amp.GradScaler()
     gamma = calculate_rbf_gamma(np.append(tensor_N, tensor_R, axis=0))
@@ -68,10 +82,10 @@ def compute_model(tensor_N, tensor_R):
         optimizer.zero_grad()
 
         mmd = validate_model(
-           tensor_N,
-           tensor_R,
-           loss_function,
-           mmd_model,
+            tensor_N,
+            tensor_R,
+            loss_function,
+            mmd_model,
         )
         mmd_list.append(mmd)
 
@@ -85,6 +99,14 @@ def compute_model(tensor_N, tensor_R):
 
 
 def validate_model(tensor_N, tensor_R, mmd_loss_function, mmd_model):
+    """_summary_
+
+    :param tensor_N: _description_
+    :param tensor_R: _description_
+    :param mmd_loss_function: _description_
+    :param mmd_model: _description_
+    :return: _description_
+    """
     mmd_model.eval()
     with torch.no_grad():
         with torch.autocast(device_type="cuda", dtype=torch.float16):

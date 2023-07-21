@@ -4,13 +4,20 @@ import numpy as np
 from sklearn.ensemble import RandomForestClassifier
 from scipy.special import xlogy
 
-from utils.metrics import compute_test_metrics_ada_deboost, compute_test_metrics_mrs
+from utils.metrics import compute_test_metrics_mrs
 
 
 y_codes = np.array([-1.0, 1.0])
 
 
 def ada_deboost_weighting(N, R, columns, *args, **kwargs):
+    """Soft MRS method
+
+    :param N: Non-representative data set
+    :param R: Representative data set
+    :param columns: Training columns
+    :return: Sample weights
+    """
     weights_N = np.ones(len(N)) / len(N)
     weights_R = np.ones(len(R)) / len(R)
     concat_data = pd.concat([N, R])
@@ -18,7 +25,6 @@ def ada_deboost_weighting(N, R, columns, *args, **kwargs):
     best_auroc_difference = np.inf
     current_patience = 0
 
-    epsilon = np.finfo(weights_N.dtype).eps
     i = 0
 
     while True:
@@ -44,22 +50,37 @@ def ada_deboost_weighting(N, R, columns, *args, **kwargs):
             weights=np.concatenate([weights_N, weights_R]),
         )
         predictions_N = predictions[: len(N), 1]
-        weights_N = update_weights(weights_N, epsilon, predictions_N)
+        weights_N = update_weights(weights_N, predictions_N)
 
     return weights_N
 
 
-def update_weights(weights_N, epsilon, predictions_N):
-    predictions_N = np.clip(predictions_N, a_min=epsilon, a_max=None)
-    y_coding = y_codes.take(predictions_N < 0.5)
-    estimator_weight = -0.25 * xlogy(y_coding, predictions_N)
+def update_weights(weights, predictions):
+    """Updates sample weights based on the prediction probabilities
+
+    :param weights: The weights
+    :param predictions: Prediction probabilities that are used to compute the
+        new weights
+    :return: Updated weights
+    """
+    epsilon = np.finfo(weights.dtype).eps
+    predictions = np.clip(predictions, a_min=epsilon, a_max=None)
+    y_coding = y_codes.take(predictions < 0.5)
+    estimator_weight = -0.25 * xlogy(y_coding, predictions)
     weight_modificator = np.exp(estimator_weight)
-    weights_N *= weight_modificator
-    weights_N = weights_N / weights_N.sum()
-    return weights_N
+    weights *= weight_modificator
+    weights = weights / weights.sum()
+    return weights
 
 
 def train_weighted_random_forest(x, label, weights):
+    """Trains a random forest and returns the predicted probabilties
+
+    :param x: Training data
+    :param label: Target label
+    :param weights: Current weights
+    :return: Predicted probabilities
+    """
     random_forest = RandomForestClassifier(max_depth=3, n_jobs=-1)
     random_forest = random_forest.fit(x, label, sample_weight=weights)
     return random_forest.predict_proba(x)

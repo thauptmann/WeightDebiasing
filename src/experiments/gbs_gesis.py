@@ -9,19 +9,24 @@ from utils.visualization import (
 )
 
 
-bins = 50
+bins = 25
 
 
 def gbs_gesis_experiment(
     df,
     columns,
-    propensity_method,
+    weighting_method,
     method="",
     **args,
 ):
-    result_path = Path("../results")
-    visualisation_path = result_path / method / "gbs_gesis"
-    visualisation_path.mkdir(exist_ok=True, parents=True)
+    """_summary_
+
+    :param df: The data set as pandas.DataFrame
+    :param columns: Name of training columns
+    :param weighting_method: The weighting function
+    :param method: Method name, defaults to ""
+    """
+    visualisation_path = create_result_path(method)
     df = df.sample(frac=1)
     mmd_list = []
     mean_list = []
@@ -33,7 +38,7 @@ def gbs_gesis_experiment(
     scaled_N = scaled_df[scaled_df["label"] == 1]
     scaled_R = scaled_df[scaled_df["label"] == 0]
 
-    weights = propensity_method(
+    weights = weighting_method(
         scaled_N,
         scaled_R,
         columns,
@@ -94,3 +99,15 @@ def gbs_gesis_experiment(
         visualisation_path,
         weights,
     )
+
+
+def create_result_path(method):
+    """Creates the result path and makes the directory.
+
+    :param method: Method name
+    :return: The result path
+    """
+    result_path = Path("../results")
+    result_path = result_path / method / "gbs_gesis"
+    result_path.mkdir(exist_ok=True, parents=True)
+    return result_path

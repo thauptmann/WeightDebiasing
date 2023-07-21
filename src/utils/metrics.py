@@ -1,19 +1,17 @@
 import numpy as np
+
 from scipy.spatial.distance import pdist
 from scipy.stats import wasserstein_distance
-
-from sklearn.metrics import (
-    mean_squared_error,
-    roc_auc_score,
-    roc_curve,
-    average_precision_score,
-)
-
-from sklearn.metrics.pairwise import rbf_kernel
 from sklearn.model_selection import GridSearchCV, StratifiedKFold
 from sklearn.preprocessing import StandardScaler
 from sklearn.tree import DecisionTreeClassifier
 from sklearn.ensemble import RandomForestClassifier, RandomForestRegressor
+from sklearn.metrics.pairwise import rbf_kernel
+from sklearn.metrics import (
+    roc_auc_score,
+    roc_curve,
+    average_precision_score,
+)
 
 
 def strictly_standardized_mean_difference(N, R, weights=None):
@@ -38,6 +36,16 @@ def compute_weighted_means(N, weights):
 
 
 def compute_relative_bias(N, R, weights):
+    """Computes the individual relative biases between all features of R and the weighted features of N.
+
+    Args:
+        N: None-representative sample
+        R: Representative sample
+        weights : Sample weights to debias N
+
+    Returns:
+        float: The relative biases
+    """
     weighted_means = compute_weighted_means(N, weights)
     population_means = np.mean(R, axis=0)
     return (abs(weighted_means - population_means) / population_means) * 100
@@ -152,7 +160,6 @@ def compute_metrics(scaled_N, scaled_R, weights, scaler, scale_columns, columns,
 
 def compute_classification_metrics(N, R, columns, weights, label):
     y_true = R[label]
-    # clf = train_classifier(N[columns], N[label], weights)
     clf = train_classifier_auroc(N[columns], N[label], weights)
     y_predictions = clf.predict_proba(R[columns])[:, 1]
     auroc_score = roc_auc_score(y_true, y_predictions)
@@ -166,16 +173,6 @@ def train_classifier(X, y, weights):
     new_weights = weights * len(X)
     clf = clf.fit(X, y, sample_weight=new_weights)
     return clf
-
-
-def compute_regression_metrics(N, R, columns, weights, label):
-    regressor = train_regressor(N[columns], N[label], weights)
-    y_prediction = regressor.predict(R[columns])
-    mean_y = np.mean(R[label])
-
-    mse = np.sqrt(mean_squared_error(R[label], y_prediction))
-    nmse = mse / mean_y
-    return nmse
 
 
 def train_regressor(X, y, weights):
@@ -210,15 +207,6 @@ def compute_test_metrics_mrs(data, columns, calculate_roc=False, weights=None, c
         return np.mean(auroc_scores), mean_ifpr_list, mean_itpr_list, std_tpr
     else:
         return np.mean(auroc_scores)
-
-
-def compute_test_metrics_ada_deboost(data, columns, weights):
-    clf = train_classifier_auroc(data[columns], data.label, weights=weights)
-    test_N = data[data["label"] == 1]
-    y_predict_N = clf.predict_proba(test_N[columns])[:, 1]
-    y_predict = clf.predict_proba(data[columns])[:, 1]
-    auroc = roc_auc_score(data.label, y_predict)
-    return y_predict_N, auroc
 
 
 def train_pu_classifier(X_train, y_train, class_weight="balanced"):

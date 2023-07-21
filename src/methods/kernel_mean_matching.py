@@ -1,10 +1,16 @@
 import numpy as np
-
-from utils.metrics import calculate_rbf_gamma
 from adapt.instance_based import KMM
+from utils.metrics import calculate_rbf_gamma
 
 
 def kernel_mean_matching(N, R, columns, *args, **attributes):
+    """Kernel mean matching
+
+    :param N: Non-representative data set
+    :param R: Representative data set
+    :param columns: Training columns
+    :return: Sample weights
+    """
     N_columns = N[columns].values
     R_columns = R[columns].values
     gamma = calculate_rbf_gamma(np.append(N_columns, R_columns, axis=0))

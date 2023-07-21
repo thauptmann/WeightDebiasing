@@ -29,7 +29,6 @@ def write_result_dict(
     biases_list,
     wasserstein_parameter_list,
     remaining_samples_list,
-    mse_list,
     auroc_list,
     auprc_list,
     number_of_samples,
@@ -46,10 +45,6 @@ def write_result_dict(
         "auprc": {
             "mean": np.nanmean(auprc_list),
             "sd": np.nanstd(auprc_list),
-        },
-        "mse": {
-            "mean": np.nanmean(mse_list),
-            "sd": np.nanstd(mse_list),
         },
         "remaining samples": {
             "mean": np.nanmean(remaining_samples_list),

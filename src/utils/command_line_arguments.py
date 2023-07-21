@@ -8,7 +8,7 @@ from experiments import (
 from methods import (
     ada_deboost_weighting,
     kernel_mean_matching,
-    logistic_regression_weighting,
+    propensity_score_adjustmenr,
     neural_network_mmd_loss_weighting,
     repeated_MRS,
     uniform_weighting,
@@ -93,6 +93,7 @@ def parse_mrs_analysis_command_line_arguments():
 
     return parser.parse_args()
 
+
 def parse_command_line_arguments_statistical_analysis():
     """Parses the command line arguments for the statistical analysis experiment.
 
@@ -109,7 +110,7 @@ def get_weighting_function(method_name):
     if method_name == "uniform":
         return uniform_weighting
     elif method_name == "logistic_regression":
-        return logistic_regression_weighting
+        return propensity_score_adjustmenr
     elif method_name == "random_forest":
         return random_forest_weighting
     elif method_name == "gradient_boosting":
