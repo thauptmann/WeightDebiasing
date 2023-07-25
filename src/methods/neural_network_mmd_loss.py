@@ -22,10 +22,9 @@ def neural_network_mmd_loss_weighting(N, R, columns, *args, **attributes):
     N_dropped = N_copy.drop_duplicates(subset=columns)
     indices = N_dropped.index
     tensor_N = torch.DoubleTensor(N_dropped[columns].values)
-    tensor_R = torch.DoubleTensor(R[columns].values)
 
     all_weights = np.zeros(len(N))
-    model, mmd_list = train_weighted_mmd_model(tensor_N, tensor_R)
+    model, mmd_list = train_weighted_mmd_model(tensor_N)
 
     if attributes["mmd_list"] is not None:
         attributes["mmd_list"].append(mmd_list)
@@ -34,11 +33,7 @@ def neural_network_mmd_loss_weighting(N, R, columns, *args, **attributes):
         with torch.autocast(device_type="cuda", dtype=torch.float16):
             model.eval()
             weights = (
-                model(tensor_N.to(device), tensor_R.to(device))
-                .cpu()
-                .squeeze()
-                .numpy()
-                .astype(np.float64)
+                model(tensor_N.to(device)).cpu().squeeze().numpy().astype(np.float64)
             )
     all_weights[indices] = weights
     return all_weights / sum(all_weights)
@@ -110,7 +105,7 @@ def validate_model(tensor_N, tensor_R, mmd_loss_function, mmd_model):
     mmd_model.eval()
     with torch.no_grad():
         with torch.autocast(device_type="cuda", dtype=torch.float16):
-            validation_weights = mmd_model(tensor_N, tensor_R)
+            validation_weights = mmd_model(tensor_N)
             return (
                 mmd_loss_function(
                     validation_weights,
