@@ -24,15 +24,11 @@ def weighting_experiment(
 ) -> None:
     """_summary_
 
-    Args:
-        dataset_name (str): Defines which data set to laod
-        method_name (str): Defines which method is used
-        bias_variable (str): Defines which variable will be biased
-        bias_type (str): Defines the type of bias
-        bias_sample_size (int): Size of bias sample
-        number_of_repetitions (int): How many times the experiment is repeated
+    :param data_set_name: _description_
+    :param method_name: _description_
+    :param bias_type: _description_
+    :param number_of_repetitions: _description_
     """
-
     data, columns, target = load_dataset(data_set_name)
     compute_weights_function = get_weighting_function(method_name)
     experiment_function = get_experiment_function(data_set_name)

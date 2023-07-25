@@ -18,6 +18,11 @@ def statistical_analysis(
     method_two,
     **args,
 ):
+    """_summary_
+
+    :param method_one: _description_
+    :param method_two: _description_
+    """
     file_directory = Path(__file__).parent
     result_path = Path(file_directory, "../results")
     visualisation_path = (
@@ -58,7 +63,13 @@ def statistical_analysis(
         _,
         wasserstein_distances_one,
     ) = compute_metrics(
-        scaled_N.copy(), scaled_R.copy(), weights_one, scaler, scale_columns, scale_columns, gamma
+        scaled_N.copy(),
+        scaled_R.copy(),
+        weights_one,
+        scaler,
+        scale_columns,
+        scale_columns,
+        gamma,
     )
 
     (

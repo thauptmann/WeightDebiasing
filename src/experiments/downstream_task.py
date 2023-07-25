@@ -18,7 +18,7 @@ from utils.metrics import (
 def downstream_experiment(
     df,
     columns,
-    weighting_method: function,
+    weighting_method,
     target: str,
     method: str = "",
     number_of_repetitions: int = 100,

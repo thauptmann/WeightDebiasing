@@ -1,1 +1,29 @@
-{"Alter_relative_bias": {"wasserstein": NaN}, "Berufsgruppe_relative_bias": {"wasserstein": NaN}, "Erwerbstaetigkeit_relative_bias": {"wasserstein": 0.3843193282495684}, "Geschlecht_relative_bias": {"wasserstein": NaN}, "Optimismus_relative_bias": {"wasserstein": 0.26476733906614053}, "Pessimismus_relative_bias": {"wasserstein": 0.19053550858581705}, "Schulabschluss_relative_bias": {"wasserstein": 0.32001928795306656}, "woechentlicheArbeitszeit_relative_bias": {"wasserstein": 0.3256181521069428}, "Resilienz_relative_bias": {"wasserstein": 0.2054970666238045}}
+{
+    "Alter_relative_bias": {
+        "wasserstein": NaN
+    },
+    "Berufsgruppe_relative_bias": {
+        "wasserstein": NaN
+    },
+    "Erwerbstaetigkeit_relative_bias": {
+        "wasserstein": 0.39888129630748437
+    },
+    "Geschlecht_relative_bias": {
+        "wasserstein": NaN
+    },
+    "Optimismus_relative_bias": {
+        "wasserstein": 0.2865064695009242
+    },
+    "Pessimismus_relative_bias": {
+        "wasserstein": 0.24502597988560118
+    },
+    "Schulabschluss_relative_bias": {
+        "wasserstein": 0.27781739851834597
+    },
+    "woechentlicheArbeitszeit_relative_bias": {
+        "wasserstein": 0.28892980336792423
+    },
+    "Resilienz_relative_bias": {
+        "wasserstein": 0.21987570407673152
+    }
+}

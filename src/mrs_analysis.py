@@ -16,6 +16,13 @@ from utils.visualization import (
 
 
 def compare_mrs_variants(number_of_repetitions, data_set_name, bias_type, drop):
+    """_summary_
+
+    :param number_of_repetitions: _description_
+    :param data_set_name: _description_
+    :param bias_type: _description_
+    :param drop: _description_
+    """
     aucs_complete = []
     mmds_complete = []
     mrs_iteration_list = []
@@ -106,6 +113,12 @@ def compare_mrs_variants(number_of_repetitions, data_set_name, bias_type, drop):
 
 
 def create_save_path(data_set_name, bias_type):
+    """_summary_
+
+    :param data_set_name: _description_
+    :param bias_type: _description_
+    :return: _description_
+    """
     file_directory = Path(__file__).parent
     result_path = Path(file_directory, "../results")
     result_path = result_path / "mrs_analysis" / data_set_name / bias_type

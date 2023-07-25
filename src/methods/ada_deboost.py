@@ -2,8 +2,6 @@ import pandas as pd
 import numpy as np
 
 from sklearn.ensemble import RandomForestClassifier
-from scipy.special import xlogy
-
 from utils.metrics import compute_test_metrics_mrs
 
 
@@ -65,9 +63,10 @@ def update_weights(weights, predictions):
     """
     epsilon = np.finfo(weights.dtype).eps
     predictions = np.clip(predictions, a_min=epsilon, a_max=None)
+    p_difference = np.abs(0.5 - predictions)
     y_coding = y_codes.take(predictions < 0.5)
-    estimator_weight = -0.25 * xlogy(y_coding, predictions)
-    weight_modificator = np.exp(estimator_weight)
+    alpha = 0.75 * np.log(p_difference)
+    weight_modificator = y_coding * np.exp(alpha) + 1
     weights *= weight_modificator
     weights = weights / weights.sum()
     return weights
@@ -81,6 +80,6 @@ def train_weighted_random_forest(x, label, weights):
     :param weights: Current weights
     :return: Predicted probabilities
     """
-    random_forest = RandomForestClassifier(max_depth=3, n_jobs=-1)
+    random_forest = RandomForestClassifier(max_depth=2, n_jobs=-1)
     random_forest = random_forest.fit(x, label, sample_weight=weights)
     return random_forest.predict_proba(x)

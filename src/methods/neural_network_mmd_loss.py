@@ -5,7 +5,7 @@ from torch.optim.lr_scheduler import OneCycleLR
 
 from utils.metrics import calculate_rbf_gamma
 from utils.models import WeightingMlp
-from utils.losses import WeightedMMDLoss
+from utils.weighted_mmd_loss import WeightedMMDLoss
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
@@ -72,7 +72,7 @@ def train_weighted_mmd_model(tensor_N, tensor_R):
     for _ in range(iterations):
         mmd_model.train()
         with torch.autocast(device_type="cuda", dtype=torch.float16):
-            train_weights = mmd_model(tensor_N, tensor_R)
+            train_weights = mmd_model(tensor_N)
             loss = loss_function(train_weights)
 
         scaler.scale(loss).backward()

@@ -11,6 +11,17 @@ sns.set_theme(style="ticks")
 def plot_cumulative_distribution_function(
     N, R, file_name: str, weights_one, weights_two, method_one, method_two, wide=True
 ):
+    """_summary_
+
+    :param N: _description_
+    :param R: _description_
+    :param file_name: _description_
+    :param weights_one: _description_
+    :param weights_two: _description_
+    :param method_one: _description_
+    :param method_two: _description_
+    :param wide: _description_, defaults to True
+    """
     if wide:
         plt.figure(figsize=(10, 5))
     plot_directory = file_name / "cumulative_distributions"
@@ -32,6 +43,17 @@ def plot_cumulative_distribution_function(
 def plot_feature_histograms(
     N, R, file_name, bins, weights_one, weights_two, method_one, method_two
 ):
+    """_summary_
+
+    :param N: _description_
+    :param R: _description_
+    :param file_name: _description_
+    :param bins: _description_
+    :param weights_one: _description_
+    :param weights_two: _description_
+    :param method_one: _description_
+    :param method_two: _description_
+    """
     plot_directory = file_name / "histograms"
     plot_directory.mkdir(exist_ok=True)
     fig, ax = plt.subplots(1, 4, sharey=True, sharex=True, figsize=(10, 5))
@@ -65,22 +87,20 @@ def plot_feature_histograms(
 
 
 def plot_weights(weights, path, iteration, title="", bins=25):
+    """_summary_
+
+    :param weights: _description_
+    :param path: _description_
+    :param iteration: _description_
+    :param title: _description_, defaults to ""
+    :param bins: _description_, defaults to 25
+    """
     path.mkdir(exist_ok=True)
     weights = weights / sum(weights)
     sns.histplot(x=weights, bins=bins).set_title(title)
     same_weights_positition = 1 / len(weights)
     plt.axvline(same_weights_positition, color="k")
     plt.savefig(f"{path}/weights_{iteration}.pdf", bbox_inches="tight")
-    plt.clf()
-
-
-def plot_ratio(values, representative_ratio, title, path):
-    beautified_title = title.replace("_", " ")
-    plt.plot(values, color="blue", linestyle="-", label=beautified_title)
-    plt.axhline(y=representative_ratio, color="k", linestyle="--")
-    plt.ylabel(beautified_title)
-    plt.xlabel("Iteration")
-    plt.savefig(Path(path) / f"{title}.pdf")
     plt.clf()
 
 
@@ -94,6 +114,17 @@ def plot_statistical_analysis(
     method_one: str = "",
     method_two: str = "",
 ):
+    """_summary_
+
+    :param bins: _description_
+    :param N: _description_
+    :param R: _description_
+    :param visualisation_path: _description_
+    :param weights_one: _description_
+    :param weights_two: _description_
+    :param method_one: _description_, defaults to ""
+    :param method_two: _description_, defaults to ""
+    """
     plot_cumulative_distribution_function(
         N, R, visualisation_path, weights_one, weights_two, method_one, method_two
     )
@@ -105,6 +136,13 @@ def plot_statistical_analysis(
 def plot_results_with_variance(
     metric_list: list[float], visualisation_path: Path, suffix: str = "", metric="MMD"
 ):
+    """_summary_
+
+    :param metric_list: _description_
+    :param visualisation_path: _description_
+    :param suffix: _description_, defaults to ""
+    :param metric: _description_, defaults to "MMD"
+    """
     mean_metric = np.nanmean(metric_list, axis=0)
     sd_metric = np.nanstd(metric_list, axis=0)
     plt.plot(range(len(mean_metric)), mean_metric, color="blue")
@@ -121,45 +159,6 @@ def plot_results_with_variance(
     plt.clf()
 
 
-def mrs_progress_visualization(
-    mmd_list: list[float],
-    auc_list,
-    relative_bias_list,
-    mrs_iteration_list,
-    drop,
-    number_of_samples,
-    save_path,
-):
-    plot_auc_average(
-        np.squeeze(np.mean(auc_list, axis=0)),
-        np.squeeze(np.std(auc_list, axis=0)),
-        drop,
-        save_path / "auc_mean_with_mrs_iterations",
-        number_of_samples,
-        mrs_iterations=mrs_iteration_list,
-        wide=True,
-    )
-    plot_mmds_average(
-        np.squeeze(np.mean(mmd_list, axis=0)),
-        np.squeeze(np.std(mmd_list, axis=0)),
-        drop,
-        1,
-        save_path / "mean_mmds",
-        mrs_iteration_list,
-        number_of_samples,
-    )
-
-    if relative_bias_list.size != 0:
-        plot_relative_bias(
-            np.mean(np.array(relative_bias_list), axis=0),
-            np.std(np.array(relative_bias_list), axis=0),
-            save_path / "Relative_Bias",
-            mrs_iteration_list,
-            number_of_samples,
-            drop,
-        )
-
-
 def plot_auc_average(
     auc_score,
     std_aucs,
@@ -169,6 +168,16 @@ def plot_auc_average(
     mrs_iterations,
     wide=True,
 ):
+    """_summary_
+
+    :param auc_score: _description_
+    :param std_aucs: _description_
+    :param drop: _description_
+    :param file_name: _description_
+    :param number_of_samples: _description_
+    :param mrs_iterations: _description_
+    :param wide: _description_, defaults to True
+    """
     if wide:
         plt.figure(figsize=(12.8, 4.8))
 
@@ -214,6 +223,16 @@ def plot_auc_average(
 def plot_mmds_average(
     mmds, std, drop, mmd_iteration, file_name, mrs_iterations, number_of_samples
 ):
+    """_summary_
+
+    :param mmds: _description_
+    :param std: _description_
+    :param drop: _description_
+    :param mmd_iteration: _description_
+    :param file_name: _description_
+    :param mrs_iterations: _description_
+    :param number_of_samples: _description_
+    """
     mmds_upper = mmds + std
     mmds_lower = np.maximum(mmds - std, 0)
     stop = number_of_samples - ((mmds.size) * drop)
@@ -249,6 +268,17 @@ def plot_experiment_comparison_auc(
     file_name,
     number_of_samples,
 ):
+    """_summary_
+
+    :param auc_score_mrs: _description_
+    :param std_aucs_mrs: _description_
+    :param auc_score_experiment: _description_
+    :param std_aucs_experiment: _description_
+    :param experiment_label: _description_
+    :param drop: _description_
+    :param file_name: _description_
+    :param number_of_samples: _description_
+    """
     aucs_upper = np.minimum(auc_score_mrs + std_aucs_mrs, 1)
     aucs_lower = np.maximum(auc_score_mrs - std_aucs_mrs, 0)
 
@@ -297,6 +327,18 @@ def plot_experiment_comparison_mmd(
     file_name,
     number_of_samples,
 ):
+    """_summary_
+
+    :param mean_mmd: _description_
+    :param std_mmd: _description_
+    :param mean_mmd_experiment: _description_
+    :param std_mmd_experiment: _description_
+    :param experiment_label: _description_
+    :param drop: _description_
+    :param mmd_iteration: _description_
+    :param file_name: _description_
+    :param number_of_samples: _description_
+    """
     mmd_upper = np.minimum(mean_mmd + std_mmd, 1)
     mmd_lower = np.maximum(mean_mmd - std_mmd, 0)
 
@@ -329,6 +371,7 @@ def plot_experiment_comparison_mmd(
     plt.close()
 
 
+# Create a custom line style and color cycler
 default_cycle = cycler(
     "linestyle",
     [
@@ -341,6 +384,11 @@ default_cycle = cycler(
 
 
 def plot_rocs(roc_list, file_name):
+    """_summary_
+
+    :param roc_list: _description_
+    :param file_name: _description_
+    """
     plt.rc("")
     plt.rc("axes", prop_cycle=default_cycle)
     for fper, tper, std, deleted_elements in roc_list:
@@ -366,6 +414,15 @@ def plot_relative_bias(
     number_of_samples,
     drop,
 ):
+    """_summary_
+
+    :param mean_relative_bias_list: _description_
+    :param std_relative_bias_list: _description_
+    :param file_name: _description_
+    :param mrs_iterations: _description_
+    :param number_of_samples: _description_
+    :param drop: _description_
+    """
     plt.xlabel("Number of Remaining Samples")
     plt.ylabel("Relative Bias")
     ratio_upper = mean_relative_bias_list + std_relative_bias_list

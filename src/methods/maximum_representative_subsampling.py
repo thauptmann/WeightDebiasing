@@ -100,6 +100,23 @@ def repeated_MRS(
     *args,
     **attributes
 ):
+    """_summary_
+
+    :param N: _description_
+    :param R: _description_
+    :param columns: _description_
+    :param delta: _description_, defaults to 0.001
+    :param early_stopping: _description_, defaults to False
+    :param mrs_function: _description_, defaults to mrs
+    :param return_metrics: _description_, defaults to False
+    :param use_bias_mean: _description_, defaults to True
+    :param sampling: _description_, defaults to "max"
+    :param bias_variable: _description_, defaults to None
+    :param cv: _description_, defaults to 5
+    :param class_weights: _description_, defaults to "balanced"
+    :param drop: _description_, defaults to 1
+    :return: _description_
+    """
     auc_list = []
     relative_bias_list = []
     mmd_list = []
@@ -209,11 +226,22 @@ def repeated_MRS(
 
 
 def calculate_temperature(auc):
+    """_summary_
+
+    :param auc: _description_
+    :return: _description_
+    """
     mapped_auc = abs(auc - 0.5)
     temperature = -0.55 * mapped_auc + 0.3
     return temperature
 
 
 def random_drops(N, n_drop: int = 5, *args, **attributes):
+    """_summary_
+
+    :param N: _description_
+    :param n_drop: _description_, defaults to 5
+    :return: _description_
+    """
     drop_ids = random.sample(range(0, len(N)), n_drop)
     return N.drop(N.index[drop_ids]), N.index[drop_ids]

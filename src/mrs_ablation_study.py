@@ -13,6 +13,12 @@ from utils.visualization import (
 
 
 def compare_mrs_variants(number_of_repetitions, ablation_experiment, drop):
+    """_summary_
+
+    :param number_of_repetitions: _description_
+    :param ablation_experiment: _description_
+    :param drop: _description_
+    """
     aucs_complete = []
     mmds_complete = []
     aucs_comparison = []
@@ -96,6 +102,12 @@ def compare_mrs_variants(number_of_repetitions, ablation_experiment, drop):
 
 
 def preprocess_data(data, columns):
+    """_summary_
+
+    :param data: _description_
+    :param columns: _description_
+    :return: _description_
+    """
     data = data.sample(frac=1)
     scaled_df, _ = scale_df(data, columns)
     scaled_N = scaled_df[scaled_df["label"] == 1]
@@ -104,6 +116,12 @@ def preprocess_data(data, columns):
 
 
 def create_result_path(ablation_experiment, file_directory):
+    """_summary_
+
+    :param ablation_experiment: _description_
+    :param file_directory: _description_
+    :return: _description_
+    """
     result_path = Path(file_directory, "../results")
     result_path = result_path / "ablation_study" / ablation_experiment
     result_path.mkdir(exist_ok=True, parents=True)
@@ -124,6 +142,21 @@ def plot_result_graphs(
     mean_aucs,
     std_aucs,
 ):
+    """_summary_
+
+    :param drop: _description_
+    :param result_path: _description_
+    :param number_of_samples: _description_
+    :param experiment_label: _description_
+    :param comparison_mean_mmds: _description_
+    :param comparison_std_mmds: _description_
+    :param comparison_mean_aucs: _description_
+    :param comparison_std_aucs: _description_
+    :param mean_mmds: _description_
+    :param std_mmds: _description_
+    :param mean_aucs: _description_
+    :param std_aucs: _description_
+    """
     plot_experiment_comparison_mmd(
         mean_mmds,
         std_mmds,
@@ -148,6 +181,11 @@ def plot_result_graphs(
 
 
 def choose_hyperparameter(ablation_experiment):
+    """_summary_
+
+    :param ablation_experiment: _description_
+    :return: _description_
+    """
     class_weights = "balanced"
     if ablation_experiment == "random":
         mrs_function = maximum_representative_subsampling.random_drops
