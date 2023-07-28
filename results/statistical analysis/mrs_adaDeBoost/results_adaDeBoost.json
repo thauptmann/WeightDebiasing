@@ -6,24 +6,24 @@
         "wasserstein": NaN
     },
     "Erwerbstaetigkeit_relative_bias": {
-        "wasserstein": 0.2784316152739497
+        "wasserstein": 0.25115697459756614
     },
     "Geschlecht_relative_bias": {
         "wasserstein": NaN
     },
     "Optimismus_relative_bias": {
-        "wasserstein": 0.33362710741275803
+        "wasserstein": 0.44754006166394505
     },
     "Pessimismus_relative_bias": {
-        "wasserstein": 0.18888726934821687
+        "wasserstein": 0.18496735130369485
     },
     "Schulabschluss_relative_bias": {
-        "wasserstein": 0.27620456321294157
+        "wasserstein": 0.2887444670434631
     },
     "woechentlicheArbeitszeit_relative_bias": {
-        "wasserstein": 0.2483013937483441
+        "wasserstein": 0.2863435249559349
     },
     "Resilienz_relative_bias": {
-        "wasserstein": 0.18375419834807066
+        "wasserstein": 0.18927954286819912
     }
 }

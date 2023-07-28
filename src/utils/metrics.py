@@ -5,7 +5,7 @@ from scipy.stats import wasserstein_distance
 from sklearn.model_selection import GridSearchCV, StratifiedKFold
 from sklearn.preprocessing import StandardScaler
 from sklearn.tree import DecisionTreeClassifier
-from sklearn.ensemble import RandomForestClassifier, RandomForestRegressor
+from sklearn.ensemble import RandomForestClassifier
 from sklearn.metrics.pairwise import rbf_kernel
 from sklearn.metrics import (
     roc_auc_score,
@@ -188,9 +188,7 @@ def compute_classification_metrics(N, R, columns, weights, label):
     return auroc_score, auprc
 
 
-def compute_test_metrics_mrs(
-    data, columns, calculate_roc=False, weights=None, cv=3, return_predictions=False
-):
+def compute_test_metrics_mrs(data, columns, calculate_roc=False, weights=None, cv=3):
     """_summary_
 
     :param data: _description_
