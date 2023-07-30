@@ -1,8 +1,9 @@
 import pandas as pd
 import numpy as np
 
-from sklearn.ensemble import RandomForestClassifier
 from sklearn.metrics import roc_auc_score
+from sklearn.model_selection import GridSearchCV
+from sklearn.tree import DecisionTreeClassifier
 
 y_codes = np.array([-1.0, 1.0])
 
@@ -22,11 +23,27 @@ def ada_deboost_weighting(N, R, columns, *args, **kwargs):
     best_auroc_difference = np.inf
     current_patience = 0
 
+    param_grid = {"max_depth": [2, 3, 4]}
+    grid = GridSearchCV(
+        DecisionTreeClassifier(),
+        param_grid=param_grid,
+        cv=2,
+        n_jobs=-1,
+        refit=False,
+    )
+    grid = grid.fit(
+        concat_data[columns],
+        concat_data["label"],
+        sample_weight=np.concatenate([weights_N, weights_R]),
+    )
+    max_depth = grid.best_params_["max_depth"]
+
     while True:
         predictions = train_weighted_random_forest(
             concat_data[columns],
             concat_data["label"],
             weights=np.concatenate([weights_N, weights_R]),
+            max_depth=max_depth,
         )
         auroc_test = roc_auc_score(concat_data["label"], predictions[:, 1])
         auroc_difference = np.abs(0.5 - auroc_test)
@@ -62,7 +79,7 @@ def update_weights(weights, predictions):
     return weights
 
 
-def train_weighted_random_forest(x, label, weights):
+def train_weighted_random_forest(x, label, weights, max_depth):
     """Trains a random forest and returns the predicted probabilties
 
     :param x: Training data
@@ -70,6 +87,6 @@ def train_weighted_random_forest(x, label, weights):
     :param weights: Current weights
     :return: Predicted probabilities
     """
-    random_forest = RandomForestClassifier(max_depth=3, n_jobs=-1)
+    random_forest = DecisionTreeClassifier(max_depth=max_depth, splitter="random")
     random_forest = random_forest.fit(x, label, sample_weight=weights)
     return random_forest.predict_proba(x)

@@ -22,9 +22,10 @@ def neural_network_mmd_loss_weighting(N, R, columns, *args, **attributes):
     N_dropped = N_copy.drop_duplicates(subset=columns)
     indices = N_dropped.index
     tensor_N = torch.DoubleTensor(N_dropped[columns].values)
+    tensor_R = torch.DoubleTensor(R[columns].values)
 
     all_weights = np.zeros(len(N))
-    model, mmd_list = train_weighted_mmd_model(tensor_N)
+    model, mmd_list = train_weighted_mmd_model(tensor_N, tensor_R)
 
     if attributes["mmd_list"] is not None:
         attributes["mmd_list"].append(mmd_list)
