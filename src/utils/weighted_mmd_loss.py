@@ -7,9 +7,9 @@ euclidean_distance_fn = torch.nn.PairwiseDistance(2)
 
 # Weighted MMD loss
 class WeightedMMDLoss(nn.Module):
-    """Weighted MMD loss class
-    """
-    def __init__(self, gamma, N, R, device):
+    """Weighted MMD loss class"""
+
+    def __init__(self, gamma, N, R, device="cpu"):
         """Initializes the loss function
 
         :param gamma: Gamma for the RBF-Kernel
@@ -35,6 +35,8 @@ class WeightedMMDLoss(nn.Module):
         :param weights: Current weights
         :return: Loss value
         """
+        if not torch.is_tensor(weights):
+            weights = torch.DoubleTensor(weights)
         n_n_mean = (
             torch.matmul(torch.unsqueeze(weights, 1), torch.unsqueeze(weights, 0))
             * self.n_n_rbf_matrix
