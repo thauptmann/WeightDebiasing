@@ -1,4 +1,7 @@
 import argparse
+import functools
+
+
 from experiments import (
     gbs_allensbach_experiment,
     gbs_gesis_experiment,
@@ -6,7 +9,7 @@ from experiments import (
 )
 
 from methods import (
-    ada_deboost_weighting,
+    soft_mrs_weighting,
     kernel_mean_matching,
     propensity_score_adjustmen,
     neural_network_mmd_loss_weighting,
@@ -19,12 +22,13 @@ method_list = [
     "logistic_regression",
     "neural_network_mmd_loss",
     "uniform",
-    "adaDeBoost",
+    "soft-mrs",
+    "soft-mrs-exponential",
     "mrs",
     "kmm",
 ]
 
-# Possible debiasing types
+# Possible bias types
 bias_choice = [
     "none",
     "less_negative_class",
@@ -38,19 +42,14 @@ dataset_list = [
     "gbs_gesis",
     "folktables_income",
     "folktables_employment",
-    "mrs_census",
     "breast_cancer",
     "hr_analytics",
     "loan_prediction",
 ]
 
-
 mrs_ablation_experiments = [
     "random",
     "cross-validation",
-    "temperature",
-    "sampling",
-    "class_weights",
 ]
 
 down_stream_data_sets = [
@@ -126,8 +125,10 @@ def get_weighting_function(method_name):
         return propensity_score_adjustmen
     elif method_name == "neural_network_mmd_loss":
         return neural_network_mmd_loss_weighting
-    elif method_name == "adaDeBoost":
-        return ada_deboost_weighting
+    elif method_name == "soft-mrs": 
+        return soft_mrs_weighting
+    elif method_name == "soft-mrs-exponential":
+        return functools.partial(soft_mrs_weighting, exponential=True)
     elif method_name == "mrs":
         return repeated_MRS
     elif method_name == "kmm":

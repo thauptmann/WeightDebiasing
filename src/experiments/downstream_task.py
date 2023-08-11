@@ -14,6 +14,10 @@ from utils.metrics import (
     calculate_rbf_gamma,
 )
 
+# Used to draw radom states
+max_int = 2**32 - 1
+seed = 5
+
 
 def downstream_experiment(
     df,
@@ -24,6 +28,7 @@ def downstream_experiment(
     number_of_repetitions: int = 100,
     bias_type: str = None,
     data_set_name: str = "",
+    random_generator=None,
     **args
 ):
     """The function uses the weighting method to compute the sample weights and
@@ -39,7 +44,6 @@ def downstream_experiment(
     :param bias_type: Name of the bias that will be induced, defaults to None
     :param data_set_name: Data set name, defaults to ""
     """
-
     weighted_mmds_list = []
     biases_list = []
     wasserstein_parameter_list = []
@@ -79,6 +83,8 @@ def downstream_experiment(
             mmd_list=mmd_list,
             drop=1,
             early_stopping=True,
+            random_generator=random_generator,
+            patience=25,
         )
 
         auroc, auprc = compute_classification_metrics(N, R, columns, weights, target)
@@ -117,7 +123,6 @@ def downstream_experiment(
         auprc_list,
         len(N),
     )
-
 
     with open(result_path / "results.json", "w") as result_file:
         result_file.write(json.dumps(result_dict))

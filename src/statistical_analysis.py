@@ -1,4 +1,7 @@
 import json
+import random
+import numpy as np
+
 from pathlib import Path
 from utils.command_line_arguments import (
     get_weighting_function,
@@ -9,8 +12,10 @@ from utils.metrics import calculate_rbf_gamma, compute_metrics, scale_df
 from utils.statistics import logistic_regression
 from utils.visualization import plot_statistical_analysis
 
-
 bins = 25
+seed = 5
+# Used to draw radom states
+max_int = 2**32 - 1
 
 
 def statistical_analysis(
@@ -18,11 +23,14 @@ def statistical_analysis(
     method_two,
     **args,
 ):
-    """_summary_
+    """Analyze GBS corrected with Allensbach with two methods.
 
-    :param method_one: _description_
-    :param method_two: _description_
+    :param method_one: First method
+    :param method_two: Second method
     """
+    np.random.seed(seed)
+    random.seed(seed)
+    random_generator = np.random.RandomState(seed)
     file_directory = Path(__file__).parent
     result_path = Path(file_directory, "../results")
     visualisation_path = (
@@ -47,8 +55,11 @@ def statistical_analysis(
         save_path=visualisation_path,
         drop=1,
         early_stopping=True,
+        random_generator=random_generator,
+        patience=25,
     )
 
+    random_generator = np.random.RandomState(seed)
     weights_two = weighting_function_two(
         scaled_N,
         scaled_R,
@@ -56,15 +67,18 @@ def statistical_analysis(
         save_path=visualisation_path,
         drop=1,
         early_stopping=True,
+        random_generator=random_generator,
     )
+
+    weights_uniform = np.ones(len(scaled_N)) / len(scaled_N)
 
     (
         _,
-        _,
+        sample_biases_one,
         wasserstein_distances_one,
     ) = compute_metrics(
-        scaled_N.copy(),
-        scaled_R.copy(),
+        scaled_N[scale_columns].copy(),
+        scaled_R[scale_columns].copy(),
         weights_one,
         scaler,
         scale_columns,
@@ -74,22 +88,51 @@ def statistical_analysis(
 
     (
         _,
-        _,
+        sample_biases_two,
         wasserstein_distances_two,
     ) = compute_metrics(
-        scaled_N, scaled_R, weights_two, scaler, scale_columns, scale_columns, gamma
+        scaled_N[scale_columns].copy(),
+        scaled_R[scale_columns].copy(),
+        weights_two,
+        scaler,
+        scale_columns,
+        scale_columns,
+        gamma,
+    )
+
+    (
+        _,
+        sample_biases_uniform,
+        wasserstein_distances_uniform,
+    ) = compute_metrics(
+        scaled_N[scale_columns].copy(),
+        scaled_R[scale_columns].copy(),
+        weights_uniform,
+        scaler,
+        scale_columns,
+        scale_columns,
+        gamma,
     )
 
     result_dict_one = {}
     for index, column in enumerate(scale_columns):
         result_dict_one[f"{column}_relative_bias"] = {
             "wasserstein": wasserstein_distances_one[index],
+            "relative_bias": sample_biases_one[index],
         }
 
     result_dict_two = {}
     for index, column in enumerate(scale_columns):
         result_dict_two[f"{column}_relative_bias"] = {
             "wasserstein": wasserstein_distances_two[index],
+            "relative_bias": sample_biases_two[index],
+        }
+
+    result_dict_uniform = {}
+    for index, column in enumerate(scale_columns):
+        result_dict_uniform[f"{column}_relative_bias"] = {
+            "wasserstein": wasserstein_distances_uniform[index],
+            "relative_bias": sample_biases_uniform[index],
         }
 
     lr_pvalue_gbs, lr_pvalue_weighted_one = logistic_regression(
@@ -116,6 +159,12 @@ def statistical_analysis(
 
     with open(visualisation_path / f"results_{method_two}.json", "w") as result_file:
         result_file.write(json.dumps(result_dict_two))
+
+    with open(visualisation_path / "results_uniform.json", "w") as result_file:
+        result_file.write(json.dumps(result_dict_uniform))
+
+    scaled_N.loc[:, scale_columns] = scaler.inverse_transform(scaled_N[scale_columns])
+    scaled_R.loc[:, scale_columns] = scaler.inverse_transform(scaled_R[scale_columns])
 
     plot_statistical_analysis(
         bins,

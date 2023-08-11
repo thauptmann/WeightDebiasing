@@ -11,16 +11,16 @@ sns.set_theme(style="ticks")
 def plot_cumulative_distribution_function(
     N, R, file_name: str, weights_one, weights_two, method_one, method_two, wide=True
 ):
-    """_summary_
+    """Plots the cumulative distribution functions of two methods.
 
-    :param N: _description_
-    :param R: _description_
-    :param file_name: _description_
-    :param weights_one: _description_
-    :param weights_two: _description_
-    :param method_one: _description_
-    :param method_two: _description_
-    :param wide: _description_, defaults to True
+    :param N: Values of the first method
+    :param R: Values of the second method
+    :param file_name: File name for the plot
+    :param weights_one: Weights for the first method
+    :param weights_two: Weights for the second method
+    :param method_one: Name of the first method
+    :param method_two: Name of the second method
+    :param wide: If true, plots the data in a wide format, defaults to True
     """
     if wide:
         plt.figure(figsize=(10, 5))
@@ -43,16 +43,16 @@ def plot_cumulative_distribution_function(
 def plot_feature_histograms(
     N, R, file_name, bins, weights_one, weights_two, method_one, method_two
 ):
-    """_summary_
+    """Plot and saves the feature histograms of two methods
 
-    :param N: _description_
-    :param R: _description_
-    :param file_name: _description_
-    :param bins: _description_
-    :param weights_one: _description_
-    :param weights_two: _description_
-    :param method_one: _description_
-    :param method_two: _description_
+    :param N: Features of the first data set
+    :param R: Features of the second data set
+    :param file_name: File name of the plot
+    :param bins: How many bins are used
+    :param weights_one: Weights for the first method
+    :param weights_two: _Weights for the second method
+    :param method_one: Name of the first method
+    :param method_two: Name of the second method
     """
     plot_directory = file_name / "histograms"
     plot_directory.mkdir(exist_ok=True)
@@ -79,7 +79,8 @@ def plot_feature_histograms(
             weights=weights_two,
             ax=ax[3],
             bins=bins,
-            stat="probability", kde=True
+            stat="probability",
+            kde=True,
         ).set_title(method_two)
         fig.savefig(plot_directory / f"{column_name}.pdf")
         [axis.clear() for axis in ax]
@@ -87,13 +88,13 @@ def plot_feature_histograms(
 
 
 def plot_weights(weights, path, iteration, title="", bins=25):
-    """_summary_
+    """Plot the weights for a method
 
-    :param weights: _description_
-    :param path: _description_
-    :param iteration: _description_
-    :param title: _description_, defaults to ""
-    :param bins: _description_, defaults to 25
+    :param weights: Weights
+    :param path: Save path
+    :param iteration: From which iteration are the weights
+    :param title: Title for the plot, defaults to ""
+    :param bins: How many bin are used, defaults to 25
     """
     path.mkdir(exist_ok=True)
     weights = weights / sum(weights)
@@ -114,16 +115,16 @@ def plot_statistical_analysis(
     method_one: str = "",
     method_two: str = "",
 ):
-    """_summary_
+    """Plots the statistical analysis for two methods
 
-    :param bins: _description_
-    :param N: _description_
-    :param R: _description_
-    :param visualisation_path: _description_
-    :param weights_one: _description_
-    :param weights_two: _description_
-    :param method_one: _description_, defaults to ""
-    :param method_two: _description_, defaults to ""
+    :param bins: How many bins are used
+    :param N: Features of the first method
+    :param R: Features of the second method
+    :param visualisation_path: Save path
+    :param weights_one: Weights for the first method
+    :param weights_two: Weights for the second method
+    :param method_one: Name of the first method, defaults to ""
+    :param method_two: Name of the second method, defaults to ""
     """
     plot_cumulative_distribution_function(
         N, R, visualisation_path, weights_one, weights_two, method_one, method_two
@@ -136,12 +137,12 @@ def plot_statistical_analysis(
 def plot_results_with_variance(
     metric_list: list[float], visualisation_path: Path, suffix: str = "", metric="MMD"
 ):
-    """_summary_
+    """Plots a mean value line with variance
 
-    :param metric_list: _description_
-    :param visualisation_path: _description_
-    :param suffix: _description_, defaults to ""
-    :param metric: _description_, defaults to "MMD"
+    :param metric_list: Mean values
+    :param visualisation_path: Save path
+    :param suffix: Suffix for the file name, defaults to ""
+    :param metric: Metric name, defaults to "MMD"
     """
     mean_metric = np.nanmean(metric_list, axis=0)
     sd_metric = np.nanstd(metric_list, axis=0)
@@ -168,15 +169,15 @@ def plot_auc_average(
     mrs_iterations,
     wide=True,
 ):
-    """_summary_
+    """Plots average aurocs with variance
 
-    :param auc_score: _description_
-    :param std_aucs: _description_
-    :param drop: _description_
-    :param file_name: _description_
-    :param number_of_samples: _description_
-    :param mrs_iterations: _description_
-    :param wide: _description_, defaults to True
+    :param auc_score: Mean auroc values
+    :param std_aucs: Standard deviation for the aurocs
+    :param drop: How many elements were dropped each iteration
+    :param file_name: File name for the plot
+    :param number_of_samples: Number of samples in the original data set
+    :param mrs_iterations: In which iteration where the mrs returned
+    :param wide: If true, plot the data in wide format, defaults to True
     """
     if wide:
         plt.figure(figsize=(12.8, 4.8))
@@ -223,15 +224,15 @@ def plot_auc_average(
 def plot_mmds_average(
     mmds, std, drop, mmd_iteration, file_name, mrs_iterations, number_of_samples
 ):
-    """_summary_
+    """Plots the mean mmds with variance
 
-    :param mmds: _description_
-    :param std: _description_
-    :param drop: _description_
-    :param mmd_iteration: _description_
-    :param file_name: _description_
-    :param mrs_iterations: _description_
-    :param number_of_samples: _description_
+    :param mmds: Mean mmd values
+    :param std: Standard deviation for the mmd values
+    :param drop: How many elements were dropped in each iteration
+    :param mmd_iteration: In which iteration where the mmd computed
+    :param file_name: Save file name
+    :param mrs_iterations: In whih iterations were the mrs' returned
+    :param number_of_samples: How many samples were in the original data set
     """
     mmds_upper = mmds + std
     mmds_lower = np.maximum(mmds - std, 0)
@@ -268,16 +269,16 @@ def plot_experiment_comparison_auc(
     file_name,
     number_of_samples,
 ):
-    """_summary_
+    """Plots the mean auroc with variance
 
-    :param auc_score_mrs: _description_
-    :param std_aucs_mrs: _description_
-    :param auc_score_experiment: _description_
-    :param std_aucs_experiment: _description_
-    :param experiment_label: _description_
-    :param drop: _description_
-    :param file_name: _description_
-    :param number_of_samples: _description_
+    :param auc_score_mrs: Mean auroc values
+    :param std_aucs_mrs: Standard deviation of auroc values
+    :param auc_score_experiment: Mean auroc values for the mrs variant
+    :param std_aucs_experiment: Standard deviation of auroc values for the mrs variant
+    :param experiment_label: Name of the mrs variant
+    :param drop: Number of dropped samples per iteration
+    :param file_name: File name for the plot
+    :param number_of_samples: Number of sample sin the original data set
     """
     aucs_upper = np.minimum(auc_score_mrs + std_aucs_mrs, 1)
     aucs_lower = np.maximum(auc_score_mrs - std_aucs_mrs, 0)
@@ -327,17 +328,17 @@ def plot_experiment_comparison_mmd(
     file_name,
     number_of_samples,
 ):
-    """_summary_
+    """Plots the mmd of a comparison with a variant
 
-    :param mean_mmd: _description_
-    :param std_mmd: _description_
-    :param mean_mmd_experiment: _description_
-    :param std_mmd_experiment: _description_
-    :param experiment_label: _description_
-    :param drop: _description_
-    :param mmd_iteration: _description_
-    :param file_name: _description_
-    :param number_of_samples: _description_
+    :param mean_mmd: Mean mmds of mrs
+    :param std_mmd: Standard deviation for the mmds of mrs
+    :param mean_mmd_experiment: Mean mmds of the mrs variant
+    :param std_mmd_experiment: Standard deviation for the mmds of the mrs variant
+    :param experiment_label: Name of the mrs variant
+    :param drop: Number of dropped samples per iteration
+    :param mmd_iteration: Number of iteration the mmd was computed
+    :param file_name: File name for the plot
+    :param number_of_samples: Number of sample sin the original data set
     """
     mmd_upper = np.minimum(mean_mmd + std_mmd, 1)
     mmd_lower = np.maximum(mean_mmd - std_mmd, 0)
@@ -384,10 +385,10 @@ default_cycle = cycler(
 
 
 def plot_rocs(roc_list, file_name):
-    """_summary_
+    """Plots rocs
 
-    :param roc_list: _description_
-    :param file_name: _description_
+    :param roc_list: Roc list
+    :param file_name: File name for the plot
     """
     plt.rc("")
     plt.rc("axes", prop_cycle=default_cycle)
@@ -414,14 +415,14 @@ def plot_relative_bias(
     number_of_samples,
     drop,
 ):
-    """_summary_
+    """Plots relative biases
 
-    :param mean_relative_bias_list: _description_
-    :param std_relative_bias_list: _description_
-    :param file_name: _description_
-    :param mrs_iterations: _description_
-    :param number_of_samples: _description_
-    :param drop: _description_
+    :param mean_relative_bias_list: Mean relative biases
+    :param std_relative_bias_list: Standard deviation for the relative biases
+    :param file_name: File name for the plot
+    :param mrs_iterations: Iteration in which mrs stopped
+    :param number_of_samples: Number of samples in the original data set
+    :param drop: Number of dropped elements per iteration
     """
     plt.xlabel("Number of Remaining Samples")
     plt.ylabel("Relative Bias")

@@ -3,11 +3,11 @@ import statsmodels.api as sm
 
 
 def logistic_regression(allensbach_gbs, weights):
-    """_summary_
+    """Performs a logisti regression
 
-    :param allensbach_gbs: _description_
-    :param weights: _description_
-    :return: _description_
+    :param allensbach_gbs: Allensbach and gbs data set
+    :param weights: Sample weights
+    :return: p values
     """
     weights = weights * len(weights)
     y = allensbach_gbs["Wahlteilnahme"]
@@ -39,17 +39,17 @@ def write_result_dict(
     auprc_list,
     number_of_samples,
 ):
-    """_summary_
+    """Creates the result dictionary
 
-    :param columns: _description_
-    :param weighted_mmds_list: _description_
-    :param biases_list: _description_
-    :param wasserstein_parameter_list: _description_
-    :param remaining_samples_list: _description_
-    :param auroc_list: _description_
-    :param auprc_list: _description_
-    :param number_of_samples: _description_
-    :return: _description_
+    :param columns: Column names
+    :param weighted_mmds_list: List of result mmds
+    :param biases_list: List of result relative biases
+    :param wasserstein_parameter_list: List of wasserstein distances
+    :param remaining_samples_list: List of remaining samples
+    :param auroc_list: List of auroc values
+    :param auprc_list: List of auprc values
+    :param number_of_samples: Number of samples in the original data set
+    :return: The result dictionary
     """
     result_dict = {
         "MMDs": {

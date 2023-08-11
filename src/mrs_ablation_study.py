@@ -1,3 +1,4 @@
+import random
 import numpy as np
 from pathlib import Path
 from tqdm import trange
@@ -12,13 +13,19 @@ from utils.visualization import (
 )
 
 
-def compare_mrs_variants(number_of_repetitions, ablation_experiment, drop):
-    """_summary_
+seed = 5
 
-    :param number_of_repetitions: _description_
-    :param ablation_experiment: _description_
-    :param drop: _description_
+
+def compare_mrs_variants(number_of_repetitions, ablation_experiment, drop):
+    """Compare different mrs variants
+
+    :param number_of_repetitions: Number of repetitions
+    :param ablation_experiment: Name of the MRS variatn
+    :param drop: Defines how many samples are dropped each iteration
     """
+    np.random.seed(seed)
+    random.seed(seed)
+    random_generator = np.random.RandomState(seed)
     aucs_complete = []
     mmds_complete = []
     aucs_comparison = []
@@ -27,7 +34,7 @@ def compare_mrs_variants(number_of_repetitions, ablation_experiment, drop):
 
     file_directory = Path(__file__).parent
     result_path = create_result_path(ablation_experiment, file_directory)
-    data, columns = load_dataset("gbs_gesis")
+    data, columns, _ = load_dataset("gbs_gesis")
     scaled_N, scaled_R = preprocess_data(data, columns)
     number_of_samples = len(scaled_N)
 
@@ -51,6 +58,7 @@ def compare_mrs_variants(number_of_repetitions, ablation_experiment, drop):
             save_path=result_path,
             return_metrics=True,
             sampling="max",
+            random_generator=random_generator,
         )
         aucs_complete.append(auc_list)
         mmds_complete.append(mmd_list)
@@ -71,6 +79,7 @@ def compare_mrs_variants(number_of_repetitions, ablation_experiment, drop):
             save_path=result_path,
             return_metrics=True,
             class_weights=class_weights,
+            random_generator=random_generator,
         )
         aucs_comparison.append(comparison_auc_list)
         mmds_comparison.append(comparison_mmd_list)
@@ -102,11 +111,11 @@ def compare_mrs_variants(number_of_repetitions, ablation_experiment, drop):
 
 
 def preprocess_data(data, columns):
-    """_summary_
+    """Preprocess the data
 
-    :param data: _description_
-    :param columns: _description_
-    :return: _description_
+    :param data: Data set as pandas.DataFrame
+    :param columns: Defines the columns that will be preprocessed
+    :return: Preprocessed data
     """
     data = data.sample(frac=1)
     scaled_df, _ = scale_df(data, columns)
@@ -116,11 +125,11 @@ def preprocess_data(data, columns):
 
 
 def create_result_path(ablation_experiment, file_directory):
-    """_summary_
+    """Creates the result path
 
-    :param ablation_experiment: _description_
-    :param file_directory: _description_
-    :return: _description_
+    :param ablation_experiment: Experiment name
+    :param file_directory: Path to the file directory
+    :return: The created path
     """
     result_path = Path(file_directory, "../results")
     result_path = result_path / "ablation_study" / ablation_experiment
@@ -142,20 +151,20 @@ def plot_result_graphs(
     mean_aucs,
     std_aucs,
 ):
-    """_summary_
+    """Plots the results
 
-    :param drop: _description_
-    :param result_path: _description_
-    :param number_of_samples: _description_
-    :param experiment_label: _description_
-    :param comparison_mean_mmds: _description_
-    :param comparison_std_mmds: _description_
-    :param comparison_mean_aucs: _description_
-    :param comparison_std_aucs: _description_
-    :param mean_mmds: _description_
-    :param std_mmds: _description_
-    :param mean_aucs: _description_
-    :param std_aucs: _description_
+    :param drop: How many samples were dropped each iteration
+    :param result_path: The path were the results should be saved
+    :param number_of_samples: Number of samples in the original data set
+    :param experiment_label: Name of the experiment
+    :param comparison_mean_mmds: Mean MMDs of the MRS variant
+    :param comparison_std_mmds: Standard deviation of the MMDs of the MRS variant
+    :param comparison_mean_aucs: Mean AUROCs of the MRS variant
+    :param comparison_std_aucs: Standard deviation AUROCs of the MMDs of the MRS variant
+    :param mean_mmds: Mean MMDs of MRS
+    :param std_mmds: Standard deviation of the MMDs of MRS
+    :param mean_aucs: Mean AUROCs of MRS
+    :param std_aucs: Standard deviation AUROCs of the MMDs of MRS
     """
     plot_experiment_comparison_mmd(
         mean_mmds,
@@ -181,10 +190,10 @@ def plot_result_graphs(
 
 
 def choose_hyperparameter(ablation_experiment):
-    """_summary_
+    """Choose the hyperparameter for a given MRS variant
 
-    :param ablation_experiment: _description_
-    :return: _description_
+    :param ablation_experiment: Name of the MRS variant
+    :return: The corresponding hyperparameter
     """
     class_weights = "balanced"
     if ablation_experiment == "random":

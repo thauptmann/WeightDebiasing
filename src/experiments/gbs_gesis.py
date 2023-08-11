@@ -10,6 +10,7 @@ from utils.visualization import (
 
 
 bins = 25
+seed = 5
 
 
 def gbs_gesis_experiment(
@@ -26,6 +27,7 @@ def gbs_gesis_experiment(
     :param weighting_method: The weighting function
     :param method: Method name, defaults to ""
     """
+    random_generator = np.random.RandomState(seed)
     visualisation_path = create_result_path(method)
     df = df.sample(frac=1)
     mmd_list = []
@@ -46,6 +48,7 @@ def gbs_gesis_experiment(
         mean_list=mean_list,
         mmd_list=mmd_list,
         drop=1,
+        random_generator=random_generator,
     )
 
     (

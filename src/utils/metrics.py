@@ -2,6 +2,7 @@ import numpy as np
 
 from scipy.spatial.distance import pdist
 from scipy.stats import wasserstein_distance
+
 from sklearn.model_selection import GridSearchCV, StratifiedKFold
 from sklearn.preprocessing import StandardScaler
 from sklearn.tree import DecisionTreeClassifier
@@ -69,16 +70,16 @@ def weighted_maximum_mean_discrepancy(
     y_y_rbf_matrix=None,
     x_y_rbf_matrix=None,
 ):
-    """_summary_
+    """Wrapper function to calculate the MMD between a weighted data set and a uniform weighted data set
 
-    :param x: _description_
-    :param y: _description_
-    :param weights: _description_
-    :param gamma: _description_, defaults to None
-    :param x_x_rbf_matrix: _description_, defaults to None
-    :param y_y_rbf_matrix: _description_, defaults to None
-    :param x_y_rbf_matrix: _description_, defaults to None
-    :return: _description_
+    :param x: The first data set
+    :param y: The second data set
+    :param weights: Weights for the first data set
+    :param gamma: Gamma of the RBF kernel, defaults to None
+    :param x_x_rbf_matrix: Pre-computed pairwise rbf matrix to save computing time, defaults to None
+    :param y_y_rbf_matrix: Pre-computed pairwise rbf matrix to save computing time, defaults to None
+    :param x_y_rbf_matrix: Pre-computed pairwise rbf matrix to save computing time, defaults to None
+    :return: The MMD between a weighted data set and a uniform weighted reference data set
     """
     if gamma is None:
         gamma = calculate_rbf_gamma(np.append(x, y, axis=0))
@@ -88,36 +89,36 @@ def weighted_maximum_mean_discrepancy(
 
 
 def compute_weighted_maximum_mean_discrepancy(
-    gamma, n, r, weights, n_n_rbf_matrix=None, r_r_rbf_matrix=None, n_r_rbf_matrix=None
+    gamma, x, y, weights, n_n_rbf_matrix=None, r_r_rbf_matrix=None, n_r_rbf_matrix=None
 ):
     """_summary_
 
     :param gamma: _description_
-    :param n: _description_
-    :param r: _description_
-    :param weights: _description_
-    :param n_n_rbf_matrix: _description_, defaults to None
-    :param r_r_rbf_matrix: _description_, defaults to None
-    :param n_r_rbf_matrix: _description_, defaults to None
-    :return: _description_
+    :param x: The first data set
+    :param y: The second data set
+    :param weights: Weights for the first data set (x)
+    :param n_n_rbf_matrix: Pre-computed pairwise rbf matrix to save computing time, defaults to None
+    :param r_r_rbf_matrix: Pre-computed pairwise rbf matrix to save computing time, defaults to None
+    :param n_r_rbf_matrix: Pre-computed pairwise rbf matrix to save computing time, defaults to None
+    :return: The MMD between a weighted data set and a uniform weighted reference data set
     """
-    weights_r = np.ones(len(r)) / len(r)
+    weights_r = np.ones(len(y)) / len(y)
     weights_n = weights / np.sum(weights)
 
     if n_n_rbf_matrix is None:
-        n_n_rbf_matrix = rbf_kernel(n, n, gamma=gamma)
+        n_n_rbf_matrix = rbf_kernel(x, x, gamma=gamma)
     weights_n_n = np.matmul(np.expand_dims(weights_n, 1), np.expand_dims(weights_n, 0))
     n_n_mean = (weights_n_n * n_n_rbf_matrix).sum()
 
     if r_r_rbf_matrix is None:
-        r_r_rbf_matrix = rbf_kernel(r, r, gamma=gamma)
+        r_r_rbf_matrix = rbf_kernel(y, y, gamma=gamma)
     weight_matrix_r_r = np.matmul(
         np.expand_dims(weights_r, 1), np.expand_dims(weights_r, 0)
     )
     r_r_mean = (weight_matrix_r_r * r_r_rbf_matrix).sum()
 
     if n_r_rbf_matrix is None:
-        n_r_rbf_matrix = rbf_kernel(n, r, gamma=gamma)
+        n_r_rbf_matrix = rbf_kernel(x, y, gamma=gamma)
     weight_matrix_n_r = np.matmul(
         np.expand_dims(weights_n, 1), np.expand_dims(weights_r, 0)
     )
@@ -128,16 +129,16 @@ def compute_weighted_maximum_mean_discrepancy(
 
 
 def compute_metrics(scaled_N, scaled_R, weights, scaler, scale_columns, columns, gamma):
-    """_summary_
+    """Computes the metrics for an experiment
 
-    :param scaled_N: _description_
-    :param scaled_R: _description_
-    :param weights: _description_
-    :param scaler: _description_
-    :param scale_columns: _description_
-    :param columns: _description_
-    :param gamma: _description_
-    :return: _description_
+    :param scaled_N: Standardized non-representative data set
+    :param scaled_R: standardized representative data set
+    :param weights: Sample weights
+    :param scaler: Standard Scaler
+    :param scale_columns: Names of scaled columns
+    :param columns: Names of columns used for training
+    :param gamma: Gamma for the rbf kernel
+    :return: Result metrics
     """
     wasserstein_distances = []
     scaled_N_dropped = scaled_N[columns].values
@@ -170,44 +171,50 @@ def compute_metrics(scaled_N, scaled_R, weights, scaler, scale_columns, columns,
 
 
 def compute_classification_metrics(N, R, columns, weights, label):
-    """_summary_
+    """Computes classification metrics for downstream tasks
 
-    :param N: _description_
-    :param R: _description_
-    :param columns: _description_
-    :param weights: _description_
-    :param label: _description_
-    :return: _description_
+    :param N: Non representative data set
+    :param R: Representative data set
+    :param columns: Columns used in the training
+    :param weights: Computed sample weights
+    :param label: Name of the target variable
+    :return: Downstream classification metrics
     """
     y_true = R[label]
     clf = train_classifier_auroc(N[columns], N[label], weights)
     y_predictions = clf.predict_proba(R[columns])[:, 1]
     auroc_score = roc_auc_score(y_true, y_predictions)
-    auprc = average_precision_score(y_true, y_predictions.round())
+    auprc = average_precision_score(y_true, y_predictions)
 
     return auroc_score, auprc
 
 
-def compute_test_metrics_mrs(data, columns, calculate_roc=False, weights=None, cv=3):
-    """_summary_
+def compute_test_metrics_mrs(
+    data, columns, calculate_roc=False, weights=None, cv=3, random_state=None
+):
+    """Compute test metrics for mrs
 
-    :param data: _description_
-    :param columns: _description_
-    :param calculate_roc: _description_, defaults to False
-    :param weights: _description_, defaults to None
-    :param cv: _description_, defaults to 3
-    :return: _description_
+    :param data: Data set as pandas.DataFrame
+    :param columns: Names of the columns use for training
+    :param calculate_roc: If true, compute roc, defaults to False
+    :param weights: Sample weights, defaults to None
+    :param cv: Number of cross-validation iterations, defaults to 3
+    :return: Test metrics for mrs
     """
     if weights is None:
         weights = np.ones(len(data)) / len(data)
     auroc_scores = []
     ifpr_list = []
     itpr_list = []
-    kf = StratifiedKFold(n_splits=cv, shuffle=True)
+    kf = StratifiedKFold(n_splits=cv, shuffle=True, random_state=random_state)
     for train_indices, test_indices in kf.split(data[columns], data["label"]):
         train, test = data.iloc[train_indices], data.iloc[test_indices]
         train_weights = weights[train_indices]
-        clf = train_classifier_auroc(train[columns], train.label, weights=train_weights)
+        clf = train_classifier_auroc(
+            train[columns],
+            train.label,
+            weights=train_weights,
+        )
         y_predict = clf.predict_proba(test[columns])[:, 1]
         auroc = roc_auc_score(test.label, y_predict)
         auroc_scores.append(auroc)
@@ -224,26 +231,30 @@ def compute_test_metrics_mrs(data, columns, calculate_roc=False, weights=None, c
         return np.mean(auroc_scores)
 
 
-def train_pu_classifier(X_train, y_train, class_weight="balanced"):
-    """_summary_
+def train_pu_classifier(X_train, y_train, class_weight="balanced", random_state=None):
+    """Train the positive unlabeled classifier
 
-    :param X_train: _description_
-    :param y_train: _description_
-    :param class_weight: _description_, defaults to "balanced"
-    :return: _description_
+    :param X_train: Training features
+    :param y_train: Training target
+    :param class_weight: Sample weights, defaults to "balanced"
+    :return: Trained positive unlabeled classifier
     """
     clf = RandomForestClassifier(
-        class_weight=class_weight, n_estimators=25, n_jobs=-1, max_depth=25
+        class_weight=class_weight,
+        n_estimators=25,
+        n_jobs=-1,
+        max_depth=25,
+        random_state=random_state,
     )
     return clf.fit(X_train, y_train)
 
 
 def interpolate_roc(y_test, y_predict):
-    """_summary_
+    """Interpolate rocs
 
-    :param y_test: _description_
-    :param y_predict: _description_
-    :return: _description_
+    :param y_test: True test targets
+    :param y_predict: Predicted test targets
+    :return: Interpolated roc
     """
     interpolation_points = 250
     interpolated_fpr = np.linspace(0, 1, interpolation_points)
@@ -254,14 +265,14 @@ def interpolate_roc(y_test, y_predict):
 
 
 def train_classifier_auroc(X_train, y_train, weights=None, speedup=True, cv=3):
-    """_summary_
+    """Train a classifier to measure the auroc
 
-    :param X_train: _description_
-    :param y_train: _description_
-    :param weights: _description_, defaults to None
-    :param speedup: _description_, defaults to True
-    :param cv: _description_, defaults to 3
-    :return: _description_
+    :param X_train: Training features
+    :param y_train: Training targets
+    :param weights: Sample weights, defaults to None
+    :param speedup: If true, use only a subset of the cost complexities, defaults to True
+    :param cv: Number of cross-validation iterations, defaults to 3
+    :return: Trained classifier
     """
     if weights is None:
         weights = np.ones(len(X_train)) / len(X_train)
@@ -294,10 +305,10 @@ def train_classifier_auroc(X_train, y_train, weights=None, speedup=True, cv=3):
 
 
 def calculate_mean_rocs(rocs):
-    """_summary_
+    """Compute mean rocs
 
-    :param rocs: _description_
-    :return: _description_
+    :param rocs: Rocs list
+    :return: Mean rocs
     """
     rocs = np.array(rocs, dtype=object)
     mean_rocs = []
@@ -312,11 +323,11 @@ def calculate_mean_rocs(rocs):
 
 
 def calculate_mean_roc(interpolated_fpr, interpolated_tpr):
-    """_summary_
+    """Compute mean roc
 
-    :param interpolated_fpr: _description_
-    :param interpolated_tpr: _description_
-    :return: _description_
+    :param interpolated_fpr: Interpolated false positive rate
+    :param interpolated_tpr: Interpolated true positive rate
+    :return: Mean roc
     """
     mean_fpr = np.mean(interpolated_fpr, axis=0)
     mean_tpr = np.mean(interpolated_tpr, axis=0)

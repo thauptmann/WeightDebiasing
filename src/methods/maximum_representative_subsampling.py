@@ -14,6 +14,9 @@ from utils.metrics import (
     weighted_maximum_mean_discrepancy,
 )
 
+# Used to draw radom states
+max_int = 2**32 - 1
+
 
 def mrs(
     N,
@@ -22,27 +25,32 @@ def mrs(
     n_drop: int = 1,
     cv=5,
     class_weights="balanced",
-    sampling="temperature",
+    random_state=None,
     *args,
     **attributes
 ):
-    """_summary_
+    """Performs one iteration of maximum representative sampling
 
-    :param N: _description_
-    :param R: _description_
-    :param columns: _description_
-    :param n_drop: _description_, defaults to 1
-    :param cv: _description_, defaults to 5
-    :param class_weights: _description_, defaults to "balanced"
-    :param sampling: _description_, defaults to "temperature"
+    :param N: Non-representative data set
+    :param R: Representative data set
+    :param columns: Columns names used for training
+    :param n_drop: Number of samples to drop every iteration, defaults to 1
+    :param cv: Number of cross-validation iterations, defaults to 5
+    :param class_weights: Type of class weights, defaults to "balanced"
+    :param random_state: Random state to make results reproducible
     :return: _description_
     """
     all_predictions = np.zeros(len(N))
-    kf = KFold(n_splits=cv, shuffle=True)
+    kf = KFold(n_splits=cv, shuffle=True, random_state=random_state)
     for train_index, test_index in kf.split(N):
         N_train, N_test = N.iloc[train_index], N.iloc[test_index]
         data = pd.concat([N_train, R])
-        clf = train_pu_classifier(data[columns], data.label, class_weight=class_weights)
+        clf = train_pu_classifier(
+            data[columns],
+            data.label,
+            class_weight=class_weights,
+            random_state=random_state,
+        )
         predictions = clf.predict_proba(N_test[columns])[:, 1]
         all_predictions[test_index] = predictions
 
@@ -56,26 +64,28 @@ def mrs_without_cv(
     R,
     columns,
     n_drop: int = 1,
-    sampling="temperature",
     class_weights="balanced",
+    random_state=None,
     *args,
     **attributes
 ):
-    """
-    MRS Algorithm
+    """Performs one iteration of maximum representative sampling without cross-validation
 
-    Input:
-        * N: dataset that is assumed to not be representative.
-        * R: dataset that is known to be representative.
-        * temperature: temperature value for probabilistic sampling procedure.
-        * drop: number of instances to drop per iteration (small values result in long runtimes).
-        * number_of_splits: splits per iteration.
-
-    Output:
-        * N/Drop: N without the dropped elements
+    :param N: Non-representative data set
+    :param R: Representative data set
+    :param columns: Name of columns used for training
+    :param n_drop: Number of samples to drop every iteration, defaults to 1
+    :param class_weights: Type of class weights, defaults to "balanced"
+    :param random_state: Random state to make the experiment reproducible, defaults to None
+    :return: The index of the element to drop
     """
     data = pd.concat([N, R])
-    clf = train_pu_classifier(data[columns], data.label, class_weight=class_weights)
+    clf = train_pu_classifier(
+        data[columns],
+        data.label,
+        class_weight=class_weights,
+        random_state=random_state,
+    )
     predictions = clf.predict_proba(N[columns])[:, 1]
     drop_ids = np.argpartition(predictions, -n_drop)[-n_drop:]
 
@@ -92,36 +102,35 @@ def repeated_MRS(
     mrs_function=mrs,
     return_metrics=False,
     use_bias_mean=True,
-    sampling="max",
     bias_variable=None,
     cv=5,
     class_weights="balanced",
     drop=1,
+    random_generator=None,
     *args,
     **attributes
 ):
-    """_summary_
+    """Performs the whole mrs
 
-    :param N: _description_
-    :param R: _description_
-    :param columns: _description_
-    :param delta: _description_, defaults to 0.001
-    :param early_stopping: _description_, defaults to False
-    :param mrs_function: _description_, defaults to mrs
-    :param return_metrics: _description_, defaults to False
-    :param use_bias_mean: _description_, defaults to True
-    :param sampling: _description_, defaults to "max"
-    :param bias_variable: _description_, defaults to None
-    :param cv: _description_, defaults to 5
-    :param class_weights: _description_, defaults to "balanced"
-    :param drop: _description_, defaults to 1
-    :return: _description_
+    :param N: Non-representative data set
+    :param R: Representative data set
+    :param columns: Name of the columns used in training
+    :param delta: Delta for the stopping criterion, defaults to 0.001
+    :param early_stopping: If true, stops before dropping all samples, defaults to False
+    :param mrs_function: Function that is used in evers mrs iteration, defaults to mrs
+    :param return_metrics: If true, return test metrics, defaults to False
+    :param use_bias_mean: If true, compute relative bias, defaults to True
+    :param bias_variable: Name of the biased variable, defaults to None
+    :param cv: Number of cross-validation iterations, defaults to 5
+    :param class_weights: Type of class weights, defaults to "balanced"
+    :param drop: Defines how many samples are dropped per iteration, defaults to 1
+    :param random_generator: Random generator to create random_states to make results reproducible
+    :return: Sample weights or test metrics
     """
     auc_list = []
     relative_bias_list = []
     mmd_list = []
     roc_list = []
-
     number_of_iterations = len(N) // drop
     mrs_iteration = 0
     roc_iteration = (len(N) // drop // 3.5) + 1
@@ -148,8 +157,11 @@ def repeated_MRS(
             y_y_rbf_matrix=y_y_rbf_matrix,
         )
     )
-    auc, mean_ifpr_list, mean_itpr_list, std_tpr = compute_test_metrics_mrs(
-        pd.concat([dropping_N, R]), columns, calculate_roc=True
+    auroc, mean_ifpr_list, mean_itpr_list, std_tpr = compute_test_metrics_mrs(
+        pd.concat([dropping_N, R]),
+        columns,
+        calculate_roc=True,
+        random_state=random_generator.randint(max_int),
     )
     roc_list.append([mean_ifpr_list, mean_itpr_list, std_tpr, 0])
 
@@ -159,7 +171,7 @@ def repeated_MRS(
         )
         relative_bias_list.append(relative_bias)
 
-    auc_list.append(auc)
+    auc_list.append(auroc)
 
     for i in trange(number_of_iterations):
         dropping_N, drop_ids = mrs_function(
@@ -167,24 +179,25 @@ def repeated_MRS(
             R=R,
             columns=columns,
             n_drop=drop,
-            sampling=sampling,
             class_weights=class_weights,
             cv=cv,
+            random_state=random_generator.randint(max_int),
         )
         weights[drop_ids] = 0
 
         if (i + 1) % roc_iteration == 0:
-            auc, mean_ifpr_list, mean_itpr_list, std_tpr = compute_test_metrics_mrs(
+            auroc, mean_ifpr_list, mean_itpr_list, std_tpr = compute_test_metrics_mrs(
                 pd.concat([dropping_N, R]), columns, calculate_roc=True
             )
             roc_list.append([mean_ifpr_list, mean_itpr_list, std_tpr, i * drop])
         else:
-            auc = compute_test_metrics_mrs(
+            auroc = compute_test_metrics_mrs(
                 pd.concat([dropping_N, R]),
                 columns,
+                random_state=random_generator.randint(max_int),
             )
 
-        auc_list.append(auc)
+        auc_list.append(auroc)
 
         mmd_list.append(
             weighted_maximum_mean_discrepancy(
@@ -204,7 +217,7 @@ def repeated_MRS(
             )
             relative_bias_list.append(relative_bias)
 
-        auc_difference = abs(auc - 0.5)
+        auc_difference = abs(auroc - 0.5)
         if (auc_difference + delta) <= best_difference:
             best_weights = weights.copy()
             mrs_iteration = (i + 1) * drop
@@ -225,23 +238,12 @@ def repeated_MRS(
         return best_weights / best_weights.sum()
 
 
-def calculate_temperature(auc):
-    """_summary_
+def random_drops(N, n_drop: int = 1, *args, **attributes):
+    """MRS variant that drops sample randomly
 
-    :param auc: _description_
-    :return: _description_
-    """
-    mapped_auc = abs(auc - 0.5)
-    temperature = -0.55 * mapped_auc + 0.3
-    return temperature
-
-
-def random_drops(N, n_drop: int = 5, *args, **attributes):
-    """_summary_
-
-    :param N: _description_
-    :param n_drop: _description_, defaults to 5
-    :return: _description_
+    :param N: Non-representative data set
+    :param n_drop: Defines how many samples are dropped per iteration, defaults to 1
+    :return: Index of the samples to drop
     """
     drop_ids = random.sample(range(0, len(N)), n_drop)
     return N.drop(N.index[drop_ids]), N.index[drop_ids]

@@ -1,13 +1,11 @@
 NUMBER_OF_REPETETIONS=20
+BIAS_TYPE=mean_difference
 
-for DATASET in folktables_income folktables_employment breast_cancer hr_analytics loan_prediction
+for METHOD in uniform logistic_regression kmm soft-mrs soft-mrs-exponential mrs neural_network_mmd_loss
 do
-    for METHOD in uniform logistic_regression neural_network_mmd_loss kmm adaDeBoost mrs
+    for DATASET in breast_cancer loan_prediction hr_analytics  folktables_income folktables_employment 
     do
-        for BIAS_TYPE in mean_difference
-        do
-            python src/weighting_experiment.py --dataset $DATASET --method $METHOD \
-            --bias_type $BIAS_TYPE --number_of_repetitions $NUMBER_OF_REPETETIONS
-        done
+        python src/weighting_experiment.py --dataset $DATASET --method $METHOD \
+        --bias_type $BIAS_TYPE --number_of_repetitions $NUMBER_OF_REPETETIONS  
     done
 done

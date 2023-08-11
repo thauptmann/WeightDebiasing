@@ -5,7 +5,7 @@ from torch.optim.lr_scheduler import OneCycleLR
 
 from utils.metrics import calculate_rbf_gamma
 from utils.models import WeightingMlp
-from utils.weighted_mmd_loss import WeightedMMDLoss
+from utils.weighted_mmd_loss_torch import WeightedMMDLoss
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
@@ -79,7 +79,6 @@ def train_weighted_mmd_model(tensor_N, tensor_R):
 
         mmd = validate_model(
             tensor_N,
-            tensor_R,
             loss_function,
             mmd_model,
         )
@@ -94,7 +93,7 @@ def train_weighted_mmd_model(tensor_N, tensor_R):
     return mmd_model, mmd_list
 
 
-def validate_model(tensor_N, tensor_R, mmd_loss_function, mmd_model):
+def validate_model(tensor_N, mmd_loss_function, mmd_model):
     """Validates the neural network
 
     :param tensor_N: Non-representative data set

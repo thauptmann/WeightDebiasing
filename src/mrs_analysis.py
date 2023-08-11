@@ -1,3 +1,4 @@
+import random
 import numpy as np
 from pathlib import Path
 from tqdm import trange
@@ -14,15 +15,20 @@ from utils.visualization import (
     plot_rocs,
 )
 
+seed = 5
 
-def compare_mrs_variants(number_of_repetitions, data_set_name, bias_type, drop):
-    """_summary_
 
-    :param number_of_repetitions: _description_
-    :param data_set_name: _description_
-    :param bias_type: _description_
-    :param drop: _description_
+def analyse_mrs(number_of_repetitions, data_set_name, bias_type, drop):
+    """Run mrs on different data sets
+
+    :param number_of_repetitions: Number of repetitions
+    :param data_set_name: Data set name
+    :param bias_type: Bias type
+    :param drop: Defines how many samples are dropped in each iteration
     """
+    np.random.seed(seed)
+    random.seed(seed)
+    random_generator = np.random.RandomState(seed)
     aucs_complete = []
     mmds_complete = []
     mrs_iteration_list = []
@@ -65,6 +71,7 @@ def compare_mrs_variants(number_of_repetitions, data_set_name, bias_type, drop):
             return_metrics=True,
             use_bias_mean=use_bias_mean,
             bias_variable=bias_variable,
+            random_generator=random_generator,
         )
         aucs_complete.append(auc_list)
         mmds_complete.append(mmd_list)
@@ -113,11 +120,11 @@ def compare_mrs_variants(number_of_repetitions, data_set_name, bias_type, drop):
 
 
 def create_save_path(data_set_name, bias_type):
-    """_summary_
+    """Creates the path for result files
 
-    :param data_set_name: _description_
-    :param bias_type: _description_
-    :return: _description_
+    :param data_set_name: Data set name
+    :param bias_type: Bias type name
+    :return: File path
     """
     file_directory = Path(__file__).parent
     result_path = Path(file_directory, "../results")
@@ -128,6 +135,6 @@ def create_save_path(data_set_name, bias_type):
 
 if __name__ == "__main__":
     args = parse_mrs_analysis_command_line_arguments()
-    compare_mrs_variants(
+    analyse_mrs(
         args.number_of_repetitions, args.data_set_name, args.bias_type, args.drop
     )

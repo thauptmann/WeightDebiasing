@@ -11,7 +11,7 @@ from utils.visualization import (
 )
 
 bins = 25
-
+seed = 5
 
 def gbs_allensbach_experiment(
     df,
@@ -30,6 +30,7 @@ def gbs_allensbach_experiment(
     :param method: Method name
     :param number_of_repetitions: Number of repetetions of the experiment
     """
+    random_generator = np.random.RandomState(seed)
     result_path = create_result_path(method)
     df = df.sample(frac=1)
     mmd_list = []
@@ -56,6 +57,7 @@ def gbs_allensbach_experiment(
             mmd_list=mmd_list,
             drop=1,
             early_stopping=True,
+            random_generator=random_generator
         )
 
         (
