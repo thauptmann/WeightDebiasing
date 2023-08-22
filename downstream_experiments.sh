@@ -1,4 +1,4 @@
-NUMBER_OF_REPETETIONS=20
+NUMBER_OF_REPETETIONS=100
 BIAS_TYPE=mean_difference
 
 for METHOD in uniform logistic_regression kmm soft-mrs soft-mrs-exponential mrs neural_network_mmd_loss

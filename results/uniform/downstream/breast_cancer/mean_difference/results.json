@@ -1,15 +1,15 @@
 {
     "MMDs": {
-        "mean": 0.09853146750143323,
-        "sd": 0.022459547612755166
+        "mean": 0.09699179376809253,
+        "sd": 0.028841842059903484
     },
     "auroc": {
-        "mean": 0.9397922961066563,
-        "sd": 0.01741644990253618
+        "mean": 0.940054226456219,
+        "sd": 0.021555728435751802
     },
     "auprc": {
-        "mean": 0.9505148195047862,
-        "sd": 0.01495495917595275
+        "mean": 0.9489614270828061,
+        "sd": 0.01945629918379125
     },
     "remaining samples": {
         "mean": 308.0,
@@ -17,63 +17,63 @@
     },
     "all_samples": 308,
     "clump_thickness_relative_bias": {
-        "bias mean": 8.28112157180632,
-        "bias sd": 4.2447469080626306,
-        "wasserstein mean": 0.139778665283865,
-        "wasserstein sd": 0.0647639320540316
+        "bias mean": 8.731883292162777,
+        "bias sd": 4.419050419500159,
+        "wasserstein mean": 0.14822294123118074,
+        "wasserstein sd": 0.0654784780379715
     },
     "uniformity_of_cell_size_relative_bias": {
-        "bias mean": 20.762866058642015,
-        "bias sd": 4.336197467268038,
-        "wasserstein mean": 0.2157887725088127,
-        "wasserstein sd": 0.04980005325965861
+        "bias mean": 19.94530407439477,
+        "bias sd": 6.661245536153488,
+        "wasserstein mean": 0.2097575675307038,
+        "wasserstein sd": 0.07194637936268229
     },
     "uniformity_of_cell_shape_relative_bias": {
-        "bias mean": 18.6514092805256,
-        "bias sd": 4.874308482593504,
-        "wasserstein mean": 0.20231238406047125,
-        "wasserstein sd": 0.05824836782471504
+        "bias mean": 18.709574135344614,
+        "bias sd": 6.4258512165118775,
+        "wasserstein mean": 0.20579908347079306,
+        "wasserstein sd": 0.07304111832510482
     },
     "marginal_adhesion_relative_bias": {
-        "bias mean": 17.111493882101282,
-        "bias sd": 6.011128325320315,
-        "wasserstein mean": 0.1726897234343465,
-        "wasserstein sd": 0.061111681423667144
+        "bias mean": 16.812349947490844,
+        "bias sd": 7.067732120701573,
+        "wasserstein mean": 0.16996642323513714,
+        "wasserstein sd": 0.0736208424142224
     },
     "single_epithelial_cell_size_relative_bias": {
-        "bias mean": 15.776917782994252,
-        "bias sd": 3.4548347569614912,
-        "wasserstein mean": 0.23771508640208577,
-        "wasserstein sd": 0.053215053886435604
+        "bias mean": 14.245737594873608,
+        "bias sd": 4.8632960294544,
+        "wasserstein mean": 0.21451852951338157,
+        "wasserstein sd": 0.07434631564040688
     },
     "bare_nuclei_relative_bias": {
-        "bias mean": 13.197349975802911,
-        "bias sd": 6.36270185653636,
-        "wasserstein mean": 0.13192029204375275,
-        "wasserstein sd": 0.06401646744902251
+        "bias mean": 13.964776231612584,
+        "bias sd": 7.199992723084244,
+        "wasserstein mean": 0.14094317002105622,
+        "wasserstein sd": 0.07409435509629182
     },
     "bland_chromatin_relative_bias": {
-        "bias mean": 11.960851059670423,
-        "bias sd": 3.824289796000151,
-        "wasserstein mean": 0.17347041147351128,
-        "wasserstein sd": 0.053271810853219456
+        "bias mean": 12.612296947641505,
+        "bias sd": 5.13483853274231,
+        "wasserstein mean": 0.18444909109321422,
+        "wasserstein sd": 0.0729778794255325
     },
     "normal_nucleoli_relative_bias": {
-        "bias mean": 19.44901175560601,
-        "bias sd": 6.684653376521962,
-        "wasserstein mean": 0.18804818565240256,
-        "wasserstein sd": 0.070442548648558
+        "bias mean": 18.19340024481663,
+        "bias sd": 7.044362178810461,
+        "wasserstein mean": 0.17632684731026746,
+        "wasserstein sd": 0.07043923424704067
     },
     "mitoses_relative_bias": {
-        "bias mean": 22.682440925385404,
-        "bias sd": 5.327939060618847,
-        "wasserstein mean": 0.21476630428951768,
-        "wasserstein sd": 0.05305825198039973
+        "bias mean": 21.643980583965458,
+        "bias sd": 5.236267175801423,
+        "wasserstein mean": 0.20255141024231652,
+        "wasserstein sd": 0.05487783288436714
     },
     "class_relative_bias": {
-        "bias mean": 11.729548366709633,
-        "bias sd": 5.039969432464716,
-        "wasserstein mean": 0.07531420192710599,
-        "wasserstein sd": 0.030890342909386068
+        "bias mean": 11.602195205095974,
+        "bias sd": 5.962161308139028,
+        "wasserstein mean": 0.0742511520737335,
+        "wasserstein sd": 0.03643828940133211
     }
 }
