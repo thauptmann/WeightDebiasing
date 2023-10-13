@@ -23,7 +23,6 @@ method_list = [
     "neural_network_mmd_loss",
     "uniform",
     "soft-mrs",
-    "soft-mrs-exponential",
     "mrs",
     "kmm",
 ]

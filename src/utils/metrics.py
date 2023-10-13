@@ -124,8 +124,8 @@ def compute_weighted_maximum_mean_discrepancy(
     )
     n_r_mean = (weight_matrix_n_r * n_r_rbf_matrix).sum()
 
-    mmd = n_n_mean + r_r_mean - 2 * n_r_mean
-    return np.sqrt(mmd)
+    mmd = np.sqrt(n_n_mean + r_r_mean - 2 * n_r_mean)
+    return mmd
 
 
 def compute_metrics(scaled_N, scaled_R, weights, scaler, scale_columns, columns, gamma):
@@ -170,7 +170,7 @@ def compute_metrics(scaled_N, scaled_R, weights, scaler, scale_columns, columns,
     )
 
 
-def compute_classification_metrics(N, R, columns, weights, label):
+def compute_classification_metrics(N, R, columns, weights, label, random_state=None):
     """Computes classification metrics for downstream tasks
 
     :param N: Non representative data set
@@ -181,7 +181,14 @@ def compute_classification_metrics(N, R, columns, weights, label):
     :return: Downstream classification metrics
     """
     y_true = R[label]
-    clf = train_classifier_auroc(N[columns], N[label], weights)
+    clf = train_classifier_auroc(
+        N[columns],
+        N[label],
+        weights,
+        random_state=random_state,
+        n_splits=25,
+        speedup=False,
+    )
     y_predictions = clf.predict_proba(R[columns])[:, 1]
     auroc_score = roc_auc_score(y_true, y_predictions)
     auprc = average_precision_score(y_true, y_predictions)
@@ -214,6 +221,7 @@ def compute_test_metrics_mrs(
             train[columns],
             train.label,
             weights=train_weights,
+            random_state=random_state,
         )
         y_predict = clf.predict_proba(test[columns])[:, 1]
         auroc = roc_auc_score(test.label, y_predict)
@@ -264,7 +272,9 @@ def interpolate_roc(y_test, y_predict):
     return interpolated_fpr, interpolated_tpr
 
 
-def train_classifier_auroc(X_train, y_train, weights=None, speedup=True, cv=3):
+def train_classifier_auroc(
+    X_train, y_train, weights=None, speedup=True, n_splits=3, random_state=None
+):
     """Train a classifier to measure the auroc
 
     :param X_train: Training features
@@ -276,7 +286,7 @@ def train_classifier_auroc(X_train, y_train, weights=None, speedup=True, cv=3):
     """
     if weights is None:
         weights = np.ones(len(X_train)) / len(X_train)
-    clf = DecisionTreeClassifier()
+    clf = DecisionTreeClassifier(random_state=np.random.RandomState(random_state))
     path = clf.cost_complexity_pruning_path(X_train, y_train, sample_weight=weights)
     ccp_alphas = path.ccp_alphas
     ccp_alphas[ccp_alphas < 0] = 0
@@ -288,9 +298,15 @@ def train_classifier_auroc(X_train, y_train, weights=None, speedup=True, cv=3):
             ccp_alphas_unique = np.append(
                 ccp_alphas_unique[-10:], shortened_ccp_alphas_unique
             )
+
     param_grid = {"ccp_alpha": ccp_alphas_unique}
+    cv = StratifiedKFold(
+        n_splits=n_splits,
+        shuffle=True,
+        random_state=np.random.RandomState(random_state),
+    )
     grid = GridSearchCV(
-        DecisionTreeClassifier(),
+        clf,
         param_grid=param_grid,
         cv=cv,
         n_jobs=-1,

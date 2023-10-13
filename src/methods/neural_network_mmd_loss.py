@@ -47,7 +47,7 @@ def train_weighted_mmd_model(tensor_N, tensor_R):
     :param tensor_R: Representative data set
     :return: Trained model
     """
-    iterations = 5000
+    iterations = 1000
     scaler = torch.cuda.amp.GradScaler()
     gamma = calculate_rbf_gamma(np.append(tensor_N, tensor_R, axis=0))
     latent_features = tensor_N.shape[1] // 2

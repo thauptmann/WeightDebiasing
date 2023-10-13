@@ -14,10 +14,6 @@ from utils.metrics import (
     calculate_rbf_gamma,
 )
 
-# Used to draw radom states
-max_int = 2**32 - 1
-seed = 5
-
 
 def downstream_experiment(
     df,
@@ -60,9 +56,6 @@ def downstream_experiment(
     sample_df = df.copy()
 
     for i in trange(number_of_repetitions):
-        # Sample from the data set because the complete one is too big.
-        if len(df) > 5000:
-            sample_df = df.sample(5000).copy()
         N, R = sample(
             bias_type,
             sample_df,
@@ -87,7 +80,9 @@ def downstream_experiment(
             patience=25,
         )
 
-        auroc, auprc = compute_classification_metrics(N, R, columns, weights, target)
+        auroc, auprc = compute_classification_metrics(
+            N, R, columns, weights, target, random_state=5
+        )
 
         (
             weighted_mmd,
