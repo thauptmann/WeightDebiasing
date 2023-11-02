@@ -1,0 +1,217 @@
+{
+    "MMDs": {
+        "mean": 0.027030160629606753,
+        "sd": 0.002825277598094627
+    },
+    "auroc": {
+        "mean": 0.7299970212229583,
+        "sd": 0.013003432659606658
+    },
+    "auprc": {
+        "mean": 0.39320393150698846,
+        "sd": 0.019069790189680004
+    },
+    "remaining samples": {
+        "mean": 1456.46,
+        "sd": 8.17119330330644
+    },
+    "all_samples": 1459,
+    "city_development_index_relative_bias": {
+        "bias mean": 1.961375986403892,
+        "bias sd": 0.43853590468007225,
+        "wasserstein mean": 0.14426963375549742,
+        "wasserstein sd": 0.031574507804834735
+    },
+    "experience_relative_bias": {
+        "bias mean": 3.3650807513109884,
+        "bias sd": 1.4538496063301176,
+        "wasserstein mean": 0.06132447609684252,
+        "wasserstein sd": 0.02440001133364159
+    },
+    "training_hours_relative_bias": {
+        "bias mean": 2.378848510267547,
+        "bias sd": 1.8847198728052486,
+        "wasserstein mean": 0.03720160339699015,
+        "wasserstein sd": 0.01535005051232446
+    },
+    "target_relative_bias": {
+        "bias mean": 70.1578529660118,
+        "bias sd": 10.220859601652496,
+        "wasserstein mean": 0.11651158618230267,
+        "wasserstein sd": 0.013556631445839176
+    },
+    "gender_Male_relative_bias": {
+        "bias mean": 0.951241383170229,
+        "bias sd": 0.6412975590985346,
+        "wasserstein mean": 0.02875353635340042,
+        "wasserstein sd": 0.019321413828762013
+    },
+    "gender_Other_relative_bias": {
+        "bias mean": 37.509403111700365,
+        "bias sd": 34.92642614269393,
+        "wasserstein mean": 0.032261519128863575,
+        "wasserstein sd": 0.023856470027784137
+    },
+    "relevent_experience_No relevent experience_relative_bias": {
+        "bias mean": 7.911195712694319,
+        "bias sd": 5.9665135102517075,
+        "wasserstein mean": 0.029095899619665792,
+        "wasserstein sd": 0.021201115096032126
+    },
+    "enrolled_university_Part time course_relative_bias": {
+        "bias mean": 7.762270167172402,
+        "bias sd": 5.182596785902759,
+        "wasserstein mean": 0.019702303079366552,
+        "wasserstein sd": 0.013418823173232682
+    },
+    "enrolled_university_no_enrollment_relative_bias": {
+        "bias mean": 1.1681990005434038,
+        "bias sd": 0.8586445372354908,
+        "wasserstein mean": 0.027614029251435426,
+        "wasserstein sd": 0.020347901359539088
+    },
+    "education_level_Masters_relative_bias": {
+        "bias mean": 4.28582178714283,
+        "bias sd": 3.7005240840834093,
+        "wasserstein mean": 0.02634631416106685,
+        "wasserstein sd": 0.022682013523932152
+    },
+    "education_level_Phd_relative_bias": {
+        "bias mean": 17.34193026817159,
+        "bias sd": 11.329105894181954,
+        "wasserstein mean": 0.029538064262483957,
+        "wasserstein sd": 0.019182763427315397
+    },
+    "major_discipline_Business Degree_relative_bias": {
+        "bias mean": 20.889039890268137,
+        "bias sd": 13.82498319952294,
+        "wasserstein mean": 0.030154083041712677,
+        "wasserstein sd": 0.02077198752479074
+    },
+    "major_discipline_Humanities_relative_bias": {
+        "bias mean": 11.782588385391819,
+        "bias sd": 8.084917167912305,
+        "wasserstein mean": 0.024778378649517395,
+        "wasserstein sd": 0.017687805231722236
+    },
+    "major_discipline_No Major_relative_bias": {
+        "bias mean": 22.764079844089906,
+        "bias sd": 16.172031236249246,
+        "wasserstein mean": 0.025300542946088724,
+        "wasserstein sd": 0.018645194945340792
+    },
+    "major_discipline_Other_relative_bias": {
+        "bias mean": 20.025167763474425,
+        "bias sd": 13.734993310162702,
+        "wasserstein mean": 0.028722855400751104,
+        "wasserstein sd": 0.020222377104237497
+    },
+    "major_discipline_STEM_relative_bias": {
+        "bias mean": 1.0274428461166734,
+        "bias sd": 0.7252877483317062,
+        "wasserstein mean": 0.029474481547705277,
+        "wasserstein sd": 0.020703578999086897
+    },
+    "company_size_100-500_relative_bias": {
+        "bias mean": 4.644289122280889,
+        "bias sd": 3.5029809360183966,
+        "wasserstein mean": 0.023570673304841177,
+        "wasserstein sd": 0.018056522877804175
+    },
+    "company_size_1000-4999_relative_bias": {
+        "bias mean": 9.646389591200677,
+        "bias sd": 6.749713308394012,
+        "wasserstein mean": 0.0324434176986252,
+        "wasserstein sd": 0.022296873956038542
+    },
+    "company_size_10000+_relative_bias": {
+        "bias mean": 5.890376068035391,
+        "bias sd": 4.117378091719119,
+        "wasserstein mean": 0.025645071500305747,
+        "wasserstein sd": 0.017553404263509383
+    },
+    "company_size_50-99_relative_bias": {
+        "bias mean": 4.616537004755485,
+        "bias sd": 3.813116518938323,
+        "wasserstein mean": 0.02462051313515463,
+        "wasserstein sd": 0.02044714999150911
+    },
+    "company_size_500-999_relative_bias": {
+        "bias mean": 9.938460543913761,
+        "bias sd": 7.223392177064492,
+        "wasserstein mean": 0.02656629164802069,
+        "wasserstein sd": 0.019190131748916185
+    },
+    "company_size_5000-9999_relative_bias": {
+        "bias mean": 12.451817083180396,
+        "bias sd": 10.789089916057911,
+        "wasserstein mean": 0.026993338473095423,
+        "wasserstein sd": 0.023408562931997643
+    },
+    "company_size_<10_relative_bias": {
+        "bias mean": 9.625440724488323,
+        "bias sd": 5.596763969640276,
+        "wasserstein mean": 0.031472442701719935,
+        "wasserstein sd": 0.01891103103274443
+    },
+    "company_type_Funded Startup_relative_bias": {
+        "bias mean": 9.4415362514952,
+        "bias sd": 6.513041050154,
+        "wasserstein mean": 0.02965104556968136,
+        "wasserstein sd": 0.021454369508161306
+    },
+    "company_type_NGO_relative_bias": {
+        "bias mean": 12.796509516676544,
+        "bias sd": 10.959782994715994,
+        "wasserstein mean": 0.025253110514592607,
+        "wasserstein sd": 0.02132188982206899
+    },
+    "company_type_Other_relative_bias": {
+        "bias mean": 33.82027880460519,
+        "bias sd": 22.759403978320872,
+        "wasserstein mean": 0.029908107828705514,
+        "wasserstein sd": 0.01833893994033308
+    },
+    "company_type_Public Sector_relative_bias": {
+        "bias mean": 10.864506841316043,
+        "bias sd": 8.178306673912218,
+        "wasserstein mean": 0.028225331185918984,
+        "wasserstein sd": 0.02180092415056806
+    },
+    "company_type_Pvt Ltd_relative_bias": {
+        "bias mean": 1.7834475607914064,
+        "bias sd": 1.315815541754495,
+        "wasserstein mean": 0.031554043335827626,
+        "wasserstein sd": 0.02308470628255245
+    },
+    "last_new_job_2_relative_bias": {
+        "bias mean": 6.324835017830366,
+        "bias sd": 4.032786261521954,
+        "wasserstein mean": 0.029024073050827184,
+        "wasserstein sd": 0.01855351265519893
+    },
+    "last_new_job_3_relative_bias": {
+        "bias mean": 9.545053506060976,
+        "bias sd": 8.643559213714958,
+        "wasserstein mean": 0.0251627205668368,
+        "wasserstein sd": 0.02152397417832497
+    },
+    "last_new_job_4_relative_bias": {
+        "bias mean": 9.022365426003283,
+        "bias sd": 7.114803588353061,
+        "wasserstein mean": 0.02398138825703996,
+        "wasserstein sd": 0.018088871358826288
+    },
+    "last_new_job_>4_relative_bias": {
+        "bias mean": 5.358713690070476,
+        "bias sd": 4.039464820182081,
+        "wasserstein mean": 0.028717437559789692,
+        "wasserstein sd": 0.022316538862088346
+    },
+    "last_new_job_never_relative_bias": {
+        "bias mean": 14.539329374591976,
+        "bias sd": 12.395894400371118,
+        "wasserstein mean": 0.029664760548901235,
+        "wasserstein sd": 0.023110412725314427
+    }
+}
