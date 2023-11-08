@@ -1,6 +1,6 @@
 NUMBER_OF_REPETETIONS=50
 
-for METHOD in uniform logistic_regression kmm soft-mrs mrs neural_network_mmd_loss
+for METHOD in uniform logistic_regression kmm soft-mrs mrs
 do
     for DATASET in breast_cancer loan_prediction hr_analytics folktables_income folktables_employment 
     do

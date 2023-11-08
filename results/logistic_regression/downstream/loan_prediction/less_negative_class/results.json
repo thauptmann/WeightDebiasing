@@ -1,97 +1,97 @@
 {
     "MMDs": {
-        "mean": 0.03644164515155047,
-        "sd": 0.004327072851587892
+        "mean": 0.03428722756642238,
+        "sd": 0.0042042841329221325
     },
     "auroc": {
-        "mean": 0.6943041639019057,
-        "sd": 0.03466397483517655
+        "mean": 0.6984793662355971,
+        "sd": 0.03144656216669221
     },
     "auprc": {
-        "mean": 0.7857159702830505,
-        "sd": 0.027634129986756566
+        "mean": 0.7879736963291555,
+        "sd": 0.0229059806551176
     },
     "remaining samples": {
-        "mean": 203.34,
-        "sd": 2.825668062600418
+        "mean": 221.64,
+        "sd": 1.3965672200076873
     },
-    "all_samples": 204,
+    "all_samples": 222,
     "Dependents_relative_bias": {
-        "bias mean": 2.398136303466919,
-        "bias sd": 1.7028101717747977,
-        "wasserstein mean": 0.04958278165469234,
-        "wasserstein sd": 0.022553670291689313
+        "bias mean": 1.6864401249986225,
+        "bias sd": 1.2241640494822774,
+        "wasserstein mean": 0.0466229657015971,
+        "wasserstein sd": 0.019506691791866045
     },
     "ApplicantIncome_relative_bias": {
-        "bias mean": 3.444778471124889,
-        "bias sd": 2.6483240655944473,
-        "wasserstein mean": 0.10771988541373002,
-        "wasserstein sd": 0.028016435089868102
+        "bias mean": 2.9102217269388917,
+        "bias sd": 3.084980187968212,
+        "wasserstein mean": 0.10715991948191221,
+        "wasserstein sd": 0.03943980176390557
     },
     "CoapplicantIncome_relative_bias": {
-        "bias mean": 4.956885423634961,
-        "bias sd": 5.735709813759564,
-        "wasserstein mean": 0.10417458392330507,
-        "wasserstein sd": 0.051106011199325306
+        "bias mean": 4.7404206918884935,
+        "bias sd": 5.952095161165954,
+        "wasserstein mean": 0.1012627690102507,
+        "wasserstein sd": 0.05119880399452076
     },
     "LoanAmount_relative_bias": {
-        "bias mean": 1.4822992405114428,
-        "bias sd": 1.2035710917209435,
-        "wasserstein mean": 0.10431748858995274,
-        "wasserstein sd": 0.03314360032770785
+        "bias mean": 1.0586337972925017,
+        "bias sd": 0.7505531024011212,
+        "wasserstein mean": 0.09991907885857028,
+        "wasserstein sd": 0.031092631149492952
     },
     "Loan_Amount_Term_relative_bias": {
-        "bias mean": 0.46779154696709035,
-        "bias sd": 0.43387171513629924,
-        "wasserstein mean": 0.06993843460528565,
-        "wasserstein sd": 0.02940577662429357
+        "bias mean": 0.3529375169032648,
+        "bias sd": 0.3028614762611845,
+        "wasserstein mean": 0.06836811757656251,
+        "wasserstein sd": 0.031072289209685112
     },
     "Credit_History_relative_bias": {
-        "bias mean": 0.8853524127448469,
-        "bias sd": 0.6824585358258008,
-        "wasserstein mean": 0.021271928789685635,
-        "wasserstein sd": 0.0162832402493901
+        "bias mean": 0.7174803750452834,
+        "bias sd": 0.5983187759147148,
+        "wasserstein mean": 0.017265057865943373,
+        "wasserstein sd": 0.014351720275591704
     },
     "Loan_Status_relative_bias": {
-        "bias mean": 13.041640703910591,
-        "bias sd": 5.002499148067226,
-        "wasserstein mean": 0.08894439666101164,
-        "wasserstein sd": 0.03175363767787233
+        "bias mean": 6.604866184997055,
+        "bias sd": 4.51801692831862,
+        "wasserstein mean": 0.04483554480605553,
+        "wasserstein sd": 0.029214571545665438
     },
     "Gender_Male_relative_bias": {
-        "bias mean": 0.9001762110443203,
-        "bias sd": 0.6955720583501781,
-        "wasserstein mean": 0.019301916103833684,
-        "wasserstein sd": 0.014884860115886314
+        "bias mean": 0.6381224138892158,
+        "bias sd": 0.4901174305694496,
+        "wasserstein mean": 0.013711339510158007,
+        "wasserstein sd": 0.010516504394392705
     },
     "Married_Yes_relative_bias": {
-        "bias mean": 1.6586388900126332,
-        "bias sd": 1.5047608045226726,
-        "wasserstein mean": 0.02234440350988628,
-        "wasserstein sd": 0.02006512847050263
+        "bias mean": 1.2287987299911893,
+        "bias sd": 1.0699285152018236,
+        "wasserstein mean": 0.01658713925092459,
+        "wasserstein sd": 0.014274068570342033
     },
     "Education_Not Graduate_relative_bias": {
-        "bias mean": 2.813755056118032,
-        "bias sd": 2.665592735268058,
-        "wasserstein mean": 0.014344478887606163,
-        "wasserstein sd": 0.014144013974527699
+        "bias mean": 2.3175575502299184,
+        "bias sd": 2.0555300694267515,
+        "wasserstein mean": 0.011977591233586677,
+        "wasserstein sd": 0.011212512960774398
     },
     "Self_Employed_Yes_relative_bias": {
-        "bias mean": 4.422575497289236,
-        "bias sd": 3.220761737634714,
-        "wasserstein mean": 0.017683531042551583,
-        "wasserstein sd": 0.013262875468452088
+        "bias mean": 3.2777479189511096,
+        "bias sd": 2.767043301343157,
+        "wasserstein mean": 0.013115759360363943,
+        "wasserstein sd": 0.011298610180660366
     },
     "Property_Area_Semiurban_relative_bias": {
-        "bias mean": 2.2662862551107126,
-        "bias sd": 1.7497190242502518,
-        "wasserstein mean": 0.018230156608785728,
-        "wasserstein sd": 0.014199084380718275
+        "bias mean": 1.6178442471669265,
+        "bias sd": 1.2988554640021814,
+        "wasserstein mean": 0.012981245591471029,
+        "wasserstein sd": 0.010484117662057054
     },
     "Property_Area_Urban_relative_bias": {
-        "bias mean": 2.574957718622767,
-        "bias sd": 1.8769719187647054,
-        "wasserstein mean": 0.017712680529669032,
-        "wasserstein sd": 0.013123919241737838
+        "bias mean": 1.945553953858962,
+        "bias sd": 1.4733474004408993,
+        "wasserstein mean": 0.013419230885319412,
+        "wasserstein sd": 0.010292324811827026
     }
 }
